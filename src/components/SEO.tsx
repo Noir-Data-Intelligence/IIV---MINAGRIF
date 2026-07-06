@@ -1,7 +1,9 @@
 import { Helmet } from "react-helmet-async";
 
 const SITE_NAME = "Instituto de Investigação Veterinária";
-const BASE_URL = "https://iiv-insight-hub.lovable.app";
+// Placeholder ate confirmacao do dominio institucional real (ver PLANO-ATUALIZACAO-FRONTEND.txt, decisao D5).
+// Configuravel via VITE_SITE_URL sem alterar codigo.
+export const BASE_URL = import.meta.env.VITE_SITE_URL || "https://www.iiv.gov.ao";
 
 interface SEOProps {
   title: string;

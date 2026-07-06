@@ -1,42 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Dominio placeholder ate confirmacao do dominio institucional real (ver PLANO-ATUALIZACAO-FRONTEND.txt, decisao D5) -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://iiv-insight-hub.lovable.app/</loc>
+    <loc>https://www.iiv.gov.ao/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://iiv-insight-hub.lovable.app/sobre</loc>
+    <loc>https://www.iiv.gov.ao/sobre</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://iiv-insight-hub.lovable.app/servicos</loc>
+    <loc>https://www.iiv.gov.ao/servicos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://iiv-insight-hub.lovable.app/noticias</loc>
+    <loc>https://www.iiv.gov.ao/noticias</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://iiv-insight-hub.lovable.app/legislacao</loc>
+    <loc>https://www.iiv.gov.ao/legislacao</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://iiv-insight-hub.lovable.app/contactos</loc>
+    <loc>https://www.iiv.gov.ao/contactos</loc>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://iiv-insight-hub.lovable.app/privacidade</loc>
+    <loc>https://www.iiv.gov.ao/privacidade</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://iiv-insight-hub.lovable.app/termos</loc>
+    <loc>https://www.iiv.gov.ao/termos</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

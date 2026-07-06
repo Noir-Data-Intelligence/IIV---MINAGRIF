@@ -15,5 +15,13 @@
     "switch": "Mudar idioma",
     "pt": "Português",
     "en": "Inglês"
+  },
+  "emptyState": {
+    "defaultMessage": "Nenhum registo encontrado."
+  },
+  "errorState": {
+    "title": "Ocorreu um erro",
+    "defaultMessage": "Não foi possível carregar os dados. Tenta novamente.",
+    "retry": "Tentar novamente"
   }
 }

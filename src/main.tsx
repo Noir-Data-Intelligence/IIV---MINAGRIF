@@ -14,8 +14,18 @@ import "@fontsource/space-grotesk/700.css";
 
 import "@/i18n";
 
-createRoot(document.getElementById("root")!).render(
-  <HelmetProvider>
-    <App />
-  </HelmetProvider>,
-);
+// Arranca o MSW apenas em modo mock (VITE_API_MOCK="true"). Import dinâmico para
+// que o worker e os handlers não entrem no bundle quando se usa o backend real.
+async function enableMocking() {
+  if (import.meta.env.VITE_API_MOCK !== "true") return;
+  const { worker } = await import("@/mocks/browser");
+  return worker.start({ onUnhandledRequest: "bypass" });
+}
+
+enableMocking().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>,
+  );
+});

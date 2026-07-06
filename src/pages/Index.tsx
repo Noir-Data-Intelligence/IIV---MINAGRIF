@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { HeroSlideshow } from "@/components/home/HeroSlideshow";
 import { PartnersBar } from "@/components/home/PartnersBar";
 import { LiveStats } from "@/components/home/LiveStats";
-import { SEO } from "@/components/SEO";
+import { SEO, BASE_URL } from "@/components/SEO";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import heroCampo from "@/assets/hero/hero-campo.jpg";
@@ -68,7 +68,7 @@ export default function Index() {
           "@type": "GovernmentOrganization",
           name: "Instituto de Investigação Veterinária",
           alternateName: "IIV",
-          url: "https://iiv-insight-hub.lovable.app",
+          url: BASE_URL,
           areaServed: "Angola",
           parentOrganization: { "@type": "GovernmentOrganization", name: "Ministério da Agricultura e Pescas" },
         }}

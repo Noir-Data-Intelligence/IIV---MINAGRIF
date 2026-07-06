@@ -15,5 +15,13 @@
     "switch": "Switch language",
     "pt": "Portuguese",
     "en": "English"
+  },
+  "emptyState": {
+    "defaultMessage": "No records found."
+  },
+  "errorState": {
+    "title": "Something went wrong",
+    "defaultMessage": "Could not load the data. Please try again.",
+    "retry": "Try again"
   }
 }

@@ -18,4 +18,4 @@ Disallow: /registar
 Disallow: /recuperar-senha
 Disallow: /redefinir-senha
 
-Sitemap: https://iiv-insight-hub.lovable.app/sitemap.xml
+Sitemap: https://www.iiv.gov.ao/sitemap.xml
