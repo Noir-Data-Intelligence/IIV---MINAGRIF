@@ -1,0 +1,72 @@
+{
+  "page": {
+    "title": "Distribuição",
+    "description": "Histórico de distribuição de produtos"
+  },
+  "kpi": {
+    "month": "Distribuído no Mês",
+    "monthCaption": "Unidades no mês corrente",
+    "destinations": "Destinos Únicos",
+    "destinationsCaption": "No histórico",
+    "total": "Total de Registos",
+    "totalCaption": "Distribuições registadas"
+  },
+  "actions": {
+    "exportPdf": "Exportar PDF",
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "labels": {
+      "destination": "Destino",
+      "quantity": "Quantidade",
+      "date": "Data",
+      "notes": "Notas"
+    },
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "editTitle": "Editar Distribuição",
+    "detailsTitle": "Detalhes da Distribuição"
+  },
+  "details": {
+    "batch": "Lote",
+    "product": "Produto",
+    "destination": "Destino",
+    "quantity": "Quantidade",
+    "date": "Data",
+    "notes": "Notas"
+  },
+  "table": {
+    "batch": "Lote",
+    "product": "Produto",
+    "destination": "Destino",
+    "quantity": "Quantidade",
+    "date": "Data",
+    "notes": "Notas",
+    "empty": "Nenhuma distribuição registada.",
+    "searchPlaceholder": "Pesquisar distribuições...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "destinationShort": "Destino demasiado curto",
+    "quantityPositive": "Quantidade deve ser maior que zero",
+    "dateRequired": "Data obrigatória"
+  },
+  "pdf": {
+    "title": "Relatório de Distribuição",
+    "batch": "Lote",
+    "product": "Produto",
+    "destination": "Destino",
+    "quantity": "Quantidade",
+    "date": "Data"
+  },
+  "toast": {
+    "updateSuccess": "Distribuição actualizada",
+    "deleteSuccess": "Distribuição eliminada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

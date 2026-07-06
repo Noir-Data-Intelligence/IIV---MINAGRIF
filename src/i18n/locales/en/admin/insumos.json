@@ -1,0 +1,79 @@
+{
+  "page": {
+    "title": "Supplies and Reagents",
+    "description": "Laboratory inventory control"
+  },
+  "kpis": {
+    "total": "Total Supplies",
+    "totalCaption": "Items in inventory",
+    "lowStock": "Low Stock",
+    "lowStockCaption": "Below minimum",
+    "expiring": "Expiring (30 days)",
+    "expiringCaption": "Near or past expiry"
+  },
+  "actions": {
+    "new": "New Supply",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "labels": {
+      "laboratory": "Laboratory",
+      "name": "Supply Name",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "minStock": "Minimum Stock",
+      "expiryDate": "Expiry Date"
+    },
+    "placeholders": {
+      "laboratory": "Select laboratory",
+      "name": "e.g. Mueller-Hinton Agar",
+      "unit": "unit"
+    },
+    "submitCreate": "Add Supply",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Add Supply",
+    "editTitle": "Edit Supply",
+    "detailsTitle": "Supply Details"
+  },
+  "details": {
+    "name": "Name",
+    "laboratory": "Laboratory",
+    "quantity": "Quantity",
+    "minStock": "Minimum Stock",
+    "expiryDate": "Expiry",
+    "status": "Status"
+  },
+  "table": {
+    "name": "Name",
+    "laboratory": "Laboratory",
+    "quantity": "Quantity",
+    "expiryDate": "Expiry",
+    "status": "Status",
+    "empty": "No supplies found.",
+    "searchPlaceholder": "Search supplies...",
+    "emptyCell": "—"
+  },
+  "state": {
+    "ok": "OK",
+    "lowStock": "Low Stock",
+    "expired": "Expired"
+  },
+  "validation": {
+    "laboratoryRequired": "Select a laboratory",
+    "nameShort": "Name too short",
+    "quantityInvalid": "Invalid quantity",
+    "minStockInvalid": "Invalid minimum stock"
+  },
+  "toast": {
+    "createSuccess": "Supply added successfully",
+    "updateSuccess": "Supply updated",
+    "deleteSuccess": "Supply deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

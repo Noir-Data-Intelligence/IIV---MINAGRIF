@@ -1,0 +1,72 @@
+{
+  "page": {
+    "title": "Distribution",
+    "description": "Product distribution history"
+  },
+  "kpi": {
+    "month": "Distributed This Month",
+    "monthCaption": "Units in current month",
+    "destinations": "Unique Destinations",
+    "destinationsCaption": "In history",
+    "total": "Total Records",
+    "totalCaption": "Recorded distributions"
+  },
+  "actions": {
+    "exportPdf": "Export PDF",
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "labels": {
+      "destination": "Destination",
+      "quantity": "Quantity",
+      "date": "Date",
+      "notes": "Notes"
+    },
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "editTitle": "Edit Distribution",
+    "detailsTitle": "Distribution Details"
+  },
+  "details": {
+    "batch": "Batch",
+    "product": "Product",
+    "destination": "Destination",
+    "quantity": "Quantity",
+    "date": "Date",
+    "notes": "Notes"
+  },
+  "table": {
+    "batch": "Batch",
+    "product": "Product",
+    "destination": "Destination",
+    "quantity": "Quantity",
+    "date": "Date",
+    "notes": "Notes",
+    "empty": "No distributions recorded.",
+    "searchPlaceholder": "Search distributions...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "destinationShort": "Destination too short",
+    "quantityPositive": "Quantity must be greater than zero",
+    "dateRequired": "Date required"
+  },
+  "pdf": {
+    "title": "Distribution Report",
+    "batch": "Batch",
+    "product": "Product",
+    "destination": "Destination",
+    "quantity": "Quantity",
+    "date": "Date"
+  },
+  "toast": {
+    "updateSuccess": "Distribution updated",
+    "deleteSuccess": "Distribution deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

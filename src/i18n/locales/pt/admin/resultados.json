@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "Resultados Laboratoriais",
+    "description": "Lançamento e consulta de resultados de análises"
+  },
+  "kpis": {
+    "total": "Total de Resultados",
+    "totalCaption": "Registados no sistema",
+    "coverage": "Análises com Resultado",
+    "coverageCaption": "Do total de análises"
+  },
+  "actions": {
+    "new": "Lançar Resultado",
+    "view": "Ver detalhes",
+    "pdf": "Gerar PDF",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "labels": {
+      "analysis": "Análise",
+      "resultText": "Resultado"
+    },
+    "placeholders": {
+      "analysis": "Seleccionar análise pendente",
+      "resultText": "Descreva o resultado da análise..."
+    },
+    "submitCreate": "Registar Resultado",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Lançar Resultado de Análise",
+    "editTitle": "Editar Resultado",
+    "detailsTitle": "Detalhes do Resultado"
+  },
+  "details": {
+    "client": "Cliente",
+    "concluded": "Concluída",
+    "sample": "Amostra",
+    "dates": "Datas",
+    "type": "Tipo",
+    "species": "Espécie",
+    "animalId": "ID animal",
+    "scheduled": "Agendada",
+    "concludedDate": "Concluída",
+    "result": "Resultado"
+  },
+  "table": {
+    "date": "Data",
+    "client": "Cliente",
+    "analysisType": "Tipo Análise",
+    "result": "Resultado",
+    "actions": "Acções",
+    "empty": "Nenhum resultado encontrado.",
+    "searchPlaceholder": "Pesquisar resultados...",
+    "emptyCell": "—"
+  },
+  "pdf": {
+    "title": "Relatório de Análise Laboratorial",
+    "fieldColumn": "Campo",
+    "valueColumn": "Valor",
+    "client": "Cliente",
+    "animalSpecies": "Espécie Animal",
+    "animalId": "ID do Animal",
+    "sampleType": "Tipo de Amostra",
+    "analysisType": "Tipo de Análise",
+    "analysisDate": "Data da Análise",
+    "resultDate": "Data do Resultado",
+    "result": "Resultado",
+    "notAvailable": "N/A"
+  },
+  "validation": {
+    "analysisRequired": "Seleccione uma análise",
+    "resultRequired": "Descreva o resultado"
+  },
+  "toast": {
+    "createSuccess": "Resultado registado com sucesso",
+    "updateSuccess": "Resultado actualizado",
+    "deleteSuccess": "Resultado eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

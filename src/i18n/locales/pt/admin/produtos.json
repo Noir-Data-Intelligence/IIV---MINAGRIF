@@ -1,0 +1,87 @@
+{
+  "page": {
+    "title": "Produtos",
+    "description": "Catálogo de vacinas, soros e reagentes"
+  },
+  "kpi": {
+    "activeTotal": "Produtos Activos",
+    "activeCaption": "No catálogo em uso",
+    "vaccines": "Vacinas",
+    "sera": "Soros",
+    "reagents": "Reagentes",
+    "archived": "Arquivados",
+    "archivedCaption": "Fora de catálogo"
+  },
+  "tabs": {
+    "active": "Activos",
+    "archived": "Arquivados"
+  },
+  "actions": {
+    "new": "Novo Produto",
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Arquivar",
+    "restore": "Restaurar"
+  },
+  "types": {
+    "vacina": "Vacina",
+    "soro": "Soro",
+    "reagente": "Reagente"
+  },
+  "form": {
+    "labels": {
+      "name": "Nome",
+      "type": "Tipo",
+      "unit": "Unidade",
+      "description": "Descrição"
+    },
+    "placeholders": {
+      "name": "Ex: Vacina contra a Raiva",
+      "type": "Seleccionar tipo",
+      "unit": "Ex: dose, ml, frasco",
+      "description": "Descrição do produto"
+    },
+    "submitCreate": "Registar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Registar Produto",
+    "editTitle": "Editar Produto",
+    "detailsTitle": "Detalhes do Produto"
+  },
+  "details": {
+    "name": "Nome",
+    "type": "Tipo",
+    "unit": "Unidade",
+    "description": "Descrição",
+    "createdAt": "Criado em"
+  },
+  "table": {
+    "name": "Nome",
+    "type": "Tipo",
+    "unit": "Unidade",
+    "description": "Descrição",
+    "empty": "Nenhum produto registado.",
+    "emptyArchived": "Nenhum produto arquivado.",
+    "searchPlaceholder": "Pesquisar produtos...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "nameShort": "Nome demasiado curto",
+    "typeRequired": "Seleccione um tipo",
+    "unitShort": "Indique a unidade"
+  },
+  "delete": {
+    "title": "Arquivar Produto",
+    "description": "O produto será arquivado e deixará de aparecer na listagem, mas os lotes associados serão mantidos."
+  },
+  "toast": {
+    "createSuccess": "Produto registado com sucesso",
+    "updateSuccess": "Produto actualizado",
+    "archiveSuccess": "Produto arquivado com sucesso",
+    "restoreSuccess": "Produto restaurado com sucesso",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

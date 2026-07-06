@@ -1,200 +1,464 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { Package, Eye, Pencil, Plus, Trash2, AlertTriangle, CalendarClock } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, AlertTriangle, Package, Pencil, Trash2, Eye } from "lucide-react";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import { formatDate } from "@/lib/format";
+import {
+  useInsumosList,
+  useCreateInsumo,
+  useDeleteInsumo,
+  useUpdateInsumo,
+} from "@/hooks/queries/useInsumos";
+import { useLaboratoriosList } from "@/hooks/queries/useLaboratorios";
+import type { InsumoDto } from "@/types/dto/insumo";
+import i18n from "@/i18n";
+import ptInsumos from "@/i18n/locales/pt/admin/insumos.json";
+import enInsumos from "@/i18n/locales/en/admin/insumos.json";
 
-interface Lab { id: string; name: string; }
-interface Supply {
-  id: string; laboratory_id: string; name: string; quantity: number;
-  unit: string; min_stock: number; expiry_date: string | null;
+// Namespace autónomo registado em runtime, seguindo o padrão de Laboratorios.tsx.
+if (!i18n.hasResourceBundle("pt", "admin-insumos"))
+  i18n.addResourceBundle("pt", "admin-insumos", ptInsumos, true, true);
+if (!i18n.hasResourceBundle("en", "admin-insumos"))
+  i18n.addResourceBundle("en", "admin-insumos", enInsumos, true, true);
+
+const EXPIRY_WINDOW_DAYS = 30;
+
+function buildInsumoSchema(t: TFunction) {
+  return z.object({
+    laboratoryId: z.string().min(1, t("validation.laboratoryRequired")),
+    name: z.string().trim().min(2, t("validation.nameShort")),
+    quantity: z
+      .string()
+      .trim()
+      .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 0, t("validation.quantityInvalid")),
+    unit: z.string().trim().optional(),
+    minStock: z
+      .string()
+      .trim()
+      .optional()
+      .refine((v) => !v || (Number.isInteger(Number(v)) && Number(v) >= 0), t("validation.minStockInvalid")),
+    expiryDate: z.string().trim().optional(),
+  });
+}
+
+type InsumoFormValues = z.infer<ReturnType<typeof buildInsumoSchema>>;
+
+function isLowStock(item: InsumoDto): boolean {
+  return item.quantity <= item.minStock;
+}
+
+function isExpired(item: InsumoDto): boolean {
+  return !!item.expiryDate && new Date(item.expiryDate) < new Date();
+}
+
+function isExpiringSoon(item: InsumoDto): boolean {
+  if (!item.expiryDate) return false;
+  const now = new Date();
+  const windowEnd = new Date(now.getTime() + EXPIRY_WINDOW_DAYS * 86400000);
+  return new Date(item.expiryDate) <= windowEnd;
 }
 
 export default function Insumos() {
-  const [supplies, setSupplies] = useState<Supply[]>([]);
-  const [labs, setLabs] = useState<Lab[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const { t, i18n: i18nInstance } = useTranslation("admin-insumos");
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("insumos");
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewItem, setViewItem] = useState<Supply | null>(null);
-  const [editItem, setEditItem] = useState<Supply | null>(null);
-  const { toast } = useToast();
-  const pag = usePagination(20);
+  const [viewItem, setViewItem] = useState<InsumoDto | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<InsumoDto | null>(null);
 
-  const [labId, setLabId] = useState("");
-  const [name, setName] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [unit, setUnit] = useState("unidade");
-  const [minStock, setMinStock] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
+  const { data, isLoading } = useInsumosList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
+  // Dataset completo, para os KPIs de stock baixo/validade não dependerem da página actual.
+  const statsQuery = useInsumosList({ page: 1, perPage: 1000 });
+  const laboratoriosQuery = useLaboratoriosList({ page: 1, perPage: 100 });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [{ data: sData, count }, { data: lData }] = await Promise.all([
-      supabase.from("lab_supplies").select("*", { count: "exact" }).order("name").range(pag.from, pag.to),
-      supabase.from("laboratories").select("id, name").order("name"),
-    ]);
-    setSupplies((sData as Supply[]) ?? []);
-    pag.setTotal(count ?? 0);
-    setLabs((lData as Lab[]) ?? []);
-    setLoading(false);
-  };
+  const createInsumo = useCreateInsumo();
+  const updateInsumo = useUpdateInsumo();
+  const deleteInsumo = useDeleteInsumo();
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
-  const labNameMap = Object.fromEntries(labs.map((l) => [l.id, l.name]));
+  const laboratorios = laboratoriosQuery.data?.data ?? [];
+  const labNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    laboratorios.forEach((l) => map.set(l.id, l.name));
+    return map;
+  }, [laboratorios]);
 
-  const resetForm = () => { setLabId(""); setName(""); setQuantity(""); setUnit("unidade"); setMinStock(""); setExpiryDate(""); };
+  const insumoSchema = useMemo(() => buildInsumoSchema(t), [t]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from("lab_supplies").insert({
-      laboratory_id: labId, name, quantity: parseInt(quantity), unit,
-      min_stock: parseInt(minStock) || 0, expiry_date: expiryDate || null,
-    } as any);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Insumo adicionado com sucesso" }); setOpen(false); resetForm(); fetchData();
-  };
-
-  const openEdit = (s: Supply) => {
-    setEditItem(s); setLabId(s.laboratory_id); setName(s.name); setQuantity(String(s.quantity));
-    setUnit(s.unit); setMinStock(String(s.min_stock)); setExpiryDate(s.expiry_date || ""); setEditOpen(true);
-  };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editItem) return;
-    const { error } = await supabase.from("lab_supplies").update({
-      laboratory_id: labId, name, quantity: parseInt(quantity), unit,
-      min_stock: parseInt(minStock) || 0, expiry_date: expiryDate || null,
-    } as any).eq("id", editItem.id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Insumo actualizado" }); setEditOpen(false); setEditItem(null); resetForm(); fetchData();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("lab_supplies").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Insumo eliminado" }); setDeleteId(null); fetchData();
-  };
-
-  const formFields = (
-    <>
-      <div><Label>Laboratório</Label>
-        <Select value={labId} onValueChange={setLabId} required>
-          <SelectTrigger><SelectValue placeholder="Seleccionar laboratório" /></SelectTrigger>
-          <SelectContent>{labs.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div><Label>Nome do Insumo</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Agar Mueller-Hinton" required /></div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div><Label>Quantidade</Label><Input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} required min="0" /></div>
-        <div><Label>Unidade</Label><Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="unidade" /></div>
-        <div><Label>Stock Mínimo</Label><Input type="number" value={minStock} onChange={(e) => setMinStock(e.target.value)} min="0" /></div>
-      </div>
-      <div><Label>Data de Validade</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} /></div>
-    </>
+  const initialValues = useMemo<Partial<InsumoFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            laboratoryId: editItem.laboratoryId,
+            name: editItem.name,
+            quantity: String(editItem.quantity),
+            unit: editItem.unit,
+            minStock: String(editItem.minStock),
+            expiryDate: editItem.expiryDate ?? "",
+          }
+        : undefined,
+    [editItem],
   );
+
+  const entityForm = useEntityForm({
+    schema: insumoSchema,
+    initialValues,
+    defaultValues: {
+      laboratoryId: "",
+      name: "",
+      quantity: "",
+      unit: "unidade",
+      minStock: "",
+      expiryDate: "",
+    },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const payload: Partial<InsumoDto> = {
+        laboratoryId: values.laboratoryId,
+        name: values.name,
+        quantity: Number(values.quantity),
+        unit: values.unit?.trim() || "unidade",
+        minStock: values.minStock?.trim() ? Number(values.minStock) : 0,
+        expiryDate: values.expiryDate?.trim() ? values.expiryDate.trim() : null,
+      };
+      if (editItem) {
+        await updateInsumo.mutateAsync({ id: editItem.id, payload });
+      } else {
+        await createInsumo.mutateAsync(payload);
+      }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (s: InsumoDto) => {
+    setEditItem(s);
+    setFormOpen(true);
+  };
+
+  const rows = data?.data ?? [];
+  const kpiTotal = data?.meta.total ?? 0;
+  const statsRows = statsQuery.data?.data ?? [];
+  const kpiLowStock = useMemo(() => statsRows.filter(isLowStock).length, [statsRows]);
+  const kpiExpiringSoon = useMemo(() => statsRows.filter(isExpiringSoon).length, [statsRows]);
+
+  const renderStatusBadge = (item: InsumoDto) => {
+    if (isExpired(item)) {
+      return (
+        <Badge variant="destructive" className="gap-1">
+          <AlertTriangle className="h-3 w-3" /> {t("state.expired")}
+        </Badge>
+      );
+    }
+    if (isLowStock(item)) {
+      return (
+        <Badge variant="destructive" className="gap-1">
+          <AlertTriangle className="h-3 w-3" /> {t("state.lowStock")}
+        </Badge>
+      );
+    }
+    return <Badge variant="default">{t("state.ok")}</Badge>;
+  };
+
+  const columns = useMemo<ColumnDef<InsumoDto>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.name")} />,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2 font-medium">
+            <Package className="h-4 w-4 text-primary" />
+            {row.original.name}
+          </div>
+        ),
+      },
+      {
+        id: "laboratory",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.laboratory")} />,
+        cell: ({ row }) => labNameMap.get(row.original.laboratoryId) ?? t("table.emptyCell"),
+      },
+      {
+        accessorKey: "quantity",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.quantity")} />,
+        cell: ({ row }) => (
+          <span className={isLowStock(row.original) ? "text-destructive font-medium" : ""}>
+            {row.original.quantity} {row.original.unit}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "expiryDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.expiryDate")} />,
+        cell: ({ row }) => (
+          <span className={isExpired(row.original) ? "text-destructive font-medium" : ""}>
+            {row.original.expiryDate ? formatDate(row.original.expiryDate) : t("table.emptyCell")}
+          </span>
+        ),
+      },
+      {
+        id: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) => renderStatusBadge(row.original),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, labNameMap],
+  );
+
+  const renderRowActions = (row: InsumoDto) => {
+    const actions: RowAction[] = [];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return <RowActions primary={{ label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) }} actions={actions} />;
+  };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={Package} title="Insumos e Reagentes" description="Controlo de inventário laboratorial">
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo Insumo</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-serif">Adicionar Insumo</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">{formFields}<Button type="submit" className="w-full">Adicionar Insumo</Button></form>
-          </DialogContent>
-        </Dialog>
+      <AdminPageHeader icon={Package} title={t("page.title")} description={t("page.description")}>
+        <WriteGuard module="insumos">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) { setEditItem(null); resetForm(); } }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle className="font-serif">Editar Insumo</DialogTitle></DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">{formFields}<Button type="submit" className="w-full">Guardar Alterações</Button></form>
-        </DialogContent>
-      </Dialog>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <AdminCard
+          variant="gradient-green"
+          icon={Package}
+          metric={kpiTotal}
+          title={t("kpis.total")}
+          caption={t("kpis.totalCaption")}
+          stagger={1}
+        />
+        <AdminCard
+          variant={kpiLowStock > 0 ? "gradient-gold" : "glass"}
+          icon={AlertTriangle}
+          metric={kpiLowStock}
+          title={t("kpis.lowStock")}
+          caption={t("kpis.lowStockCaption")}
+          stagger={2}
+        />
+        <AdminCard
+          variant={kpiExpiringSoon > 0 ? "gradient-gold" : "glass"}
+          icon={CalendarClock}
+          metric={kpiExpiringSoon}
+          title={t("kpis.expiring")}
+          caption={t("kpis.expiringCaption")}
+          stagger={3}
+        />
+      </div>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="laboratoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.laboratory")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("form.placeholders.laboratory")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {laboratorios.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.name")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.name")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.quantity")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.unit")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.unit")} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="minStock"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.minStock")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="expiryDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.expiryDate")}</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </EntityFormDialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await deleteInsumo.mutateAsync(deleteId);
+          setDeleteId(null);
+        }}
+      />
 
       <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="font-serif">Detalhes do Insumo</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-serif">{t("dialog.detailsTitle")}</DialogTitle>
+          </DialogHeader>
           {viewItem && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Nome:</span><p className="font-medium">{viewItem.name}</p></div>
-                <div><span className="text-muted-foreground">Laboratório:</span><p className="font-medium">{labNameMap[viewItem.laboratory_id] ?? "—"}</p></div>
-                <div><span className="text-muted-foreground">Quantidade:</span><p className="font-medium">{viewItem.quantity} {viewItem.unit}</p></div>
-                <div><span className="text-muted-foreground">Stock Mínimo:</span><p className="font-medium">{viewItem.min_stock} {viewItem.unit}</p></div>
-                <div><span className="text-muted-foreground">Validade:</span><p className="font-medium">{viewItem.expiry_date ? new Date(viewItem.expiry_date).toLocaleDateString("pt-AO") : "—"}</p></div>
-                <div><span className="text-muted-foreground">Estado:</span><p>{viewItem.expiry_date && new Date(viewItem.expiry_date) < new Date() ? <Badge variant="destructive">Expirado</Badge> : viewItem.quantity <= viewItem.min_stock ? <Badge variant="destructive">Stock Baixo</Badge> : <Badge variant="default">OK</Badge>}</p></div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.name")}:</span>
+                  <p className="font-medium">{viewItem.name}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.laboratory")}:</span>
+                  <p className="font-medium">{labNameMap.get(viewItem.laboratoryId) ?? "—"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.quantity")}:</span>
+                  <p className="font-medium">
+                    {viewItem.quantity} {viewItem.unit}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.minStock")}:</span>
+                  <p className="font-medium">
+                    {viewItem.minStock} {viewItem.unit}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.expiryDate")}:</span>
+                  <p className="font-medium">{viewItem.expiryDate ? formatDate(viewItem.expiryDate) : "—"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.status")}:</span>
+                  <p>{renderStatusBadge(viewItem)}</p>
+                </div>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
-
-      <AdminCard title="Inventário de Insumos" icon={Package} loading={loading} isEmpty={supplies.length === 0} emptyMessage="Nenhum insumo cadastrado.">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead><TableHead>Laboratório</TableHead>
-                <TableHead>Quantidade</TableHead><TableHead>Validade</TableHead><TableHead>Estado</TableHead><TableHead className="w-24">Acções</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {supplies.map((s) => {
-                const isLow = s.quantity <= s.min_stock;
-                const isExpired = s.expiry_date && new Date(s.expiry_date) < new Date();
-                return (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell>{labNameMap[s.laboratory_id] ?? "—"}</TableCell>
-                    <TableCell>{s.quantity} {s.unit}</TableCell>
-                    <TableCell>{s.expiry_date ? new Date(s.expiry_date).toLocaleDateString("pt-AO") : "—"}</TableCell>
-                    <TableCell>
-                      {isExpired ? <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Expirado</Badge>
-                        : isLow ? <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Stock Baixo</Badge>
-                        : <Badge variant="default">OK</Badge>}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setViewItem(s)}><Eye className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
     </div>
   );
 }

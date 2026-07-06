@@ -1,0 +1,70 @@
+{
+  "page": {
+    "title": "Laboratórios",
+    "description": "Gestão dos laboratórios do instituto"
+  },
+  "kpis": {
+    "total": "Total de Laboratórios",
+    "totalCaption": "Registados no sistema",
+    "active": "Activos",
+    "activeCaption": "Em funcionamento",
+    "types": "Tipos Distintos",
+    "typesCaption": "Áreas de especialidade"
+  },
+  "actions": {
+    "new": "Novo Laboratório",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "labels": {
+      "name": "Nome",
+      "type": "Tipo",
+      "description": "Descrição",
+      "isActive": "Laboratório activo"
+    },
+    "placeholders": {
+      "name": "Ex: Laboratório de Virologia",
+      "type": "Ex: virologia, bacteriologia",
+      "description": "Descrição do laboratório"
+    },
+    "submitCreate": "Criar Laboratório",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Cadastrar Laboratório",
+    "editTitle": "Editar Laboratório",
+    "detailsTitle": "Detalhes do Laboratório"
+  },
+  "details": {
+    "name": "Nome",
+    "type": "Tipo",
+    "status": "Estado",
+    "description": "Descrição",
+    "createdAt": "Criado em"
+  },
+  "table": {
+    "name": "Nome",
+    "type": "Tipo",
+    "status": "Estado",
+    "description": "Descrição",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "empty": "Nenhum laboratório encontrado.",
+    "searchPlaceholder": "Pesquisar laboratórios...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "nameShort": "Nome demasiado curto",
+    "typeRequired": "Indique o tipo de laboratório"
+  },
+  "toast": {
+    "createSuccess": "Laboratório criado com sucesso",
+    "updateSuccess": "Laboratório actualizado",
+    "deleteSuccess": "Laboratório eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

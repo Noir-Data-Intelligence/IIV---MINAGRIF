@@ -33,6 +33,18 @@ export const PROCESS_PRIORITY: Record<string, EnumEntry> = {
   urgente: { label: "Urgente", variant: "destructive" },
 };
 
+/**
+ * Estado de uma análise laboratorial (src/pages/admin/Analises.tsx).
+ * Extraído do `statusMap` local dessa página, para reutilização pelas 4 páginas
+ * do grupo Laboratório e futura tradução via i18n.
+ */
+export const ANALYSIS_STATUS: Record<string, EnumEntry> = {
+  agendada: { label: "Agendada", variant: "secondary" },
+  em_progresso: { label: "Em Progresso", variant: "outline" },
+  concluida: { label: "Concluída", variant: "default" },
+  cancelada: { label: "Cancelada", variant: "destructive" },
+};
+
 /** Estado de uma auditoria de qualidade (src/pages/admin/Auditorias.tsx). */
 export const AUDIT_STATUS: Record<string, EnumEntry> = {
   planeada: { label: "Planeada", variant: "outline" },

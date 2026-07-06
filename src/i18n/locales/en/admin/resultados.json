@@ -1,0 +1,84 @@
+{
+  "page": {
+    "title": "Laboratory Results",
+    "description": "Recording and consulting analysis results"
+  },
+  "kpis": {
+    "total": "Total Results",
+    "totalCaption": "Registered in the system",
+    "coverage": "Analyses with Result",
+    "coverageCaption": "Of all analyses"
+  },
+  "actions": {
+    "new": "Record Result",
+    "view": "View details",
+    "pdf": "Generate PDF",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "labels": {
+      "analysis": "Analysis",
+      "resultText": "Result"
+    },
+    "placeholders": {
+      "analysis": "Select pending analysis",
+      "resultText": "Describe the analysis result..."
+    },
+    "submitCreate": "Record Result",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Record Analysis Result",
+    "editTitle": "Edit Result",
+    "detailsTitle": "Result Details"
+  },
+  "details": {
+    "client": "Client",
+    "concluded": "Concluded",
+    "sample": "Sample",
+    "dates": "Dates",
+    "type": "Type",
+    "species": "Species",
+    "animalId": "Animal ID",
+    "scheduled": "Scheduled",
+    "concludedDate": "Concluded",
+    "result": "Result"
+  },
+  "table": {
+    "date": "Date",
+    "client": "Client",
+    "analysisType": "Analysis Type",
+    "result": "Result",
+    "actions": "Actions",
+    "empty": "No results found.",
+    "searchPlaceholder": "Search results...",
+    "emptyCell": "—"
+  },
+  "pdf": {
+    "title": "Laboratory Analysis Report",
+    "fieldColumn": "Field",
+    "valueColumn": "Value",
+    "client": "Client",
+    "animalSpecies": "Animal Species",
+    "animalId": "Animal ID",
+    "sampleType": "Sample Type",
+    "analysisType": "Analysis Type",
+    "analysisDate": "Analysis Date",
+    "resultDate": "Result Date",
+    "result": "Result",
+    "notAvailable": "N/A"
+  },
+  "validation": {
+    "analysisRequired": "Select an analysis",
+    "resultRequired": "Describe the result"
+  },
+  "toast": {
+    "createSuccess": "Result recorded successfully",
+    "updateSuccess": "Result updated",
+    "deleteSuccess": "Result deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

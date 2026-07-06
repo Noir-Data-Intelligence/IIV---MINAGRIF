@@ -1,0 +1,79 @@
+{
+  "page": {
+    "title": "Insumos e Reagentes",
+    "description": "Controlo de inventário laboratorial"
+  },
+  "kpis": {
+    "total": "Total de Insumos",
+    "totalCaption": "Itens em inventário",
+    "lowStock": "Stock Baixo",
+    "lowStockCaption": "Abaixo do mínimo",
+    "expiring": "A Expirar (30 dias)",
+    "expiringCaption": "Validade próxima ou expirada"
+  },
+  "actions": {
+    "new": "Novo Insumo",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "labels": {
+      "laboratory": "Laboratório",
+      "name": "Nome do Insumo",
+      "quantity": "Quantidade",
+      "unit": "Unidade",
+      "minStock": "Stock Mínimo",
+      "expiryDate": "Data de Validade"
+    },
+    "placeholders": {
+      "laboratory": "Seleccionar laboratório",
+      "name": "Ex: Agar Mueller-Hinton",
+      "unit": "unidade"
+    },
+    "submitCreate": "Adicionar Insumo",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Adicionar Insumo",
+    "editTitle": "Editar Insumo",
+    "detailsTitle": "Detalhes do Insumo"
+  },
+  "details": {
+    "name": "Nome",
+    "laboratory": "Laboratório",
+    "quantity": "Quantidade",
+    "minStock": "Stock Mínimo",
+    "expiryDate": "Validade",
+    "status": "Estado"
+  },
+  "table": {
+    "name": "Nome",
+    "laboratory": "Laboratório",
+    "quantity": "Quantidade",
+    "expiryDate": "Validade",
+    "status": "Estado",
+    "empty": "Nenhum insumo encontrado.",
+    "searchPlaceholder": "Pesquisar insumos...",
+    "emptyCell": "—"
+  },
+  "state": {
+    "ok": "OK",
+    "lowStock": "Stock Baixo",
+    "expired": "Expirado"
+  },
+  "validation": {
+    "laboratoryRequired": "Seleccione um laboratório",
+    "nameShort": "Nome demasiado curto",
+    "quantityInvalid": "Quantidade inválida",
+    "minStockInvalid": "Stock mínimo inválido"
+  },
+  "toast": {
+    "createSuccess": "Insumo adicionado com sucesso",
+    "updateSuccess": "Insumo actualizado",
+    "deleteSuccess": "Insumo eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

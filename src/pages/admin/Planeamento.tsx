@@ -1,236 +1,526 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { CalendarRange, Plus, FileText, Eye, Pencil, Trash2, Factory, Target, CheckCircle2 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, CalendarRange, FileText, Pencil, Trash2, Eye } from "lucide-react";
-import { format } from "date-fns";
-import { pt } from "date-fns/locale";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { ensurePdfFonts, PDF_HEADING_FONT, PDF_BODY_FONT } from "@/lib/pdfFonts";
+import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { axisTickStyle, buildChartConfig, chartColors, formatAxisNumber, NoDataOverlay } from "@/components/charts";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import { formatDate, formatNumber } from "@/lib/format";
+import { generateInstitutionalPdf } from "@/lib/generateInstitutionalPdf";
+import {
+  useCreatePlano,
+  useDeletePlano,
+  usePlanosList,
+  useUpdatePlano,
+} from "@/hooks/queries/usePlaneamento";
+import { useProdutosList } from "@/hooks/queries/useProdutos";
+import type { PlanoDto, PlanoStatus } from "@/types/dto/plano";
+import type { ProdutoDto } from "@/types/dto/produto";
+import i18n from "@/i18n";
+import ptPlaneamento from "@/i18n/locales/pt/admin/planeamento.json";
+import enPlaneamento from "@/i18n/locales/en/admin/planeamento.json";
 
-interface Product { id: string; name: string; product_type: string; unit: string; }
-interface Plan {
-  id: string; product_id: string; planned_quantity: number; actual_quantity: number | null;
-  planned_start: string; planned_end: string; status: string; notes: string | null; products?: Product;
-}
+if (!i18n.hasResourceBundle("pt", "planeamento")) i18n.addResourceBundle("pt", "planeamento", ptPlaneamento, true, true);
+if (!i18n.hasResourceBundle("en", "planeamento")) i18n.addResourceBundle("en", "planeamento", enPlaneamento, true, true);
 
-const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  planeada: { label: "Planeada", variant: "outline" }, em_producao: { label: "Em Produção", variant: "secondary" },
-  concluida: { label: "Concluída", variant: "default" }, suspensa: { label: "Suspensa", variant: "destructive" },
+const PLANO_STATUSES: PlanoStatus[] = ["planeada", "em_producao", "concluida", "suspensa"];
+
+const statusVariant: Record<PlanoStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  planeada: "outline",
+  em_producao: "secondary",
+  concluida: "default",
+  suspensa: "destructive",
 };
 
+function buildPlanoSchema(t: TFunction) {
+  return z.object({
+    productId: z.string().min(1, t("validation.productRequired")),
+    plannedQuantity: z
+      .string()
+      .trim()
+      .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, t("validation.quantityPositive")),
+    actualQuantity: z.string().trim().optional(),
+    plannedStart: z.string().min(1, t("validation.dateRequired")),
+    plannedEnd: z.string().min(1, t("validation.dateRequired")),
+    status: z.enum(["planeada", "em_producao", "concluida", "suspensa"]),
+    notes: z.string().trim().optional(),
+  });
+}
+
+type PlanoFormValues = z.infer<ReturnType<typeof buildPlanoSchema>>;
+
 export default function Planeamento() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const { t } = useTranslation("planeamento");
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("planeamento");
+  const statusLabel = (s: string) => t(`status.${s}`, { defaultValue: s });
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<PlanoDto | null>(null);
+  const [viewItem, setViewItem] = useState<PlanoDto | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewItem, setViewItem] = useState<Plan | null>(null);
-  const [editItem, setEditItem] = useState<Plan | null>(null);
-  const { toast } = useToast();
-  const pag = usePagination(20);
 
-  const [productId, setProductId] = useState("");
-  const [plannedQty, setPlannedQty] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("planeada");
-  const [notes, setNotes] = useState("");
+  const { data, isLoading } = usePlanosList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
+  const statsQuery = usePlanosList({ page: 1, perPage: 1000 });
+  const produtosQuery = useProdutosList({ page: 1, perPage: 1000 });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [planRes, prodRes] = await Promise.all([
-      supabase.from("production_plans")
-        .select("*, products(id, name, product_type, unit)", { count: "exact" })
-        .order("planned_start", { ascending: false })
-        .range(pag.from, pag.to),
-      supabase.from("products").select("id, name, product_type, unit").order("name"),
-    ]);
-    setPlans((planRes.data as any[]) ?? []);
-    pag.setTotal(planRes.count ?? 0);
-    setProducts((prodRes.data as Product[]) ?? []);
-    setLoading(false);
+  const produtoMap = useMemo(() => {
+    const map = new Map<string, ProdutoDto>();
+    (produtosQuery.data?.data ?? []).forEach((p) => map.set(p.id, p));
+    return map;
+  }, [produtosQuery.data]);
+  const produtos = produtosQuery.data?.data ?? [];
+  const productName = (id: string) => produtoMap.get(id)?.name ?? t("table.emptyCell");
+
+  const createPlano = useCreatePlano();
+  const updatePlano = useUpdatePlano();
+  const deletePlano = useDeletePlano();
+
+  const allPlans = useMemo(() => statsQuery.data?.data ?? [], [statsQuery.data]);
+
+  const stats = useMemo(
+    () => ({
+      total: allPlans.length,
+      inProgress: allPlans.filter((p) => p.status === "em_producao").length,
+      planned: allPlans.reduce((sum, p) => sum + p.plannedQuantity, 0),
+      actual: allPlans.reduce((sum, p) => sum + (p.actualQuantity ?? 0), 0),
+    }),
+    [allPlans],
+  );
+
+  // Gráfico "Planeado vs Real": agrega por produto (soma de metas e produção real).
+  const chartData = useMemo(() => {
+    const byProduct = new Map<string, { name: string; planned: number; actual: number }>();
+    for (const p of allPlans) {
+      const entry = byProduct.get(p.productId) ?? { name: productName(p.productId), planned: 0, actual: 0 };
+      entry.planned += p.plannedQuantity;
+      entry.actual += p.actualQuantity ?? 0;
+      byProduct.set(p.productId, entry);
+    }
+    return Array.from(byProduct.values());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allPlans, produtoMap]);
+
+  const chartConfig = useMemo(
+    () => buildChartConfig(["planned", "actual"], { planned: t("chart.planned"), actual: t("chart.actual") }),
+    [t],
+  );
+
+  const planoSchema = useMemo(() => buildPlanoSchema(t), [t]);
+
+  const initialValues = useMemo<Partial<PlanoFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            productId: editItem.productId,
+            plannedQuantity: String(editItem.plannedQuantity),
+            actualQuantity: editItem.actualQuantity != null ? String(editItem.actualQuantity) : "",
+            plannedStart: editItem.plannedStart,
+            plannedEnd: editItem.plannedEnd,
+            status: editItem.status,
+            notes: editItem.notes ?? "",
+          }
+        : undefined,
+    [editItem],
+  );
+
+  const entityForm = useEntityForm({
+    schema: planoSchema,
+    initialValues,
+    defaultValues: {
+      productId: "",
+      plannedQuantity: "",
+      actualQuantity: "",
+      plannedStart: "",
+      plannedEnd: "",
+      status: "planeada",
+      notes: "",
+    },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const actual = values.actualQuantity?.trim();
+      const payload = {
+        productId: values.productId,
+        plannedQuantity: parseInt(values.plannedQuantity, 10),
+        actualQuantity: actual ? parseInt(actual, 10) : null,
+        plannedStart: values.plannedStart,
+        plannedEnd: values.plannedEnd,
+        status: values.status,
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      };
+      if (editItem) {
+        await updatePlano.mutateAsync({ id: editItem.id, payload });
+      } else {
+        await createPlano.mutateAsync(payload);
+      }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFormOpen(true);
   };
-
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
-
-  const resetForm = () => { setProductId(""); setPlannedQty(""); setStartDate(""); setEndDate(""); setStatus("planeada"); setNotes(""); };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from("production_plans").insert({
-      product_id: productId, planned_quantity: parseInt(plannedQty),
-      planned_start: startDate, planned_end: endDate, status, notes: notes || null,
-    } as any);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Plano criado com sucesso" }); setOpen(false); resetForm(); fetchData();
-  };
-
-  const openEdit = (p: Plan) => {
-    setEditItem(p); setProductId(p.product_id); setPlannedQty(String(p.planned_quantity));
-    setStartDate(p.planned_start); setEndDate(p.planned_end); setStatus(p.status); setNotes(p.notes || ""); setEditOpen(true);
-  };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editItem) return;
-    const { error } = await supabase.from("production_plans").update({
-      product_id: productId, planned_quantity: parseInt(plannedQty),
-      planned_start: startDate, planned_end: endDate, status, notes: notes || null,
-    } as any).eq("id", editItem.id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Plano actualizado" }); setEditOpen(false); setEditItem(null); resetForm(); fetchData();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("production_plans").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Plano eliminado" }); setDeleteId(null); fetchData();
+  const openEdit = (p: PlanoDto) => {
+    setEditItem(p);
+    setFormOpen(true);
   };
 
   const generatePDF = async () => {
-    const doc = new jsPDF();
-    await ensurePdfFonts(doc);
-    doc.setFont(PDF_HEADING_FONT, "bold");
-    doc.setFontSize(16); doc.text("Instituto de Investigação Veterinária", 105, 20, { align: "center" });
-    doc.setFontSize(11); doc.text("Relatório de Planeamento de Produção", 105, 28, { align: "center" });
-    doc.setFont(PDF_BODY_FONT, "normal");
-    doc.setFontSize(9); doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: pt })}`, 105, 34, { align: "center" });
-    autoTable(doc, {
-      startY: 42, head: [["Produto", "Qtd. Planeada", "Qtd. Real", "Início", "Fim", "Estado"]],
-      body: plans.map((p) => [
-        p.products?.name ?? "—", p.planned_quantity.toString(), p.actual_quantity?.toString() ?? "—",
-        format(new Date(p.planned_start), "dd/MM/yyyy"), format(new Date(p.planned_end), "dd/MM/yyyy"),
-        statusMap[p.status]?.label ?? p.status,
-      ]),
-      styles: { font: PDF_BODY_FONT },
-      headStyles: { fillColor: [34, 87, 55], font: PDF_HEADING_FONT, fontStyle: "bold" },
+    await generateInstitutionalPdf({
+      title: t("pdf.title"),
+      filename: "planeamento-producao",
+      sections: [
+        {
+          type: "table",
+          head: [[t("pdf.product"), t("pdf.plannedQuantity"), t("pdf.actualQuantity"), t("pdf.start"), t("pdf.end"), t("pdf.status")]],
+          body: allPlans.map((p) => [
+            productName(p.productId),
+            formatNumber(p.plannedQuantity),
+            p.actualQuantity != null ? formatNumber(p.actualQuantity) : "—",
+            formatDate(p.plannedStart),
+            formatDate(p.plannedEnd),
+            statusLabel(p.status),
+          ]),
+        },
+      ],
     });
-    doc.save("planeamento-producao.pdf");
   };
 
-  const formFields = (
-    <>
-      <div><Label>Produto</Label>
-        <Select value={productId} onValueChange={setProductId} required>
-          <SelectTrigger><SelectValue placeholder="Seleccionar produto" /></SelectTrigger>
-          <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div><Label>Quantidade Planeada</Label><Input type="number" min="1" value={plannedQty} onChange={(e) => setPlannedQty(e.target.value)} required /></div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Data Início</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required /></div>
-        <div><Label>Data Fim</Label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required /></div>
-      </div>
-      <div><Label>Estado</Label>
-        <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{Object.entries(statusMap).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div><Label>Notas</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
-    </>
+  const columns = useMemo<ColumnDef<PlanoDto>[]>(
+    () => [
+      {
+        id: "product",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.product")} />,
+        cell: ({ row }) => (
+          <span className="font-medium flex items-center gap-2">
+            <CalendarRange className="h-4 w-4 text-primary" />
+            {productName(row.original.productId)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "plannedQuantity",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.plannedQuantity")} />,
+        cell: ({ row }) => formatNumber(row.original.plannedQuantity),
+      },
+      {
+        accessorKey: "actualQuantity",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.actualQuantity")} />,
+        cell: ({ row }) => (row.original.actualQuantity != null ? formatNumber(row.original.actualQuantity) : t("table.emptyCell")),
+      },
+      {
+        id: "period",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.period")} />,
+        cell: ({ row }) => (
+          <span className="text-sm">
+            {formatDate(row.original.plannedStart)} — {formatDate(row.original.plannedEnd)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) => <Badge variant={statusVariant[row.original.status]}>{statusLabel(row.original.status)}</Badge>,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, produtoMap],
   );
+
+  const renderRowActions = (row: PlanoDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteId(row.id) });
+    }
+    return <RowActions actions={actions} />;
+  };
+
+  const kpiCards = [
+    { key: "total", icon: CalendarRange, label: t("kpi.total"), value: formatNumber(stats.total), caption: t("kpi.totalCaption"), variant: "gradient-green" as const },
+    { key: "inProgress", icon: Factory, label: t("kpi.inProgress"), value: formatNumber(stats.inProgress), caption: t("kpi.inProgressCaption"), variant: "gradient-teal" as const },
+    { key: "planned", icon: Target, label: t("kpi.planned"), value: formatNumber(stats.planned), caption: t("kpi.plannedCaption"), variant: "gradient-gold" as const },
+    { key: "actual", icon: CheckCircle2, label: t("kpi.actual"), value: formatNumber(stats.actual), caption: t("kpi.actualCaption"), variant: "gradient-green-gold" as const },
+  ];
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={CalendarRange} title="Planeamento de Produção" description="Planificação e acompanhamento da produção">
-        {plans.length > 0 && <Button variant="outline" onClick={generatePDF}><FileText className="mr-2 h-4 w-4" /> Exportar PDF</Button>}
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo Plano</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-serif">Criar Plano de Produção</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">{formFields}<Button type="submit" className="w-full" disabled={!productId}>Criar Plano</Button></form>
-          </DialogContent>
-        </Dialog>
+      <AdminPageHeader icon={CalendarRange} title={t("page.title")} description={t("page.description")}>
+        {allPlans.length > 0 && (
+          <Button variant="outline" onClick={generatePDF}>
+            <FileText className="mr-2 h-4 w-4" /> {t("actions.exportPdf")}
+          </Button>
+        )}
+        <WriteGuard module="planeamento">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) { setEditItem(null); resetForm(); } }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle className="font-serif">Editar Plano</DialogTitle></DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">{formFields}<Button type="submit" className="w-full" disabled={!productId}>Guardar Alterações</Button></form>
-        </DialogContent>
-      </Dialog>
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {kpiCards.map((c, i) => (
+          <AdminCard
+            key={c.key}
+            title={c.label}
+            icon={c.icon}
+            metric={c.value}
+            caption={c.caption}
+            variant={c.variant}
+            stagger={(i + 1) as 1 | 2 | 3 | 4}
+          />
+        ))}
+      </div>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
+      <Card className="glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold font-serif">{t("chart.title")}</CardTitle>
+          <p className="text-xs text-muted-foreground">{t("chart.subtitle")}</p>
+        </CardHeader>
+        <CardContent>
+          {chartData.length > 0 ? (
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
+              <BarChart data={chartData} layout="vertical" margin={{ left: 12, right: 16 }}>
+                <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" allowDecimals={false} tick={axisTickStyle} tickFormatter={formatAxisNumber} />
+                <YAxis type="category" dataKey="name" width={150} tick={axisTickStyle} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar dataKey="planned" name={t("chart.planned")} fill={chartColors[0]} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="actual" name={t("chart.actual")} fill={chartColors[1]} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <NoDataOverlay message={t("chart.empty")} height={320} />
+          )}
+        </CardContent>
+      </Card>
+
+      <DataTable
+        columns={columns}
+        data={data?.data ?? []}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="productId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.product")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("form.placeholders.product")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {produtos.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="plannedQuantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.plannedQuantity")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="actualQuantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.actualQuantity")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" placeholder={t("form.placeholders.actualQuantity")} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="plannedStart"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.startDate")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="plannedEnd"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.endDate")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.status")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PLANO_STATUSES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {statusLabel(s)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.notes")}</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </EntityFormDialog>
+
+      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={async () => {
+        if (!deleteId) return;
+        await deletePlano.mutateAsync(deleteId);
+        setDeleteId(null);
+      }} />
 
       <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle className="font-serif">Detalhes do Plano</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-serif">{t("dialog.detailsTitle")}</DialogTitle>
+          </DialogHeader>
           {viewItem && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Produto:</span><p className="font-medium">{viewItem.products?.name ?? "—"}</p></div>
-                <div><span className="text-muted-foreground">Tipo:</span><p className="font-medium">{viewItem.products?.product_type ?? "—"}</p></div>
-                <div><span className="text-muted-foreground">Qtd. Planeada:</span><p className="font-medium">{viewItem.planned_quantity} {viewItem.products?.unit ?? ""}</p></div>
-                <div><span className="text-muted-foreground">Qtd. Real:</span><p className="font-medium">{viewItem.actual_quantity ?? "—"}</p></div>
-                <div><span className="text-muted-foreground">Início:</span><p className="font-medium">{format(new Date(viewItem.planned_start), "dd/MM/yyyy")}</p></div>
-                <div><span className="text-muted-foreground">Fim:</span><p className="font-medium">{format(new Date(viewItem.planned_end), "dd/MM/yyyy")}</p></div>
-                <div><span className="text-muted-foreground">Estado:</span><p><Badge variant={(statusMap[viewItem.status] ?? statusMap.planeada).variant}>{(statusMap[viewItem.status] ?? statusMap.planeada).label}</Badge></p></div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.product")}:</span>
+                  <p className="font-medium">{productName(viewItem.productId)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.status")}:</span>
+                  <p><Badge variant={statusVariant[viewItem.status]}>{statusLabel(viewItem.status)}</Badge></p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.plannedQuantity")}:</span>
+                  <p className="font-medium">{formatNumber(viewItem.plannedQuantity)} {produtoMap.get(viewItem.productId)?.unit ?? ""}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.actualQuantity")}:</span>
+                  <p className="font-medium">{viewItem.actualQuantity != null ? formatNumber(viewItem.actualQuantity) : t("table.emptyCell")}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.start")}:</span>
+                  <p className="font-medium">{formatDate(viewItem.plannedStart)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.end")}:</span>
+                  <p className="font-medium">{formatDate(viewItem.plannedEnd)}</p>
+                </div>
               </div>
-              {viewItem.notes && <div><span className="text-muted-foreground">Notas:</span><p className="font-medium mt-1">{viewItem.notes}</p></div>}
+              {viewItem.notes && (
+                <div>
+                  <span className="text-muted-foreground">{t("details.notes")}:</span>
+                  <p className="font-medium mt-1">{viewItem.notes}</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
-
-      <AdminCard title="Planos de Produção" icon={CalendarRange} loading={loading} isEmpty={plans.length === 0} emptyMessage="Nenhum plano registado.">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Produto</TableHead><TableHead>Qtd. Planeada</TableHead><TableHead>Qtd. Real</TableHead>
-                <TableHead>Período</TableHead><TableHead>Estado</TableHead><TableHead>Acções</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {plans.map((p) => {
-                const s = statusMap[p.status] ?? { label: p.status, variant: "outline" as const };
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium"><div className="flex items-center gap-2"><CalendarRange className="h-4 w-4 text-primary" />{p.products?.name ?? "—"}</div></TableCell>
-                    <TableCell>{p.planned_quantity}</TableCell>
-                    <TableCell>{p.actual_quantity ?? "—"}</TableCell>
-                    <TableCell className="text-sm">{format(new Date(p.planned_start), "dd/MM/yyyy")} — {format(new Date(p.planned_end), "dd/MM/yyyy")}</TableCell>
-                    <TableCell><Badge variant={s.variant}>{s.label}</Badge></TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setViewItem(p)}><Eye className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(p.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
     </div>
   );
 }

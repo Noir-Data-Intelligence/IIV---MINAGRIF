@@ -1,0 +1,70 @@
+{
+  "page": {
+    "title": "Laboratories",
+    "description": "Management of the institute's laboratories"
+  },
+  "kpis": {
+    "total": "Total Laboratories",
+    "totalCaption": "Registered in the system",
+    "active": "Active",
+    "activeCaption": "In operation",
+    "types": "Distinct Types",
+    "typesCaption": "Areas of expertise"
+  },
+  "actions": {
+    "new": "New Laboratory",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "labels": {
+      "name": "Name",
+      "type": "Type",
+      "description": "Description",
+      "isActive": "Active laboratory"
+    },
+    "placeholders": {
+      "name": "e.g. Virology Laboratory",
+      "type": "e.g. virology, bacteriology",
+      "description": "Laboratory description"
+    },
+    "submitCreate": "Create Laboratory",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Register Laboratory",
+    "editTitle": "Edit Laboratory",
+    "detailsTitle": "Laboratory Details"
+  },
+  "details": {
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "description": "Description",
+    "createdAt": "Created on"
+  },
+  "table": {
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "description": "Description",
+    "active": "Active",
+    "inactive": "Inactive",
+    "empty": "No laboratories found.",
+    "searchPlaceholder": "Search laboratories...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "nameShort": "Name too short",
+    "typeRequired": "Please provide the laboratory type"
+  },
+  "toast": {
+    "createSuccess": "Laboratory created successfully",
+    "updateSuccess": "Laboratory updated",
+    "deleteSuccess": "Laboratory deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

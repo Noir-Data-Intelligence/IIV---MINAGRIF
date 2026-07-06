@@ -1,0 +1,99 @@
+{
+  "page": {
+    "title": "Production Planning",
+    "description": "Production planning and monitoring"
+  },
+  "kpi": {
+    "total": "Registered Plans",
+    "totalCaption": "All statuses",
+    "inProgress": "In Production",
+    "inProgressCaption": "Active plans",
+    "planned": "Total Planned",
+    "plannedCaption": "Sum of targets",
+    "actual": "Total Actual",
+    "actualCaption": "Achieved production"
+  },
+  "chart": {
+    "title": "Planned vs Actual",
+    "subtitle": "By product",
+    "planned": "Planned",
+    "actual": "Actual",
+    "empty": "No planning data to compare."
+  },
+  "actions": {
+    "new": "New Plan",
+    "exportPdf": "Export PDF",
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "status": {
+    "planeada": "Planned",
+    "em_producao": "In Production",
+    "concluida": "Completed",
+    "suspensa": "Suspended"
+  },
+  "form": {
+    "labels": {
+      "product": "Product",
+      "plannedQuantity": "Planned Quantity",
+      "actualQuantity": "Actual Quantity",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "status": "Status",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "product": "Select product",
+      "actualQuantity": "Optional"
+    },
+    "submitCreate": "Create Plan",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Create Production Plan",
+    "editTitle": "Edit Plan",
+    "detailsTitle": "Plan Details"
+  },
+  "details": {
+    "product": "Product",
+    "plannedQuantity": "Planned Qty.",
+    "actualQuantity": "Actual Qty.",
+    "start": "Start",
+    "end": "End",
+    "status": "Status",
+    "notes": "Notes"
+  },
+  "table": {
+    "product": "Product",
+    "plannedQuantity": "Planned Qty.",
+    "actualQuantity": "Actual Qty.",
+    "period": "Period",
+    "status": "Status",
+    "empty": "No plans registered.",
+    "searchPlaceholder": "Search plans...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "productRequired": "Select a product",
+    "quantityPositive": "Quantity must be greater than zero",
+    "dateRequired": "Date required"
+  },
+  "pdf": {
+    "title": "Production Planning Report",
+    "product": "Product",
+    "plannedQuantity": "Planned Qty.",
+    "actualQuantity": "Actual Qty.",
+    "start": "Start",
+    "end": "End",
+    "status": "Status"
+  },
+  "toast": {
+    "createSuccess": "Plan created successfully",
+    "updateSuccess": "Plan updated",
+    "deleteSuccess": "Plan deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

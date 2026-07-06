@@ -1,0 +1,99 @@
+{
+  "page": {
+    "title": "Laboratory Analyses",
+    "description": "Scheduling and tracking of analyses"
+  },
+  "kpis": {
+    "total": "Total Analyses",
+    "totalCaption": "Registered in the system",
+    "scheduled": "Scheduled",
+    "scheduledCaption": "Not yet started",
+    "inProgress": "In Progress",
+    "inProgressCaption": "Ongoing",
+    "concluded": "Concluded",
+    "concludedCaption": "With result available"
+  },
+  "chart": {
+    "title": "Analyses by Status",
+    "seriesLabel": "Analyses",
+    "noData": "No analyses to display"
+  },
+  "actions": {
+    "new": "Schedule Analysis",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "labels": {
+      "laboratory": "Laboratory",
+      "clientName": "Client Name",
+      "animalSpecies": "Animal Species",
+      "animalId": "Animal ID",
+      "sampleType": "Sample Type",
+      "analysisType": "Analysis Type",
+      "scheduledDate": "Scheduled Date",
+      "status": "Status",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "laboratory": "Select laboratory",
+      "clientName": "Owner's name",
+      "animalSpecies": "e.g. Cattle, Swine",
+      "animalId": "Identification",
+      "sampleType": "e.g. Blood, Tissue",
+      "analysisType": "e.g. PCR, Culture",
+      "notes": "Additional notes"
+    },
+    "submitCreate": "Schedule Analysis",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Schedule New Analysis",
+    "editTitle": "Edit Analysis",
+    "detailsTitle": "Analysis Details"
+  },
+  "details": {
+    "laboratory": "Laboratory",
+    "scheduledDate": "Scheduled Date",
+    "clientName": "Client",
+    "animalSpecies": "Animal Species",
+    "animalId": "Animal ID",
+    "sampleType": "Sample Type",
+    "analysisType": "Analysis Type",
+    "status": "Status",
+    "notes": "Notes"
+  },
+  "table": {
+    "date": "Date",
+    "laboratory": "Laboratory",
+    "client": "Client",
+    "species": "Species",
+    "analysisType": "Analysis Type",
+    "status": "Status",
+    "empty": "No analyses found.",
+    "searchPlaceholder": "Search analyses...",
+    "emptyCell": "—"
+  },
+  "status": {
+    "agendada": "Scheduled",
+    "em_progresso": "In Progress",
+    "concluida": "Concluded",
+    "cancelada": "Cancelled"
+  },
+  "validation": {
+    "laboratoryRequired": "Select a laboratory",
+    "clientShort": "Client name too short",
+    "sampleRequired": "Provide the sample type",
+    "analysisRequired": "Provide the analysis type",
+    "dateRequired": "Provide the scheduled date"
+  },
+  "toast": {
+    "createSuccess": "Analysis scheduled successfully",
+    "updateSuccess": "Analysis updated",
+    "deleteSuccess": "Analysis deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

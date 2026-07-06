@@ -1,164 +1,361 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { FlaskConical, Eye, Pencil, Plus, Trash2, CheckCircle2, Layers } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, FlaskConical, Pencil, Trash2, Eye } from "lucide-react";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  useCreateLaboratorio,
+  useDeleteLaboratorio,
+  useLaboratoriosList,
+  useUpdateLaboratorio,
+} from "@/hooks/queries/useLaboratorios";
+import type { LaboratorioDto } from "@/types/dto/laboratorio";
+import i18n from "@/i18n";
+import ptLaboratorios from "@/i18n/locales/pt/admin/laboratorios.json";
+import enLaboratorios from "@/i18n/locales/en/admin/laboratorios.json";
 
-interface Laboratory {
-  id: string; name: string; type: string; description: string | null; is_active: boolean; created_at: string;
+// Namespace autónomo registado em runtime (o bundle central só regista common/nav),
+// seguindo o padrão de Departamentos.tsx.
+if (!i18n.hasResourceBundle("pt", "admin-laboratorios"))
+  i18n.addResourceBundle("pt", "admin-laboratorios", ptLaboratorios, true, true);
+if (!i18n.hasResourceBundle("en", "admin-laboratorios"))
+  i18n.addResourceBundle("en", "admin-laboratorios", enLaboratorios, true, true);
+
+function buildLaboratorioSchema(t: TFunction) {
+  return z.object({
+    name: z.string().trim().min(2, t("validation.nameShort")),
+    type: z.string().trim().min(2, t("validation.typeRequired")),
+    description: z.string().trim().optional(),
+    isActive: z.boolean(),
+  });
 }
 
+type LaboratorioFormValues = z.infer<ReturnType<typeof buildLaboratorioSchema>>;
+
 export default function Laboratorios() {
-  const [labs, setLabs] = useState<Laboratory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const { t, i18n: i18nInstance } = useTranslation("admin-laboratorios");
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("laboratorios");
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewItem, setViewItem] = useState<Laboratory | null>(null);
-  const [editItem, setEditItem] = useState<Laboratory | null>(null);
-  const [name, setName] = useState("");
-  const [type, setType] = useState("");
-  const [description, setDescription] = useState("");
-  const { toast } = useToast();
-  const pag = usePagination(20);
+  const [viewItem, setViewItem] = useState<LaboratorioDto | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<LaboratorioDto | null>(null);
 
-  const fetchLabs = async () => {
-    setLoading(true);
-    const { data, count } = await supabase
-      .from("laboratories")
-      .select("*", { count: "exact" })
-      .order("name")
-      .range(pag.from, pag.to);
-    setLabs((data as Laboratory[]) ?? []);
-    pag.setTotal(count ?? 0);
-    setLoading(false);
+  const { data, isLoading } = useLaboratoriosList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
+
+  const createLaboratorio = useCreateLaboratorio();
+  const updateLaboratorio = useUpdateLaboratorio();
+  const deleteLaboratorio = useDeleteLaboratorio();
+
+  const laboratorioSchema = useMemo(() => buildLaboratorioSchema(t), [t]);
+
+  const initialValues = useMemo<Partial<LaboratorioFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            name: editItem.name,
+            type: editItem.type,
+            description: editItem.description ?? "",
+            isActive: editItem.isActive,
+          }
+        : undefined,
+    [editItem],
+  );
+
+  const entityForm = useEntityForm({
+    schema: laboratorioSchema,
+    initialValues,
+    defaultValues: { name: "", type: "", description: "", isActive: true },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const payload = {
+        name: values.name,
+        type: values.type,
+        description: values.description?.trim() ? values.description.trim() : null,
+        isActive: values.isActive,
+      };
+      if (editItem) {
+        await updateLaboratorio.mutateAsync({ id: editItem.id, payload });
+      } else {
+        await createLaboratorio.mutateAsync(payload);
+      }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFormOpen(true);
   };
 
-  useEffect(() => { fetchLabs(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
-
-  const resetForm = () => { setName(""); setType(""); setDescription(""); };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from("laboratories").insert({ name, type, description: description || null } as any);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Laboratório criado com sucesso" }); setOpen(false); resetForm(); fetchLabs();
+  const openEdit = (l: LaboratorioDto) => {
+    setEditItem(l);
+    setFormOpen(true);
   };
 
-  const openEdit = (l: Laboratory) => {
-    setEditItem(l); setName(l.name); setType(l.type); setDescription(l.description || ""); setEditOpen(true);
-  };
+  // KPIs — total vem do meta.total (dataset completo); activos/tipos derivam da
+  // página carregada. Com pageSize 20 e o volume actual, a página cobre todo o
+  // conjunto; para datasets grandes seria preferível um endpoint de resumo.
+  const rows = data?.data ?? [];
+  const kpiTotal = data?.meta.total ?? 0;
+  const kpiActive = useMemo(() => rows.filter((l) => l.isActive).length, [rows]);
+  const kpiTypes = useMemo(() => new Set(rows.map((l) => l.type)).size, [rows]);
 
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editItem) return;
-    const { error } = await supabase.from("laboratories").update({ name, type, description: description || null } as any).eq("id", editItem.id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Laboratório actualizado" }); setEditOpen(false); setEditItem(null); resetForm(); fetchLabs();
-  };
+  const columns = useMemo<ColumnDef<LaboratorioDto>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.name")} />,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2 font-medium">
+            <FlaskConical className="h-4 w-4 text-primary" />
+            {row.original.name}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "type",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.type")} />,
+        cell: ({ row }) => (
+          <Badge variant="secondary" className="capitalize">
+            {row.original.type.replace(/_/g, " ")}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "isActive",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) => (
+          <Badge variant={row.original.isActive ? "default" : "destructive"}>
+            {row.original.isActive ? t("table.active") : t("table.inactive")}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "description",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.description")} />,
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-sm line-clamp-1 max-w-xs">
+            {row.original.description || t("table.emptyCell")}
+          </span>
+        ),
+      },
+    ],
+    [t],
+  );
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("laboratories").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Laboratório eliminado" }); setDeleteId(null); fetchLabs();
+  const renderRowActions = (row: LaboratorioDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return <RowActions actions={actions} />;
   };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={FlaskConical} title="Laboratórios" description="Gestão dos laboratórios do instituto">
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo Laboratório</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-serif">Cadastrar Laboratório</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Laboratório de Virologia" required /></div>
-              <div><Label>Tipo</Label><Input value={type} onChange={(e) => setType(e.target.value)} placeholder="Ex: virologia, bacteriologia" required /></div>
-              <div><Label>Descrição</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição do laboratório" /></div>
-              <Button type="submit" className="w-full">Criar Laboratório</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+      <AdminPageHeader icon={FlaskConical} title={t("page.title")} description={t("page.description")}>
+        <WriteGuard module="laboratorios">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) { setEditItem(null); resetForm(); } }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle className="font-serif">Editar Laboratório</DialogTitle></DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">
-            <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
-            <div><Label>Tipo</Label><Input value={type} onChange={(e) => setType(e.target.value)} required /></div>
-            <div><Label>Descrição</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-            <Button type="submit" className="w-full">Guardar Alterações</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <AdminCard
+          variant="gradient-green"
+          icon={FlaskConical}
+          metric={kpiTotal}
+          title={t("kpis.total")}
+          caption={t("kpis.totalCaption")}
+          stagger={1}
+        />
+        <AdminCard
+          variant="gradient-teal"
+          icon={CheckCircle2}
+          metric={kpiActive}
+          title={t("kpis.active")}
+          caption={t("kpis.activeCaption")}
+          stagger={2}
+        />
+        <AdminCard
+          variant="gradient-gold"
+          icon={Layers}
+          metric={kpiTypes}
+          title={t("kpis.types")}
+          caption={t("kpis.typesCaption")}
+          stagger={3}
+        />
+      </div>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.name")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.name")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.type")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.type")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.description")}</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder={t("form.placeholders.description")} {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel className="!mt-0 cursor-pointer">{t("form.labels.isActive")}</FormLabel>
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </EntityFormDialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await deleteLaboratorio.mutateAsync(deleteId);
+          setDeleteId(null);
+        }}
+      />
 
       <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="font-serif">Detalhes do Laboratório</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-serif">{t("dialog.detailsTitle")}</DialogTitle>
+          </DialogHeader>
           {viewItem && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Nome:</span><p className="font-medium">{viewItem.name}</p></div>
-                <div><span className="text-muted-foreground">Tipo:</span><p className="font-medium capitalize">{viewItem.type}</p></div>
-                <div><span className="text-muted-foreground">Estado:</span><p><Badge variant={viewItem.is_active ? "default" : "destructive"}>{viewItem.is_active ? "Activo" : "Inactivo"}</Badge></p></div>
-                <div><span className="text-muted-foreground">Criado em:</span><p className="font-medium">{new Date(viewItem.created_at).toLocaleDateString("pt-AO")}</p></div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.name")}:</span>
+                  <p className="font-medium">{viewItem.name}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.type")}:</span>
+                  <p className="font-medium capitalize">{viewItem.type.replace(/_/g, " ")}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.status")}:</span>
+                  <p>
+                    <Badge variant={viewItem.isActive ? "default" : "destructive"}>
+                      {viewItem.isActive ? t("table.active") : t("table.inactive")}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.createdAt")}:</span>
+                  <p className="font-medium">
+                    {new Date(viewItem.createdAt).toLocaleDateString(
+                      i18nInstance.language === "en" ? "en-GB" : "pt-AO",
+                    )}
+                  </p>
+                </div>
               </div>
-              {viewItem.description && <div><span className="text-muted-foreground">Descrição:</span><p className="font-medium mt-1">{viewItem.description}</p></div>}
+              {viewItem.description && (
+                <div>
+                  <span className="text-muted-foreground">{t("details.description")}:</span>
+                  <p className="font-medium mt-1">{viewItem.description}</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
-
-      <AdminCard title="Laboratórios Cadastrados" icon={FlaskConical} loading={loading} isEmpty={labs.length === 0} emptyMessage="Nenhum laboratório cadastrado.">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Estado</TableHead><TableHead>Descrição</TableHead><TableHead className="w-24">Acções</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {labs.map((l) => (
-              <TableRow key={l.id}>
-                <TableCell className="font-medium"><div className="flex items-center gap-2"><FlaskConical className="h-4 w-4 text-primary" />{l.name}</div></TableCell>
-                <TableCell><Badge variant="secondary" className="capitalize">{l.type}</Badge></TableCell>
-                <TableCell><Badge variant={l.is_active ? "default" : "destructive"}>{l.is_active ? "Activo" : "Inactivo"}</Badge></TableCell>
-                <TableCell className="text-muted-foreground text-sm max-w-xs truncate">{l.description || "—"}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => setViewItem(l)}><Eye className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(l)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(l.id)}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
     </div>
   );
 }

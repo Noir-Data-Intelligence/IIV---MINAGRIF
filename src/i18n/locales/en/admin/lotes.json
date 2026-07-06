@@ -1,0 +1,105 @@
+{
+  "page": {
+    "title": "Production Batches",
+    "description": "Batch management and product distribution"
+  },
+  "kpi": {
+    "active": "Active Batches",
+    "activeCaption": "In production or planned",
+    "produced": "Total Produced",
+    "producedCaption": "Sum of all batches",
+    "expiring": "Expiring (30 days)",
+    "expiringCaption": "Require attention"
+  },
+  "actions": {
+    "new": "New Batch",
+    "view": "View details",
+    "distribute": "Distribute",
+    "pdf": "Generate PDF",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "status": {
+    "planeada": "Planned",
+    "em_producao": "In Production",
+    "concluida": "Completed",
+    "suspensa": "Suspended"
+  },
+  "form": {
+    "labels": {
+      "product": "Product",
+      "batchNumber": "Batch No.",
+      "quantityProduced": "Qty. Produced",
+      "status": "Status",
+      "productionDate": "Production Date",
+      "expiryDate": "Expiry",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "product": "Select product",
+      "batchNumber": "e.g. LOT-2026-001"
+    },
+    "submitCreate": "Register Batch",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Register Batch",
+    "editTitle": "Edit Batch",
+    "detailsTitle": "Batch Details",
+    "distributeTitle": "Register Distribution"
+  },
+  "distribute": {
+    "batchLabel": "Batch",
+    "available": "Available",
+    "destination": "Destination",
+    "destinationPlaceholder": "e.g. Humpata Livestock Station",
+    "quantity": "Quantity",
+    "date": "Date",
+    "notes": "Notes",
+    "submit": "Register Distribution",
+    "overAvailable": "Only {{count}} units available.",
+    "success": "Distribution recorded"
+  },
+  "details": {
+    "batchNumber": "Batch No.",
+    "produced": "Produced",
+    "distributed": "Distributed",
+    "available": "Available",
+    "productType": "Product type",
+    "productionDate": "Production date",
+    "expiryDate": "Expiry",
+    "status": "Status",
+    "notes": "Notes",
+    "expired": "(expired)"
+  },
+  "table": {
+    "batch": "Batch",
+    "product": "Product",
+    "produced": "Produced",
+    "available": "Available",
+    "expiry": "Expiry",
+    "status": "Status",
+    "empty": "No batches registered.",
+    "searchPlaceholder": "Search batches...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "productRequired": "Select a product",
+    "batchShort": "Invalid batch number",
+    "quantityPositive": "Quantity must be greater than zero",
+    "dateRequired": "Date required"
+  },
+  "pdf": {
+    "title": "Production Batch Report",
+    "field": "Field",
+    "value": "Value"
+  },
+  "toast": {
+    "createSuccess": "Batch created successfully",
+    "updateSuccess": "Batch updated",
+    "deleteSuccess": "Batch deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

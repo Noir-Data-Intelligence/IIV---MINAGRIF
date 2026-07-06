@@ -56,6 +56,44 @@ export const endpoints = {
     markAllRead: "/notifications/mark-all-read",
   },
 
+  // --- LABORATÓRIO ---------------------------------------------------------
+  laboratorios: {
+    list: "/laboratorios",
+    detail: (id: string) => `/laboratorios/${id}`,
+  },
+  analises: {
+    list: "/analises",
+    detail: (id: string) => `/analises/${id}`,
+  },
+  insumos: {
+    list: "/insumos",
+    detail: (id: string) => `/insumos/${id}`,
+  },
+  resultados: {
+    list: "/resultados",
+    detail: (id: string) => `/resultados/${id}`,
+  },
+
+  // --- PRODUÇÃO -------------------------------------------------------------
+  produtos: {
+    list: "/produtos",
+    detail: (id: string) => `/produtos/${id}`,
+    archive: (id: string) => `/produtos/${id}/archive`,
+    restore: (id: string) => `/produtos/${id}/restore`,
+  },
+  lotes: {
+    list: "/lotes",
+    detail: (id: string) => `/lotes/${id}`,
+  },
+  planeamento: {
+    list: "/planeamento",
+    detail: (id: string) => `/planeamento/${id}`,
+  },
+  distribuicao: {
+    list: "/distribuicao",
+    detail: (id: string) => `/distribuicao/${id}`,
+  },
+
   // --- Módulos futuros (contrato documentado, ainda sem implementação) -----
   //
   // GERAL
@@ -63,18 +101,6 @@ export const endpoints = {
   //   notificacoes:  "/notificacoes"          (+ detail /{id})
   //   utilizadores:  "/utilizadores"          (+ detail /{id})
   //   departamentos: "/departamentos"         (+ detail /{id})
-  //
-  // LABORATÓRIO
-  //   laboratorios:  "/laboratorios"
-  //   analises:      "/analises"
-  //   resultados:    "/resultados"
-  //   insumos:       "/insumos"
-  //
-  // PRODUÇÃO
-  //   produtos:      "/produtos"
-  //   lotes:         "/lotes"
-  //   planeamento:   "/planeamento"
-  //   distribuicao:  "/distribuicao"
   //
   // QUALIDADE
   //   estacoes:          "/estacoes"

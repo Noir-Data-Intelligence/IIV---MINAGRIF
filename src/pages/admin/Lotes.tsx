@@ -1,292 +1,612 @@
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { Boxes, Plus, Eye, Truck, FileText, Pencil, Trash2, CalendarClock, PackageCheck, Download } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { RowActions } from "@/components/admin/RowActions";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, Boxes, FileText, Truck, Pencil, Trash2, Eye, Download } from "lucide-react";
-import { format } from "date-fns";
-import { pt } from "date-fns/locale";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { ensurePdfFonts, PDF_HEADING_FONT, PDF_BODY_FONT } from "@/lib/pdfFonts";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import { formatDate, formatNumber } from "@/lib/format";
+import { generateInstitutionalPdf } from "@/lib/generateInstitutionalPdf";
+import {
+  useCreateLote,
+  useDeleteLote,
+  useLotesList,
+  useUpdateLote,
+} from "@/hooks/queries/useLotes";
+import { useCreateDistribuicao } from "@/hooks/queries/useDistribuicao";
+import { useProdutosList } from "@/hooks/queries/useProdutos";
+import type { LoteDto, LoteStatus } from "@/types/dto/lote";
+import type { ProdutoDto } from "@/types/dto/produto";
 import { AttachedDocsPanel } from "@/components/admin/AttachedDocsPanel";
 import { OpenProcessButton } from "@/components/admin/OpenProcessButton";
+import i18n from "@/i18n";
+import ptLotes from "@/i18n/locales/pt/admin/lotes.json";
+import enLotes from "@/i18n/locales/en/admin/lotes.json";
 
+if (!i18n.hasResourceBundle("pt", "lotes")) i18n.addResourceBundle("pt", "lotes", ptLotes, true, true);
+if (!i18n.hasResourceBundle("en", "lotes")) i18n.addResourceBundle("en", "lotes", enLotes, true, true);
 
-interface Product { id: string; name: string; product_type: string; unit: string; }
-interface Batch {
-  id: string; batch_number: string; product_id: string; quantity_produced: number;
-  quantity_distributed: number; production_date: string; expiry_date: string;
-  status: string; notes: string | null; products?: Product;
-}
+const LOTE_STATUSES: LoteStatus[] = ["planeada", "em_producao", "concluida", "suspensa"];
 
-const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  planeada: { label: "Planeada", variant: "outline" }, em_producao: { label: "Em Produção", variant: "secondary" },
-  concluida: { label: "Concluída", variant: "default" }, suspensa: { label: "Suspensa", variant: "destructive" },
+const statusVariant: Record<LoteStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  planeada: "outline",
+  em_producao: "secondary",
+  concluida: "default",
+  suspensa: "destructive",
 };
 
-export default function Lotes() {
-  const [batches, setBatches] = useState<Batch[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [distOpen, setDistOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewItem, setViewItem] = useState<Batch | null>(null);
-  const [editItem, setEditItem] = useState<Batch | null>(null);
-  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
-  const { toast } = useToast();
-  const pag = usePagination(20);
+function buildLoteSchema(t: TFunction) {
+  return z.object({
+    productId: z.string().min(1, t("validation.productRequired")),
+    batchNumber: z.string().trim().min(3, t("validation.batchShort")),
+    quantityProduced: z
+      .string()
+      .trim()
+      .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, t("validation.quantityPositive")),
+    status: z.enum(["planeada", "em_producao", "concluida", "suspensa"]),
+    productionDate: z.string().min(1, t("validation.dateRequired")),
+    expiryDate: z.string().min(1, t("validation.dateRequired")),
+    notes: z.string().trim().optional(),
+  });
+}
 
-  const [productId, setProductId] = useState("");
-  const [batchNumber, setBatchNumber] = useState("");
-  const [qtyProduced, setQtyProduced] = useState("");
-  const [prodDate, setProdDate] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [status, setStatus] = useState("planeada");
-  const [notes, setNotes] = useState("");
+type LoteFormValues = z.infer<ReturnType<typeof buildLoteSchema>>;
+
+export default function Lotes() {
+  const { t } = useTranslation("lotes");
+  const { toast } = useToast();
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("lotes");
+  const statusLabel = (s: string) => t(`status.${s}`, { defaultValue: s });
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<LoteDto | null>(null);
+  const [viewItem, setViewItem] = useState<LoteDto | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Dialog de "distribuir" — ligado ao módulo Distribuição (ver reporte).
+  const [distOpen, setDistOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<LoteDto | null>(null);
   const [distDest, setDistDest] = useState("");
   const [distQty, setDistQty] = useState("");
-  const [distDate, setDistDate] = useState(new Date().toISOString().split("T")[0]);
+  const [distDate, setDistDate] = useState(new Date().toISOString().slice(0, 10));
   const [distNotes, setDistNotes] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const [batchRes, prodRes] = await Promise.all([
-      supabase
-        .from("production_batches")
-        .select("*, products(id, name, product_type, unit)", { count: "exact" })
-        .order("production_date", { ascending: false })
-        .range(pag.from, pag.to),
-      supabase.from("products").select("id, name, product_type, unit").order("name"),
-    ]);
-    setBatches((batchRes.data as any[]) ?? []);
-    pag.setTotal(batchRes.count ?? 0);
-    setProducts((prodRes.data as Product[]) ?? []);
-    setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pag.from, pag.to]);
+  const { data, isLoading } = useLotesList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
+  const statsQuery = useLotesList({ page: 1, perPage: 1000 });
+  const produtosQuery = useProdutosList({ page: 1, perPage: 1000 });
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const produtoMap = useMemo(() => {
+    const map = new Map<string, ProdutoDto>();
+    (produtosQuery.data?.data ?? []).forEach((p) => map.set(p.id, p));
+    return map;
+  }, [produtosQuery.data]);
+  const produtos = produtosQuery.data?.data ?? [];
 
+  const createLote = useCreateLote();
+  const updateLote = useUpdateLote();
+  const deleteLote = useDeleteLote();
+  const createDistribuicao = useCreateDistribuicao();
 
-  const resetForm = () => { setProductId(""); setBatchNumber(""); setQtyProduced(""); setProdDate(""); setExpiryDate(""); setStatus("planeada"); setNotes(""); };
+  const stats = useMemo(() => {
+    const all = statsQuery.data?.data ?? [];
+    const now = new Date();
+    const in30 = new Date(now.getTime() + 30 * 86400000);
+    return {
+      active: all.filter((l) => l.status === "em_producao" || l.status === "planeada").length,
+      produced: all.reduce((sum, l) => sum + l.quantityProduced, 0),
+      expiring: all.filter((l) => {
+        const d = new Date(l.expiryDate);
+        return d >= now && d <= in30;
+      }).length,
+    };
+  }, [statsQuery.data]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from("production_batches").insert({
-      product_id: productId, batch_number: batchNumber, quantity_produced: parseInt(qtyProduced),
-      production_date: prodDate, expiry_date: expiryDate, status, notes: notes || null,
-    } as any);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Lote criado com sucesso" }); setOpen(false); resetForm(); fetchData();
+  const loteSchema = useMemo(() => buildLoteSchema(t), [t]);
+
+  const initialValues = useMemo<Partial<LoteFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            productId: editItem.productId,
+            batchNumber: editItem.batchNumber,
+            quantityProduced: String(editItem.quantityProduced),
+            status: editItem.status,
+            productionDate: editItem.productionDate,
+            expiryDate: editItem.expiryDate,
+            notes: editItem.notes ?? "",
+          }
+        : undefined,
+    [editItem],
+  );
+
+  const entityForm = useEntityForm({
+    schema: loteSchema,
+    initialValues,
+    defaultValues: {
+      productId: "",
+      batchNumber: "",
+      quantityProduced: "",
+      status: "planeada",
+      productionDate: "",
+      expiryDate: "",
+      notes: "",
+    },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const payload = {
+        productId: values.productId,
+        batchNumber: values.batchNumber,
+        quantityProduced: parseInt(values.quantityProduced, 10),
+        status: values.status,
+        productionDate: values.productionDate,
+        expiryDate: values.expiryDate,
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      };
+      if (editItem) {
+        await updateLote.mutateAsync({ id: editItem.id, payload });
+      } else {
+        await createLote.mutateAsync(payload);
+      }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFormOpen(true);
   };
-
-  const openEdit = (b: Batch) => {
-    setEditItem(b); setProductId(b.product_id); setBatchNumber(b.batch_number);
-    setQtyProduced(String(b.quantity_produced)); setProdDate(b.production_date);
-    setExpiryDate(b.expiry_date); setStatus(b.status); setNotes(b.notes || ""); setEditOpen(true);
+  const openEdit = (l: LoteDto) => {
+    setEditItem(l);
+    setFormOpen(true);
   };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editItem) return;
-    const { error } = await supabase.from("production_batches").update({
-      product_id: productId, batch_number: batchNumber, quantity_produced: parseInt(qtyProduced),
-      production_date: prodDate, expiry_date: expiryDate, status, notes: notes || null,
-    } as any).eq("id", editItem.id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Lote actualizado" }); setEditOpen(false); setEditItem(null); resetForm(); fetchData();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("production_batches").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Lote eliminado" }); setDeleteId(null); fetchData();
-  };
-
-  const handleDistribute = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBatch) return;
-    const qty = parseInt(distQty);
-    const available = selectedBatch.quantity_produced - selectedBatch.quantity_distributed;
-    if (qty > available) { toast({ title: "Erro", description: `Apenas ${available} unidades disponíveis.`, variant: "destructive" }); return; }
-    const { error } = await supabase.from("batch_distributions").insert({ batch_id: selectedBatch.id, destination: distDest, quantity: qty, distribution_date: distDate, notes: distNotes || null } as any);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    await supabase.from("production_batches").update({ quantity_distributed: selectedBatch.quantity_distributed + qty } as any).eq("id", selectedBatch.id);
-    toast({ title: "Distribuição registada" }); setDistOpen(false); setDistDest(""); setDistQty(""); setDistNotes(""); fetchData();
-  };
-
-  const generatePDF = async (batch: Batch) => {
-    const doc = new jsPDF();
-    await ensurePdfFonts(doc);
-    const prod = batch.products;
-    doc.setFont(PDF_HEADING_FONT, "bold");
-    doc.setFontSize(16); doc.text("Instituto de Investigação Veterinária", 105, 20, { align: "center" });
-    doc.setFontSize(11); doc.text("Relatório de Lote de Produção", 105, 28, { align: "center" });
-    doc.setFont(PDF_BODY_FONT, "normal");
-    doc.setFontSize(9); doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: pt })}`, 105, 34, { align: "center" });
-    autoTable(doc, {
-      startY: 42, head: [["Campo", "Valor"]],
-      body: [
-        ["Produto", prod?.name ?? "—"], ["Tipo", prod?.product_type ?? "—"], ["Lote", batch.batch_number],
-        ["Quantidade Produzida", `${batch.quantity_produced} ${prod?.unit ?? ""}`],
-        ["Quantidade Distribuída", `${batch.quantity_distributed} ${prod?.unit ?? ""}`],
-        ["Disponível", `${batch.quantity_produced - batch.quantity_distributed} ${prod?.unit ?? ""}`],
-        ["Data de Produção", format(new Date(batch.production_date), "dd/MM/yyyy")],
-        ["Validade", format(new Date(batch.expiry_date), "dd/MM/yyyy")],
-        ["Estado", statusMap[batch.status]?.label ?? batch.status], ["Notas", batch.notes || "—"],
-      ],
-      styles: { font: PDF_BODY_FONT },
-      headStyles: { fillColor: [34, 87, 55], font: PDF_HEADING_FONT, fontStyle: "bold" },
-    });
-    doc.save(`lote-${batch.batch_number}.pdf`);
+  const openDistribute = (l: LoteDto) => {
+    setSelectedBatch(l);
+    setDistDest("");
+    setDistQty("");
+    setDistDate(new Date().toISOString().slice(0, 10));
+    setDistNotes("");
+    setDistOpen(true);
   };
 
   const isExpired = (d: string) => new Date(d) < new Date();
 
-  const batchFormFields = (
-    <>
-      <div><Label>Produto</Label>
-        <Select value={productId} onValueChange={setProductId} required>
-          <SelectTrigger><SelectValue placeholder="Seleccionar produto" /></SelectTrigger>
-          <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div><Label>Nº do Lote</Label><Input value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} placeholder="Ex: LOT-2026-001" required /></div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Qtd. Produzida</Label><Input type="number" min="1" value={qtyProduced} onChange={(e) => setQtyProduced(e.target.value)} required /></div>
-        <div><Label>Estado</Label>
-          <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{Object.entries(statusMap).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Data de Produção</Label><Input type="date" value={prodDate} onChange={(e) => setProdDate(e.target.value)} required /></div>
-        <div><Label>Validade</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} required /></div>
-      </div>
-      <div><Label>Notas</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
-    </>
+  const handleDistribute = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBatch) return;
+    const qty = parseInt(distQty, 10);
+    const available = selectedBatch.quantityProduced - selectedBatch.quantityDistributed;
+    if (!Number.isFinite(qty) || qty <= 0) return;
+    if (qty > available) {
+      toast({ title: t("toast.error"), description: t("distribute.overAvailable", { count: available }), variant: "destructive" });
+      return;
+    }
+    try {
+      await createDistribuicao.mutateAsync({
+        batchId: selectedBatch.id,
+        destination: distDest,
+        quantity: qty,
+        distributionDate: distDate,
+        notes: distNotes.trim() ? distNotes.trim() : null,
+      });
+      await updateLote.mutateAsync({
+        id: selectedBatch.id,
+        payload: { quantityDistributed: selectedBatch.quantityDistributed + qty },
+      });
+      toast({ title: t("distribute.success") });
+      setDistOpen(false);
+    } catch {
+      toast({ title: t("toast.error"), variant: "destructive" });
+    }
+  };
+
+  const generatePDF = async (lote: LoteDto) => {
+    const prod = produtoMap.get(lote.productId);
+    const unit = prod?.unit ?? "";
+    await generateInstitutionalPdf({
+      title: t("pdf.title"),
+      filename: `lote-${lote.batchNumber}`,
+      sections: [
+        {
+          type: "table",
+          head: [[t("pdf.field"), t("pdf.value")]],
+          body: [
+            [t("table.product"), prod?.name ?? "—"],
+            [t("details.productType"), prod?.productType ?? "—"],
+            [t("details.batchNumber"), lote.batchNumber],
+            [t("details.produced"), `${lote.quantityProduced} ${unit}`.trim()],
+            [t("details.distributed"), `${lote.quantityDistributed} ${unit}`.trim()],
+            [t("details.available"), `${lote.quantityProduced - lote.quantityDistributed} ${unit}`.trim()],
+            [t("details.productionDate"), formatDate(lote.productionDate)],
+            [t("details.expiryDate"), formatDate(lote.expiryDate)],
+            [t("details.status"), statusLabel(lote.status)],
+            [t("details.notes"), lote.notes || "—"],
+          ],
+        },
+      ],
+    });
+  };
+
+  const columns = useMemo<ColumnDef<LoteDto>[]>(
+    () => [
+      {
+        accessorKey: "batchNumber",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.batch")} />,
+        cell: ({ row }) => (
+          <span className="font-medium flex items-center gap-2">
+            <Boxes className="h-4 w-4 text-primary" />
+            {row.original.batchNumber}
+          </span>
+        ),
+      },
+      {
+        id: "product",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.product")} />,
+        cell: ({ row }) => produtoMap.get(row.original.productId)?.name ?? t("table.emptyCell"),
+      },
+      {
+        accessorKey: "quantityProduced",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.produced")} />,
+        cell: ({ row }) => formatNumber(row.original.quantityProduced),
+      },
+      {
+        id: "available",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.available")} />,
+        cell: ({ row }) => {
+          const avail = row.original.quantityProduced - row.original.quantityDistributed;
+          return <Badge variant={avail <= 0 ? "destructive" : "secondary"}>{formatNumber(avail)}</Badge>;
+        },
+      },
+      {
+        accessorKey: "expiryDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.expiry")} />,
+        cell: ({ row }) => (
+          <span className={isExpired(row.original.expiryDate) ? "text-destructive font-medium" : ""}>
+            {formatDate(row.original.expiryDate)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) => <Badge variant={statusVariant[row.original.status]}>{statusLabel(row.original.status)}</Badge>,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, produtoMap],
   );
+
+  const renderRowActions = (row: LoteDto) => {
+    const avail = row.quantityProduced - row.quantityDistributed;
+    const actions: RowAction[] = [{ label: t("actions.pdf"), icon: FileText, onClick: () => generatePDF(row) }];
+    if (canEdit) {
+      actions.unshift({ label: t("actions.distribute"), icon: Truck, onClick: () => openDistribute(row), disabled: avail <= 0 });
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteId(row.id) });
+    }
+    return <RowActions primary={{ label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) }} actions={actions} />;
+  };
+
+  const kpiCards = [
+    { key: "active", icon: Boxes, label: t("kpi.active"), value: formatNumber(stats.active), caption: t("kpi.activeCaption"), variant: "gradient-green" as const },
+    { key: "produced", icon: PackageCheck, label: t("kpi.produced"), value: formatNumber(stats.produced), caption: t("kpi.producedCaption"), variant: "gradient-teal" as const },
+    {
+      key: "expiring",
+      icon: CalendarClock,
+      label: t("kpi.expiring"),
+      value: formatNumber(stats.expiring),
+      caption: t("kpi.expiringCaption"),
+      variant: (stats.expiring > 0 ? "gradient-gold" : "glass") as "gradient-gold" | "glass",
+    },
+  ];
+
+  const distAvailable = selectedBatch ? selectedBatch.quantityProduced - selectedBatch.quantityDistributed : 0;
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={Boxes} title="Lotes de Produção" description="Gestão de lotes e distribuição de produtos">
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo Lote</Button></DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle className="font-serif">Registar Lote</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">{batchFormFields}<Button type="submit" className="w-full" disabled={!productId}>Registar Lote</Button></form>
-          </DialogContent>
-        </Dialog>
+      <AdminPageHeader icon={Boxes} title={t("page.title")} description={t("page.description")}>
+        <WriteGuard module="lotes">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) { setEditItem(null); resetForm(); } }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-serif">Editar Lote</DialogTitle></DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">{batchFormFields}<Button type="submit" className="w-full" disabled={!productId}>Guardar Alterações</Button></form>
-        </DialogContent>
-      </Dialog>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        {kpiCards.map((c, i) => (
+          <AdminCard
+            key={c.key}
+            title={c.label}
+            icon={c.icon}
+            metric={c.value}
+            caption={c.caption}
+            variant={c.variant}
+            stagger={(i + 1) as 1 | 2 | 3}
+          />
+        ))}
+      </div>
 
+      <DataTable
+        columns={columns}
+        data={data?.data ?? []}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="productId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.product")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("form.placeholders.product")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {produtos.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="batchNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.batchNumber")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.batchNumber")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="quantityProduced"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.quantityProduced")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.status")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {LOTE_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {statusLabel(s)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="productionDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.productionDate")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="expiryDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.expiryDate")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.notes")}</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* Distribuir — acção ligada ao módulo Distribuição */}
       <Dialog open={distOpen} onOpenChange={setDistOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="font-serif">Registar Distribuição</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-serif">{t("dialog.distributeTitle")}</DialogTitle>
+          </DialogHeader>
           {selectedBatch && (
             <form onSubmit={handleDistribute} className="space-y-4">
-              <p className="text-sm text-muted-foreground">Lote: <strong>{selectedBatch.batch_number}</strong> — Disponível: <strong>{selectedBatch.quantity_produced - selectedBatch.quantity_distributed}</strong></p>
-              <div><Label>Destino</Label><Input value={distDest} onChange={(e) => setDistDest(e.target.value)} placeholder="Ex: Estação Zootécnica de Maputo" required /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Quantidade</Label><Input type="number" min="1" value={distQty} onChange={(e) => setDistQty(e.target.value)} required /></div>
-                <div><Label>Data</Label><Input type="date" value={distDate} onChange={(e) => setDistDate(e.target.value)} required /></div>
+              <p className="text-sm text-muted-foreground">
+                {t("distribute.batchLabel")}: <strong>{selectedBatch.batchNumber}</strong> — {t("distribute.available")}:{" "}
+                <strong>{formatNumber(distAvailable)}</strong>
+              </p>
+              <div>
+                <Label>{t("distribute.destination")}</Label>
+                <Input value={distDest} onChange={(e) => setDistDest(e.target.value)} placeholder={t("distribute.destinationPlaceholder")} required />
               </div>
-              <div><Label>Notas</Label><Textarea value={distNotes} onChange={(e) => setDistNotes(e.target.value)} /></div>
-              <Button type="submit" className="w-full">Registar Distribuição</Button>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>{t("distribute.quantity")}</Label>
+                  <Input type="number" min="1" max={distAvailable} value={distQty} onChange={(e) => setDistQty(e.target.value)} required />
+                </div>
+                <div>
+                  <Label>{t("distribute.date")}</Label>
+                  <Input type="date" value={distDate} onChange={(e) => setDistDate(e.target.value)} required />
+                </div>
+              </div>
+              <div>
+                <Label>{t("distribute.notes")}</Label>
+                <Textarea value={distNotes} onChange={(e) => setDistNotes(e.target.value)} />
+              </div>
+              <Button type="submit" className="w-full">
+                {t("distribute.submit")}
+              </Button>
             </form>
           )}
         </DialogContent>
       </Dialog>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
+      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={async () => {
+        if (!deleteId) return;
+        await deleteLote.mutateAsync(deleteId);
+        setDeleteId(null);
+      }} />
 
       <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-serif flex items-center gap-2">
-              <Boxes className="h-5 w-5 text-primary" /> Detalhes do Lote
+              <Boxes className="h-5 w-5 text-primary" /> {t("dialog.detailsTitle")}
             </DialogTitle>
           </DialogHeader>
           {viewItem && (() => {
-            const s = statusMap[viewItem.status] ?? statusMap.planeada;
-            const avail = viewItem.quantity_produced - viewItem.quantity_distributed;
+            const prod = produtoMap.get(viewItem.productId);
+            const avail = viewItem.quantityProduced - viewItem.quantityDistributed;
             return (
               <div className="space-y-5">
                 <div className="flex items-start justify-between gap-4 pb-4 border-b border-border/40">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Nº do Lote</p>
-                    <p className="font-serif text-2xl mt-0.5">{viewItem.batch_number}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{viewItem.products?.name ?? "—"}</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("details.batchNumber")}</p>
+                    <p className="font-serif text-2xl mt-0.5">{viewItem.batchNumber}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{prod?.name ?? "—"}</p>
                   </div>
-                  <Badge variant={s.variant} className="text-xs">{s.label}</Badge>
+                  <Badge variant={statusVariant[viewItem.status]} className="text-xs">{statusLabel(viewItem.status)}</Badge>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="rounded-lg border border-border/50 p-3 bg-muted/30">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Produzida</p>
-                    <p className="font-serif text-xl mt-1">{viewItem.quantity_produced}</p>
-                    <p className="text-[10px] text-muted-foreground">{viewItem.products?.unit ?? "un."}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("details.produced")}</p>
+                    <p className="font-serif text-xl mt-1">{formatNumber(viewItem.quantityProduced)}</p>
+                    <p className="text-[10px] text-muted-foreground">{prod?.unit ?? "un."}</p>
                   </div>
                   <div className="rounded-lg border border-border/50 p-3 bg-muted/30">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Distribuída</p>
-                    <p className="font-serif text-xl mt-1">{viewItem.quantity_distributed}</p>
-                    <p className="text-[10px] text-muted-foreground">{viewItem.products?.unit ?? "un."}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("details.distributed")}</p>
+                    <p className="font-serif text-xl mt-1">{formatNumber(viewItem.quantityDistributed)}</p>
+                    <p className="text-[10px] text-muted-foreground">{prod?.unit ?? "un."}</p>
                   </div>
                   <div className={`rounded-lg border p-3 ${avail <= 0 ? "border-destructive/40 bg-destructive/5" : "border-primary/30 bg-primary/5"}`}>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Disponível</p>
-                    <p className={`font-serif text-xl mt-1 ${avail <= 0 ? "text-destructive" : "text-primary"}`}>{avail}</p>
-                    <p className="text-[10px] text-muted-foreground">{viewItem.products?.unit ?? "un."}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("details.available")}</p>
+                    <p className={`font-serif text-xl mt-1 ${avail <= 0 ? "text-destructive" : "text-primary"}`}>{formatNumber(avail)}</p>
+                    <p className="text-[10px] text-muted-foreground">{prod?.unit ?? "un."}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground">Tipo de produto</p>
-                    <p className="font-medium">{viewItem.products?.product_type ?? "—"}</p>
+                    <p className="text-xs text-muted-foreground">{t("details.productType")}</p>
+                    <p className="font-medium">{prod?.productType ?? "—"}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Data de produção</p>
-                    <p className="font-medium">{format(new Date(viewItem.production_date), "dd/MM/yyyy")}</p>
+                    <p className="text-xs text-muted-foreground">{t("details.productionDate")}</p>
+                    <p className="font-medium">{formatDate(viewItem.productionDate)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Validade</p>
-                    <p className={`font-medium ${isExpired(viewItem.expiry_date) ? "text-destructive" : ""}`}>
-                      {format(new Date(viewItem.expiry_date), "dd/MM/yyyy")}
-                      {isExpired(viewItem.expiry_date) && <span className="ml-2 text-xs">(expirado)</span>}
+                    <p className="text-xs text-muted-foreground">{t("details.expiryDate")}</p>
+                    <p className={`font-medium ${isExpired(viewItem.expiryDate) ? "text-destructive" : ""}`}>
+                      {formatDate(viewItem.expiryDate)}
+                      {isExpired(viewItem.expiryDate) && <span className="ml-2 text-xs">{t("details.expired")}</span>}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Estado</p>
-                    <p className="font-medium">{s.label}</p>
+                    <p className="text-xs text-muted-foreground">{t("details.status")}</p>
+                    <p className="font-medium">{statusLabel(viewItem.status)}</p>
                   </div>
                 </div>
 
                 {viewItem.notes && (
                   <div className="rounded-lg border border-border/50 p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Notas</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t("details.notes")}</p>
                     <p className="text-sm whitespace-pre-wrap">{viewItem.notes}</p>
                   </div>
                 )}
@@ -295,12 +615,13 @@ export default function Lotes() {
 
                 <div className="flex justify-end gap-2 pt-2 border-t border-border/40 flex-wrap">
                   <OpenProcessButton
-                    entityType="production_batch" entityId={viewItem.id}
-                    defaultTitle={`Lote: ${viewItem.batch_number}`}
+                    entityType="production_batch"
+                    entityId={viewItem.id}
+                    defaultTitle={`${t("details.batchNumber")}: ${viewItem.batchNumber}`}
                     defaultTypeHint="Aprovação de Lote"
                   />
                   <Button variant="outline" size="sm" onClick={() => generatePDF(viewItem)}>
-                    <Download className="mr-2 h-4 w-4" /> Gerar PDF
+                    <Download className="mr-2 h-4 w-4" /> {t("actions.pdf")}
                   </Button>
                 </div>
               </div>
@@ -308,58 +629,6 @@ export default function Lotes() {
           })()}
         </DialogContent>
       </Dialog>
-
-      <AdminCard title="Lotes Registados" icon={Boxes} loading={loading} isEmpty={batches.length === 0} emptyMessage="Nenhum lote registado.">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Lote</TableHead><TableHead>Produto</TableHead><TableHead>Produzido</TableHead>
-                <TableHead>Disponível</TableHead><TableHead>Validade</TableHead><TableHead>Estado</TableHead>
-                <TableHead className="text-right w-[120px]">Acções</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {batches.map((b) => {
-                const s = statusMap[b.status] ?? { label: b.status, variant: "outline" as const };
-                const avail = b.quantity_produced - b.quantity_distributed;
-                return (
-                  <TableRow key={b.id} className="cursor-pointer" onClick={() => setViewItem(b)}>
-                    <TableCell className="font-medium"><div className="flex items-center gap-2"><Boxes className="h-4 w-4 text-primary" />{b.batch_number}</div></TableCell>
-                    <TableCell>{b.products?.name ?? "—"}</TableCell>
-                    <TableCell>{b.quantity_produced}</TableCell>
-                    <TableCell><Badge variant={avail <= 0 ? "destructive" : "secondary"}>{avail}</Badge></TableCell>
-                    <TableCell><span className={isExpired(b.expiry_date) ? "text-destructive font-medium" : ""}>{format(new Date(b.expiry_date), "dd/MM/yyyy")}</span></TableCell>
-                    <TableCell><Badge variant={s.variant}>{s.label}</Badge></TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <RowActions
-                        primary={{ label: "Ver detalhes", icon: Eye, onClick: () => setViewItem(b) }}
-                        actions={[
-                          { label: "Distribuir", icon: Truck, onClick: () => { setSelectedBatch(b); setDistOpen(true); }, disabled: avail <= 0 },
-                          { label: "Gerar PDF", icon: FileText, onClick: () => generatePDF(b) },
-                          { label: "Editar", icon: Pencil, onClick: () => openEdit(b) },
-                          { label: "Eliminar", icon: Trash2, onClick: () => setDeleteId(b.id), destructive: true },
-                        ]}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
-
     </div>
   );
 }

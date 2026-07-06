@@ -1,0 +1,87 @@
+{
+  "page": {
+    "title": "Products",
+    "description": "Catalogue of vaccines, sera and reagents"
+  },
+  "kpi": {
+    "activeTotal": "Active Products",
+    "activeCaption": "Currently in catalogue",
+    "vaccines": "Vaccines",
+    "sera": "Sera",
+    "reagents": "Reagents",
+    "archived": "Archived",
+    "archivedCaption": "Out of catalogue"
+  },
+  "tabs": {
+    "active": "Active",
+    "archived": "Archived"
+  },
+  "actions": {
+    "new": "New Product",
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Archive",
+    "restore": "Restore"
+  },
+  "types": {
+    "vacina": "Vaccine",
+    "soro": "Serum",
+    "reagente": "Reagent"
+  },
+  "form": {
+    "labels": {
+      "name": "Name",
+      "type": "Type",
+      "unit": "Unit",
+      "description": "Description"
+    },
+    "placeholders": {
+      "name": "e.g. Rabies Vaccine",
+      "type": "Select type",
+      "unit": "e.g. dose, ml, vial",
+      "description": "Product description"
+    },
+    "submitCreate": "Register",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Register Product",
+    "editTitle": "Edit Product",
+    "detailsTitle": "Product Details"
+  },
+  "details": {
+    "name": "Name",
+    "type": "Type",
+    "unit": "Unit",
+    "description": "Description",
+    "createdAt": "Created on"
+  },
+  "table": {
+    "name": "Name",
+    "type": "Type",
+    "unit": "Unit",
+    "description": "Description",
+    "empty": "No products registered.",
+    "emptyArchived": "No archived products.",
+    "searchPlaceholder": "Search products...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "nameShort": "Name too short",
+    "typeRequired": "Select a type",
+    "unitShort": "Enter the unit"
+  },
+  "delete": {
+    "title": "Archive Product",
+    "description": "The product will be archived and removed from the listing, but associated batches will be kept."
+  },
+  "toast": {
+    "createSuccess": "Product registered successfully",
+    "updateSuccess": "Product updated",
+    "archiveSuccess": "Product archived successfully",
+    "restoreSuccess": "Product restored successfully",
+    "error": "An error occurred. Please try again."
+  }
+}

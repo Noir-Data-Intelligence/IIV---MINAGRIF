@@ -1,0 +1,105 @@
+{
+  "page": {
+    "title": "Lotes de Produção",
+    "description": "Gestão de lotes e distribuição de produtos"
+  },
+  "kpi": {
+    "active": "Lotes Activos",
+    "activeCaption": "Em produção ou planeados",
+    "produced": "Total Produzido",
+    "producedCaption": "Soma de todos os lotes",
+    "expiring": "A Expirar (30 dias)",
+    "expiringCaption": "Requerem atenção"
+  },
+  "actions": {
+    "new": "Novo Lote",
+    "view": "Ver detalhes",
+    "distribute": "Distribuir",
+    "pdf": "Gerar PDF",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "status": {
+    "planeada": "Planeada",
+    "em_producao": "Em Produção",
+    "concluida": "Concluída",
+    "suspensa": "Suspensa"
+  },
+  "form": {
+    "labels": {
+      "product": "Produto",
+      "batchNumber": "Nº do Lote",
+      "quantityProduced": "Qtd. Produzida",
+      "status": "Estado",
+      "productionDate": "Data de Produção",
+      "expiryDate": "Validade",
+      "notes": "Notas"
+    },
+    "placeholders": {
+      "product": "Seleccionar produto",
+      "batchNumber": "Ex: LOT-2026-001"
+    },
+    "submitCreate": "Registar Lote",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Registar Lote",
+    "editTitle": "Editar Lote",
+    "detailsTitle": "Detalhes do Lote",
+    "distributeTitle": "Registar Distribuição"
+  },
+  "distribute": {
+    "batchLabel": "Lote",
+    "available": "Disponível",
+    "destination": "Destino",
+    "destinationPlaceholder": "Ex: Estação Zootécnica da Humpata",
+    "quantity": "Quantidade",
+    "date": "Data",
+    "notes": "Notas",
+    "submit": "Registar Distribuição",
+    "overAvailable": "Apenas {{count}} unidades disponíveis.",
+    "success": "Distribuição registada"
+  },
+  "details": {
+    "batchNumber": "Nº do Lote",
+    "produced": "Produzida",
+    "distributed": "Distribuída",
+    "available": "Disponível",
+    "productType": "Tipo de produto",
+    "productionDate": "Data de produção",
+    "expiryDate": "Validade",
+    "status": "Estado",
+    "notes": "Notas",
+    "expired": "(expirado)"
+  },
+  "table": {
+    "batch": "Lote",
+    "product": "Produto",
+    "produced": "Produzido",
+    "available": "Disponível",
+    "expiry": "Validade",
+    "status": "Estado",
+    "empty": "Nenhum lote registado.",
+    "searchPlaceholder": "Pesquisar lotes...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "productRequired": "Seleccione um produto",
+    "batchShort": "Nº de lote inválido",
+    "quantityPositive": "Quantidade deve ser maior que zero",
+    "dateRequired": "Data obrigatória"
+  },
+  "pdf": {
+    "title": "Relatório de Lote de Produção",
+    "field": "Campo",
+    "value": "Valor"
+  },
+  "toast": {
+    "createSuccess": "Lote criado com sucesso",
+    "updateSuccess": "Lote actualizado",
+    "deleteSuccess": "Lote eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

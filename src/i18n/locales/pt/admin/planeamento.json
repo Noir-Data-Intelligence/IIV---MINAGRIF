@@ -1,0 +1,99 @@
+{
+  "page": {
+    "title": "Planeamento de Produção",
+    "description": "Planificação e acompanhamento da produção"
+  },
+  "kpi": {
+    "total": "Planos Registados",
+    "totalCaption": "Todos os estados",
+    "inProgress": "Em Produção",
+    "inProgressCaption": "Planos activos",
+    "planned": "Total Planeado",
+    "plannedCaption": "Soma das metas",
+    "actual": "Total Real",
+    "actualCaption": "Produção concretizada"
+  },
+  "chart": {
+    "title": "Planeado vs Real",
+    "subtitle": "Por produto",
+    "planned": "Planeado",
+    "actual": "Real",
+    "empty": "Sem dados de planeamento para comparar."
+  },
+  "actions": {
+    "new": "Novo Plano",
+    "exportPdf": "Exportar PDF",
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "status": {
+    "planeada": "Planeada",
+    "em_producao": "Em Produção",
+    "concluida": "Concluída",
+    "suspensa": "Suspensa"
+  },
+  "form": {
+    "labels": {
+      "product": "Produto",
+      "plannedQuantity": "Quantidade Planeada",
+      "actualQuantity": "Quantidade Real",
+      "startDate": "Data Início",
+      "endDate": "Data Fim",
+      "status": "Estado",
+      "notes": "Notas"
+    },
+    "placeholders": {
+      "product": "Seleccionar produto",
+      "actualQuantity": "Opcional"
+    },
+    "submitCreate": "Criar Plano",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Criar Plano de Produção",
+    "editTitle": "Editar Plano",
+    "detailsTitle": "Detalhes do Plano"
+  },
+  "details": {
+    "product": "Produto",
+    "plannedQuantity": "Qtd. Planeada",
+    "actualQuantity": "Qtd. Real",
+    "start": "Início",
+    "end": "Fim",
+    "status": "Estado",
+    "notes": "Notas"
+  },
+  "table": {
+    "product": "Produto",
+    "plannedQuantity": "Qtd. Planeada",
+    "actualQuantity": "Qtd. Real",
+    "period": "Período",
+    "status": "Estado",
+    "empty": "Nenhum plano registado.",
+    "searchPlaceholder": "Pesquisar planos...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "productRequired": "Seleccione um produto",
+    "quantityPositive": "Quantidade deve ser maior que zero",
+    "dateRequired": "Data obrigatória"
+  },
+  "pdf": {
+    "title": "Relatório de Planeamento de Produção",
+    "product": "Produto",
+    "plannedQuantity": "Qtd. Planeada",
+    "actualQuantity": "Qtd. Real",
+    "start": "Início",
+    "end": "Fim",
+    "status": "Estado"
+  },
+  "toast": {
+    "createSuccess": "Plano criado com sucesso",
+    "updateSuccess": "Plano actualizado",
+    "deleteSuccess": "Plano eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}
