@@ -14,6 +14,13 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
+  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
+} from "@/components/ui/accordion";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink,
   BreadcrumbSeparator, BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
@@ -146,6 +153,13 @@ export function AdminLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
+  // Grupos abertos no Accordion da sidebar — arranca com o grupo da rota activa aberto.
+  const [openGroups, setOpenGroups] = useState<string[]>(() => {
+    const active = navGroups
+      .flatMap((g) => g.items.map((i) => ({ path: i.path, group: g.label })))
+      .find((i) => (i.path === "/admin" ? location.pathname === "/admin" : location.pathname.startsWith(i.path)));
+    return active ? [active.group] : [];
+  });
   const mobileAsideRef = useRef<HTMLElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const touchStartX = useRef<number | null>(null);
@@ -295,89 +309,61 @@ export function AdminLayout() {
 
       {/* Nav groups */}
       <ScrollArea className="flex-1 py-4">
-        <div className="px-3 space-y-5">
+        <Accordion
+          type="multiple"
+          value={openGroups}
+          onValueChange={setOpenGroups}
+          className="px-3 space-y-1"
+        >
           {filteredGroups.map((group) => (
-            <div key={group.label}>
-              <div className="px-3 mb-1.5 flex items-center gap-1.5">
-                <group.icon className={`h-3.5 w-3.5 ${group.colorClass}`} />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-muted">
-                  {group.label}
-                </p>
-              </div>
-              <div className="space-y-0.5">
-                {group.items.map((item) => {
-                  const active = isActive(item.path);
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={(e) => {
-                        if (isActive(item.path)) {
-                          setMobileOpen(false);
-                          return;
-                        }
-                        setNavigating(true);
-                        setPendingPath(item.path);
-                      }}
-                      aria-current={active ? "page" : undefined}
-                      data-active={active ? "true" : undefined}
-                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                        active
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground ring-1 ring-sidebar-primary/30 shadow-sm"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5"
-                      }`}
-                    >
-                      {active && (
-                        <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-sidebar-primary" />
-                      )}
-                      <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-sidebar-primary" : ""}`} />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
+            <AccordionItem key={group.label} value={group.label} className="border-b-0">
+              <AccordionTrigger className="px-3 py-2 rounded-lg hover:no-underline hover:bg-sidebar-accent/40 transition-colors [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:text-sidebar-muted">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <group.icon className={`h-3.5 w-3.5 shrink-0 ${group.colorClass}`} />
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-muted truncate">
+                    {group.label}
+                  </span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-1 pt-0.5">
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const active = isActive(item.path);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={(e) => {
+                          if (isActive(item.path)) {
+                            setMobileOpen(false);
+                            return;
+                          }
+                          setNavigating(true);
+                          setPendingPath(item.path);
+                        }}
+                        aria-current={active ? "page" : undefined}
+                        data-active={active ? "true" : undefined}
+                        className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                          active
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground ring-1 ring-sidebar-primary/30 shadow-sm"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5"
+                        }`}
+                      >
+                        {active && (
+                          <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-sidebar-primary" />
+                        )}
+                        <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-sidebar-primary" : ""}`} />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
       </ScrollArea>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-sidebar-border space-y-2">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-sidebar-accent/40">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full gradient-gold text-primary font-serif font-bold text-xs shadow-elegant">
-            {initialsFromEmail(user.email)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-sidebar-foreground truncate">{user.email?.split("@")[0]}</p>
-            {role && (
-              <Badge variant="outline" className="mt-0.5 text-[9px] h-4 px-1.5 border-sidebar-border/60 text-sidebar-muted bg-transparent">
-                {ROLE_LABEL[role]}
-              </Badge>
-            )}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-0.5">
-          <Link
-            to="/admin/perfil"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-          >
-            <UserCircle className="h-4 w-4" /> Meu Perfil
-          </Link>
-          <Link
-            to="/"
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" /> Voltar ao portal
-          </Link>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-[13px] text-sidebar-muted hover:text-destructive hover:bg-destructive/10 transition-colors text-left"
-          >
-            <LogOut className="h-4 w-4" /> Terminar sessão
-          </button>
-        </div>
-      </div>
     </>
   );
 
@@ -511,20 +497,59 @@ export function AdminLayout() {
               {/* Notifications */}
               <NotificationCenter />
 
-              {/* Mini avatar */}
-              <div className="hidden sm:flex items-center gap-2 pl-2 ml-1 border-l border-border/60">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full gradient-green text-primary-foreground font-serif text-[11px] font-bold shadow-elegant">
-                  {initialsFromEmail(user.email)}
-                </div>
-                <div className="hidden lg:block min-w-0">
-                  <p className="text-xs font-medium text-foreground leading-none truncate max-w-[140px]">
-                    {user.email?.split("@")[0]}
-                  </p>
-                  {role && (
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{ROLE_LABEL[role]}</p>
-                  )}
-                </div>
-              </div>
+              {/* User menu (avatar dropdown) */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Menu do utilizador"
+                    className="flex items-center gap-2 pl-2 ml-1 py-1 pr-1 lg:pr-2 border-l border-border/60 rounded-lg cursor-pointer hover:bg-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full gradient-green text-primary-foreground font-serif text-[11px] font-bold shadow-elegant">
+                      {initialsFromEmail(user.email)}
+                    </div>
+                    <div className="hidden lg:block min-w-0 text-left">
+                      <p className="text-xs font-medium text-foreground leading-none truncate max-w-[140px]">
+                        {user.email?.split("@")[0]}
+                      </p>
+                      {role && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{ROLE_LABEL[role]}</p>
+                      )}
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-semibold text-foreground truncate">{user.email?.split("@")[0]}</span>
+                      <span className="text-xs font-normal text-muted-foreground truncate">{user.email}</span>
+                      {role && (
+                        <Badge variant="outline" className="mt-1 w-fit text-[9px] h-4 px-1.5">
+                          {ROLE_LABEL[role]}
+                        </Badge>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link to="/admin/perfil">
+                      <UserCircle className="mr-2 h-4 w-4" /> Meu Perfil
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link to="/">
+                      <ChevronLeft className="mr-2 h-4 w-4" /> Voltar ao portal
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={signOut}
+                    className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" /> Terminar sessão
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
