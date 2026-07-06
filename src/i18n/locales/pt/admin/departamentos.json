@@ -1,0 +1,53 @@
+{
+  "page": {
+    "title": "Gestão de Departamentos",
+    "description": "Estrutura organizacional do instituto"
+  },
+  "actions": {
+    "new": "Novo Departamento",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "labels": {
+      "name": "Nome",
+      "description": "Descrição"
+    },
+    "placeholders": {
+      "name": "Ex: Departamento de Virologia",
+      "description": "Descrição do departamento"
+    },
+    "submitCreate": "Criar Departamento",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Criar Departamento",
+    "editTitle": "Editar Departamento",
+    "detailsTitle": "Detalhes do Departamento"
+  },
+  "details": {
+    "name": "Nome",
+    "description": "Descrição",
+    "createdAt": "Criado em"
+  },
+  "table": {
+    "name": "Nome",
+    "description": "Descrição",
+    "actions": "Acções",
+    "empty": "Nenhum departamento encontrado.",
+    "searchPlaceholder": "Pesquisar departamentos...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "nameShort": "Nome demasiado curto"
+  },
+  "toast": {
+    "createSuccess": "Departamento criado com sucesso",
+    "updateSuccess": "Departamento actualizado",
+    "deleteSuccess": "Departamento eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

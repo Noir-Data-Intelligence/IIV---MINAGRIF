@@ -23,6 +23,10 @@ export const endpoints = {
     list: "/legislacao",
     detail: (id: string) => `/legislacao/${id}`,
   },
+  departamentos: {
+    list: "/departamentos",
+    detail: (id: string) => `/departamentos/${id}`,
+  },
   heroSlides: {
     list: "/hero-slides",
   },

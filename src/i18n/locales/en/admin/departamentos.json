@@ -1,0 +1,53 @@
+{
+  "page": {
+    "title": "Department Management",
+    "description": "Organizational structure of the institute"
+  },
+  "actions": {
+    "new": "New Department",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "labels": {
+      "name": "Name",
+      "description": "Description"
+    },
+    "placeholders": {
+      "name": "e.g. Virology Department",
+      "description": "Department description"
+    },
+    "submitCreate": "Create Department",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Create Department",
+    "editTitle": "Edit Department",
+    "detailsTitle": "Department Details"
+  },
+  "details": {
+    "name": "Name",
+    "description": "Description",
+    "createdAt": "Created on"
+  },
+  "table": {
+    "name": "Name",
+    "description": "Description",
+    "actions": "Actions",
+    "empty": "No departments found.",
+    "searchPlaceholder": "Search departments...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "nameShort": "Name too short"
+  },
+  "toast": {
+    "createSuccess": "Department created successfully",
+    "updateSuccess": "Department updated",
+    "deleteSuccess": "Department deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

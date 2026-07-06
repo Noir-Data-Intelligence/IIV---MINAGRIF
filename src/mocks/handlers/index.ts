@@ -1,5 +1,6 @@
 import { noticiasHandlers } from "@/mocks/handlers/noticias";
 import { legislacaoHandlers } from "@/mocks/handlers/legislacao";
+import { departamentosHandlers } from "@/mocks/handlers/departamentos";
 import { heroSlidesHandlers } from "@/mocks/handlers/heroSlides";
 import { publicStatsHandlers } from "@/mocks/handlers/publicStats";
 import { contactMessagesHandlers } from "@/mocks/handlers/contactMessages";
@@ -13,6 +14,7 @@ import { contactMessagesHandlers } from "@/mocks/handlers/contactMessages";
 export const handlers = [
   ...noticiasHandlers,
   ...legislacaoHandlers,
+  ...departamentosHandlers,
   ...heroSlidesHandlers,
   ...publicStatsHandlers,
   ...contactMessagesHandlers,
