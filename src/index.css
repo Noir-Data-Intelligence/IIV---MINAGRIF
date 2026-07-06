@@ -1,0 +1,274 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 60 10% 97%;
+    --foreground: 200 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 200 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 25% 12%;
+
+    --primary: 152 42% 24%;
+    --primary-foreground: 60 20% 97%;
+
+    --secondary: 38 75% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 200 12% 93%;
+    --muted-foreground: 200 8% 46%;
+
+    --accent: 152 25% 93%;
+    --accent-foreground: 152 40% 18%;
+
+    --destructive: 0 65% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 12% 89%;
+    --input: 200 12% 89%;
+    --ring: 152 42% 24%;
+
+    --radius: 0.625rem;
+
+    --sidebar-background: 200 25% 10%;
+    --sidebar-foreground: 200 8% 80%;
+    --sidebar-primary: 38 75% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 200 20% 15%;
+    --sidebar-accent-foreground: 60 20% 97%;
+    --sidebar-border: 200 15% 16%;
+    --sidebar-ring: 38 75% 50%;
+    --sidebar-muted: 200 12% 68%;
+
+    --iiv-green-dark: 152 48% 14%;
+    --iiv-green: 152 42% 24%;
+    --iiv-green-light: 152 25% 93%;
+    --iiv-gold: 38 75% 50%;
+    --iiv-gold-light: 38 60% 93%;
+
+    --chart-1: 152 42% 24%;
+    --chart-2: 38 75% 50%;
+    --chart-3: 200 55% 48%;
+    --chart-4: 280 45% 55%;
+    --chart-5: 340 55% 55%;
+  }
+
+  .dark {
+    --background: 200 30% 6%;
+    --foreground: 60 10% 92%;
+
+    --card: 200 25% 9%;
+    --card-foreground: 60 10% 92%;
+
+    --popover: 200 25% 9%;
+    --popover-foreground: 60 10% 92%;
+
+    --primary: 152 38% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 38 65% 46%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 200 20% 14%;
+    --muted-foreground: 200 8% 56%;
+
+    --accent: 152 20% 16%;
+    --accent-foreground: 152 25% 82%;
+
+    --destructive: 0 55% 42%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 16% 16%;
+    --input: 200 16% 16%;
+    --ring: 152 38% 38%;
+
+    --sidebar-background: 200 30% 5%;
+    --sidebar-foreground: 200 8% 82%;
+    --sidebar-primary: 38 65% 46%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 200 22% 10%;
+    --sidebar-accent-foreground: 200 8% 82%;
+    --sidebar-border: 200 18% 12%;
+    --sidebar-ring: 38 65% 46%;
+    --sidebar-muted: 200 10% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Fluid root size: 14px on small screens → 16px from ~640px upwards */
+    font-size: clamp(14px, 0.85rem + 0.35vw, 16px);
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    @apply tracking-tight;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+
+  /* Fluid heading scale — keeps hierarchy intact at any width */
+  h1 { font-size: clamp(1.5rem, 1.15rem + 1.6vw, 2.25rem); }
+  h2 { font-size: clamp(1.25rem, 1rem + 1.2vw, 1.75rem); }
+  h3 { font-size: clamp(1.075rem, 0.95rem + 0.6vw, 1.35rem); }
+  h4 { font-size: clamp(1rem, 0.92rem + 0.35vw, 1.15rem); }
+
+  /* Prevent long identifiers / emails from blowing out cards & tables */
+  td, th { word-break: break-word; overflow-wrap: anywhere; }
+}
+
+@layer components {
+  /* Editorial utilities for institutional / magazine style pages */
+  .kicker {
+    @apply inline-flex items-center text-[11px] font-semibold uppercase tracking-[0.22em];
+  }
+  .editorial-rule {
+    @apply block h-px w-12 bg-[hsl(var(--iiv-gold))];
+  }
+  .lead {
+    @apply text-lg md:text-xl text-muted-foreground leading-relaxed;
+    font-weight: 300;
+  }
+  .section-divider {
+    @apply border-t border-border/40;
+  }
+
+  /* Responsive density for shadcn tables — tighter on phones, roomy on desktop */
+  table th {
+    @apply h-10 px-2.5 text-xs sm:h-12 sm:px-4 sm:text-sm;
+  }
+  table td {
+    @apply px-2.5 py-2.5 text-xs sm:px-4 sm:py-3.5 sm:text-sm;
+  }
+
+  /* Card paddings scale down on small screens to avoid cramped content */
+  .card-header-responsive {
+    @apply p-4 sm:p-6;
+  }
+  .card-content-responsive {
+    @apply p-4 pt-0 sm:p-6 sm:pt-0;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  }
+  
+  .glass-strong {
+    @apply bg-card/95 backdrop-blur-xl border border-border/60;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(152 42% 30%));
+  }
+
+  .gradient-gold {
+    background: linear-gradient(135deg, hsl(var(--secondary)), hsl(38 80% 58%));
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  }
+
+  .shadow-elegant {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 6px 24px -4px rgb(0 0 0 / 0.06);
+  }
+
+  .shadow-elevated {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 16px 40px -8px rgb(0 0 0 / 0.08);
+  }
+
+  /* Premium gradient backgrounds (IIV palette) */
+  .gradient-green {
+    background: linear-gradient(135deg, hsl(var(--iiv-green-dark)), hsl(var(--iiv-green)));
+  }
+  .gradient-green-soft {
+    background: linear-gradient(135deg, hsl(var(--iiv-green)), hsl(152 38% 34%));
+  }
+  .gradient-gold {
+    background: linear-gradient(135deg, hsl(var(--iiv-gold)), hsl(38 80% 62%));
+  }
+  .gradient-teal {
+    background: linear-gradient(135deg, hsl(180 45% 28%), hsl(175 50% 38%));
+  }
+  .gradient-green-gold {
+    background: linear-gradient(135deg, hsl(var(--iiv-green-dark)), hsl(var(--iiv-green)) 55%, hsl(38 70% 42%));
+  }
+
+  /* Glass cards reinforced */
+  .glass-card {
+    backdrop-filter: blur(10px);
+    background: hsl(var(--card) / 0.85);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  /* Hover lift */
+  .hover-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px -10px hsl(var(--primary) / 0.25);
+  }
+
+  /* Shimmer overlay */
+  .shimmer-bg {
+    background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.08), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.5s linear infinite;
+  }
+
+  /* Staggered animation delays */
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.10s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.20s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.30s; }
+  .stagger-7 { animation-delay: 0.35s; }
+  .stagger-8 { animation-delay: 0.40s; }
+
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out both;
+  }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes kenburns {
+  0% { transform: scale(1) translate3d(0,0,0); }
+  100% { transform: scale(1.08) translate3d(-1%, -1%, 0); }
+}
+.animate-kenburns {
+  animation: kenburns 9s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-kenburns { animation: none !important; }
+}

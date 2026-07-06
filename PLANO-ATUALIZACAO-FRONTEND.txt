@@ -1,0 +1,1092 @@
+====================================================================================
+ PLANO DE ATUALIZACAO E MODERNIZACAO DO FRONTEND
+ Portal do IIV / MINAGRIF (Instituto de Investigacao Veterinaria - Angola)
+====================================================================================
+ Documento: Plano de Trabalho (apenas planeamento; nenhuma alteracao de codigo
+            foi feita na producao deste documento)
+ Estado do stack: React 18 + Vite + TypeScript + Tailwind + shadcn/ui (Radix) +
+                  react-router-dom v6 + Supabase + react-hook-form + zod +
+                  recharts + next-themes (instalado, inactivo) + jsPDF +
+                  @tanstack/react-query (instalado, nao usado no admin) +
+                  react-helmet-async
+ Origem: projecto gerado/editado via Lovable (pasta .lovable/, lovable-tagger,
+         README e URLs .lovable.app presentes) — TUDO A REMOVER (ver 1.10 e 4.8).
+ Backend alvo: 100% LARAVEL (API REST Full). Supabase e TODOS os seus servicos
+               (Postgres/RLS, Auth, Storage, Realtime, Edge Functions) serao
+               DESCONTINUADOS por completo no fim do processo — nao ha
+               coexistencia definitiva com Supabase (ver 3.1.7, 3.2, Fase 4).
+====================================================================================
+
+
+------------------------------------------------------------------------------------
+0. SUMARIO EXECUTIVO
+------------------------------------------------------------------------------------
+
+    Este plano descreve a modernizacao completa do frontend do portal do IIV/MINAGRIF,
+    sem alterar as regras de negocio nem os fluxos funcionais ja existentes. O
+    objectivo e transformar um frontend funcional mas datado (acoplado directamente
+    ao SDK do Supabase, sem tema activo, sem i18n, com ~30-40 blocos de codigo CRUD
+    repetidos) num frontend profissional, animado, internacionalizado (PT/EN),
+    com tema claro/escuro, e ja preparado para consumir um backend Laravel REST.
+
+    O QUE NAO MUDA NO NEGOCIO:
+    Todos os fluxos actuais mantem-se — motor BPM de processos, avaliacoes de
+    desempenho, missoes (submissao/aprovacao/guia de marcha/prestacao de contas),
+    laboratorio, producao, qualidade, financeiro, RH, investigacao/BI, etc. Nao ha
+    supressao de funcionalidade. O que muda e a CAMADA de apresentacao, a CAMADA de
+    acesso a dados e a CAMADA de autenticacao — nao a logica de dominio.
+
+    CORRECCAO DE EXPECTATIVA (IMPORTANTE):
+    O pedido inicial mencionava "paginas inacabadas para terminar". Apos levantamento
+    exaustivo, linha a linha, de todas as ~41 paginas de administracao, 11 paginas
+    publicas e 4 paginas de autenticacao, NAO foi encontrada NENHUMA pagina vazia,
+    placeholder ou "em breve". Todas tem CRUD real, validacao e, em varios casos,
+    workflows sofisticados. O trabalho real NAO e "terminar paginas por fazer"; e:
+      (a) MODERNIZAR a UI/UX (tema, animacao, tabelas, formularios, gráficos);
+      (b) DESACOPLAR do Supabase e preparar para Laravel REST (via mock primeiro);
+      (c) CORRIGIR pequenos problemas de conteudo/dados (ver Seccao 4);
+      (d) RESOLVER gaps de escala (paginacao server-side, agregacoes pesadas).
+    Este documento reflecte essa realidade para gerir expectativas com transparencia.
+
+    REMOCAO TOTAL DE LOVABLE E DE SUPABASE (IMPORTANTE):
+    Dois requisitos adicionais, tratados como obrigatorios em todo o plano, nao como
+    "nice to have":
+      (i)  REMOVER toda e qualquer dependencia do LOVABLE (plataforma que gerou o
+           projecto originalmente): pasta .lovable/, dependencia npm "lovable-tagger"
+           e o respectivo plugin no vite.config.ts, README.md reescrito de raiz (hoje
+           e o boilerplate generico do Lovable), URLs "*.lovable.app" hardcoded
+           (sitemap.xml, robots.txt, SEO.tsx, Index.tsx), e a Edge Function
+           "chat-assistant" que hoje depende do "Lovable AI Gateway" (variavel
+           LOVABLE_API_KEY) — ver detalhe completo em 1.10 e 4.8.
+      (ii) O BACKEND FINAL E 100% LARAVEL. Isto vai alem de "preparar para consumir"
+           uma API Laravel: o objectivo declarado e a DESCONTINUACAO TOTAL do
+           Supabase (Postgres/RLS, Auth, Storage, Realtime e Edge Functions) — nao
+           apenas do SDK supabase-js no frontend. A fase de MOCK (MSW) e uma etapa
+           intermedia de desenvolvimento, nao um destino; o destino e sempre o
+           Laravel REST real (ver Fase 4, Seccao 6).
+
+
+------------------------------------------------------------------------------------
+1. ESTADO ACTUAL (RESUMO DO LEVANTAMENTO)
+------------------------------------------------------------------------------------
+
+  1.1 STACK E INFRAESTRUTURA
+      - React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui (Radix primitives).
+      - Routing: react-router-dom v6.
+      - Backend actual: Supabase (Auth + Postgres + Storage + Realtime).
+      - Formularios: react-hook-form + zod — usados SO no site publico e auth,
+        NUNCA no admin.
+      - Graficos: recharts (dashboard admin com 5+ graficos; tokens --chart-1..5).
+      - PDF: jsPDF + autoTable (geracao institucional duplicada em varias paginas).
+      - react-query: instalado mas nao usado no admin.
+      - next-themes: instalado mas NAO activado.
+      - react-helmet-async: usado no SEO.tsx.
+
+  1.2 JA PRONTO A ACTIVAR (BAIXO ESFORCO, ALTO IMPACTO)
+      - DARK MODE: tailwind.config.ts ja tem darkMode:["class"]; src/index.css ja tem
+        bloco .dark completo com todas as variaveis HSL. Falta apenas o ThemeProvider
+        (next-themes ja instalado) + toggle de UI no Header. Nenhuma pagina publica
+        usa classes dark:; apenas 7 paginas admin usam dark: esporadicamente.
+      - FONTES: @fontsource/dm-sans e @fontsource/space-grotesk ja instalados como
+        devDependency mas nao usados; index.css usa @import de Google Fonts (nao
+        optimizado, redundante). Migracao para self-host trivial.
+
+  1.3 O QUE FALTA (POR CONSTRUIR)
+      - i18n: NAO EXISTE. Sem i18next/react-i18next, sem pasta locales. Todo o texto
+        e PT hardcoded no JSX (titulos, labels, toasts, meta descriptions, mensagens
+        zod, datas via toLocaleDateString("pt-AO")).
+      - Camada de acesso a dados: NAO EXISTE. Sao ~41 pontos de acoplamento directo
+        ao SDK Supabase dentro de useEffect/handlers. Sem camada de servico/repositorio.
+      - Sistema de animacao: inexistente (excepto HeroSlideshow que ja respeita
+        prefers-reduced-motion).
+      - Abstraccoes de UI admin: o "page skeleton" CRUD esta copiado ~30 vezes; nenhuma
+        tabela usa TanStack Table; formularios admin sao useState manual sem zod.
+
+  1.4 PAGINAS PUBLICAS (11) — TODAS COMPLETAS
+      Index, Sobre, Servicos, Noticias, NoticiaDetalhe, Legislacao, LegislacaoDetalhe,
+      Contactos, Termos, Privacidade, NotFound. Conteudo redigido especificamente para
+      o IIV (nao lorem ipsum). Index/Noticias/Detalhes/Legislacao/Contactos usam Supabase
+      real (tabelas noticias, legislation, contact_messages, hero_slides; buckets
+      noticias/legislation). Sistema editorial consistente: paleta verde institucional +
+      dourado (HSL custom), tipografia Space Grotesk + DM Sans, grid 12 colunas, cards
+      com hover-lift, PageHero reutilizavel. HeroSlideshow sofisticado (autoplay, Ken
+      Burns, prefers-reduced-motion, 5 slides fallback + Supabase). LiveStats via Supabase
+      Realtime. PartnersBar mostra 6 parceiros so como texto (sem logotipos).
+
+  1.5 PAGINAS DE AUTENTICACAO (4) — COMPLETAS
+      Login, Registar, RecuperarSenha, RedefinirSenha. Usam Supabase Auth directo.
+      Padrao split-screen consistente. Problemas de conteudo a corrigir (ver Seccao 4).
+
+  1.6 AREA ADMIN (~41 PAGINAS) — TODAS COMPLETAS E FUNCIONAIS
+      Modulos: Geral (Dashboard 5 graficos + alertas, PainelDetalhe drill-down,
+      Utilizadores, RBAC matriz Papel x Modulo, Departamentos, Legislacao/Noticias/
+      Slideshow admin, Mensagens, Notificacoes realtime), Laboratorio, Producao,
+      Qualidade (inclui Acessibilidade com axe-core), Recursos & Producao, Gestao
+      (Documentos com versoes/permissoes/workflow; Processos — motor BPM completo),
+      Financeiro & Patrimonio, Pessoas & Missoes (Missoes = ~757 linhas, o modulo mais
+      complexo), Investigacao & BI, Perfil.
+
+  1.7 GAPS TECNICOS REAIS (ESCALA, NAO PAGINAS EM FALTA)
+      - Listas inteiras sem paginacao server-side (.limit(200-500) fixo em vez de
+        range()): Inseminacao (sem limite), Agricultura, Producao Pecuaria, Missoes,
+        RH, Investigacao, Formacoes.
+      - Financeiro/Stock/Patrimonio agregam KPIs trazendo TODAS as transacoes para o
+        cliente (agregacao client-side pesada).
+
+  1.8 DEZ PADROES REPETIDOS (CANDIDATOS A ABSTRACCAO)
+      1. "Page skeleton" CRUD copiado ~30x -> hook unico useResourceCrud(table).
+      2. Duas paginacoes paralelas inconsistentes (server-side vs client-side).
+      3. Admin nao usa react-hook-form nem zod (validacao ad hoc if(!x) toast()).
+      4. Sub-formularios em dialog quase identicos -> <EntityFormDialog>/useEntityForm.
+      5. Master-detail: Promise.all de selects + resolucao manual de FKs com .find().
+      6. Mapas de estado/etiqueta repetidos por pagina -> registo central de enums.
+      7. Geracao de PDF duplicada -> helper unico generateInstitutionalPdf().
+      8. RowActions existe mas so usado em 3 paginas; 90% usam botoes-icone inline.
+      9. Toggle de escrita RBAC inline ({canEdit && ...}) -> wrapper <WriteGuard>.
+     10. Nenhuma tabela usa TanStack Table (sempre <Table> shadcn com .map() manual).
+
+  1.9 AUTENTICACAO E RBAC HOJE
+      - 100% Supabase Auth (useAuth.tsx = wrapper fino sobre onAuthStateChange/
+        getSession/signOut; sessao em localStorage via supabase-js; sem JWT proprio).
+      - RBAC: papeis admin/tecnico/gestor/diretor/colaborador em user_roles; permissoes
+        por modulo (can_view/can_write) com defaults em src/lib/permissions.ts + override
+        em role_permissions (editavel na pagina RBAC). useUserRole faz cache module-level.
+        RoleGuard bloqueia rotas.
+      - PONTO CRITICO: a RBAC em JS e SO UX (esconder nav/botoes). A autorizacao REAL
+        hoje e feita pelo RLS do Postgres/Supabase. Ao migrar para Laravel, o RLS
+        desaparece e a autorizacao tem de ser reimplementada no backend.
+
+  1.10 DEPENDENCIA DO LOVABLE — LEVANTAMENTO CONCRETO (TUDO A REMOVER)
+      Confirmado por pesquisa em todo o repositorio (fora de node_modules):
+        - .lovable/plan.md               -- pasta/artefacto proprio da plataforma Lovable.
+        - package.json (devDependency)   -- "lovable-tagger": "^1.1.13".
+        - vite.config.ts                 -- import { componentTagger } from
+                                             "lovable-tagger"; usado como plugin Vite.
+        - README.md                      -- 100% boilerplate generico do Lovable
+                                             ("Welcome to your Lovable project", links
+                                             para lovable.dev/projects/..., instrucoes
+                                             de publicacao via Lovable). Reescrever de
+                                             raiz com README proprio do projecto.
+        - public/sitemap.xml, public/robots.txt, src/components/SEO.tsx (BASE_URL),
+          src/pages/Index.tsx (schema.org url) -- todos apontam para
+          "https://iiv-insight-hub.lovable.app" (dominio de preview Lovable) em vez
+          do dominio institucional de producao (ver 4.4/4.8, depende de D5).
+        - supabase/functions/chat-assistant/index.ts -- Edge Function do ChatWidget
+          admin que chama "https://ai.gateway.lovable.dev/v1/chat/completions" e
+          depende da variavel de ambiente LOVABLE_API_KEY (Lovable AI Gateway). Esta
+          funcao TODA desaparece com o Supabase (ver 3.1.7/4.8); a funcionalidade de
+          chat tera de ser reimplementada como endpoint Laravel chamando directamente
+          um provedor de LLM (ex: OpenAI, Anthropic) com chave propria.
+        - bun.lock / package-lock.json    -- referencias indirectas ao pacote
+          lovable-tagger; resolvem-se automaticamente ao remover a dependencia.
+      NOTA: nenhuma logica de negocio depende do Lovable — e apenas branding, um
+      plugin de dev (componentTagger) e uma integracao de IA de terceiros via
+      gateway Lovable. Remocao segura e sem impacto funcional, excepto o chat
+      (ver 4.8, requer decisao D11 sobre o provedor de LLM a usar no Laravel).
+
+
+------------------------------------------------------------------------------------
+2. OBJECTIVOS DA MODERNIZACAO (RASTREAVEIS AOS REQUISITOS)
+------------------------------------------------------------------------------------
+
+    OBJ-1  Frontend mais actualizado, profissional, animado e intuitivo.
+           (Req. 1) -> Seccoes 3.5, 3.6, 3.9, 6-Fase 3.
+
+    OBJ-2  Internacionalizacao PT/EN, com PT por omissao (publico angolano).
+           (Req. 2) -> Seccao 3.3.
+
+    OBJ-3  Modo escuro e claro com toggle acessivel (infra CSS ja existe).
+           (Req. 3) -> Seccao 3.4.
+
+    OBJ-4  Adoptar/consolidar stack: Tailwind, shadcn/ui (expandir), Framer Motion
+           (NOVO), Recharts (unificar), TanStack Table (NOVO), React Hook Form+zod
+           (no admin), e apoios (react-query, cva, embla, estado leve).
+           (Req. 4) -> Seccoes 3.5-3.9, 7.
+
+    OBJ-5  MIGRAR POR COMPLETO para um backend Laravel REST Full — nao apenas
+           "preparar", mas DESCONTINUAR o Supabase por inteiro (BD/RLS, Auth,
+           Storage, Realtime, Edge Functions) no fim do processo. Trabalhar com
+           MOCK (MSW) durante o desenvolvimento, com arquitectura de dados pronta
+           para trocar para REST real: client HTTP unico, contrato de endpoints,
+           DTOs/tipos partilhados, estrutura services/api.
+           (Req. 5, reforcado) -> Seccao 3.1, 3.2, 6-Fase 4.
+
+    OBJ-6  Migrar autenticacao Supabase Auth -> Laravel Sanctum (token/cookie) e
+           reimplementar autorizacao real no backend (o RLS desaparece; frontend
+           RBAC continua como UX). Migrar tambem Storage (buckets noticias/
+           legislation/documents/hero-slides/avatars) e Realtime (LiveStats,
+           NotificationCenter, Processos, Documentos) para equivalentes Laravel, e
+           reimplementar a Edge Function de chat (chat-assistant) fora do Lovable
+           AI Gateway.
+           (Req. 5, ponto critico) -> Seccao 3.2, 4.8.
+
+    OBJ-10 Remover toda e qualquer dependencia do LOVABLE (plataforma que gerou o
+           projecto): pasta .lovable/, dependencia lovable-tagger + plugin Vite,
+           README boilerplate, URLs *.lovable.app, e a dependencia da Edge Function
+           de chat no Lovable AI Gateway.
+           (Requisito explicito do utilizador) -> Seccoes 1.10, 4.8, 6-Fase 0.
+
+    OBJ-7  Corrigir problemas de conteudo/dados e gaps de escala (NAO "terminar
+           paginas"), com transparencia.
+           (Req. 6) -> Seccoes 4 e 1.7.
+
+    OBJ-8  Preparar ~30 ficheiros de media (fotos/videos Pexels) para backgrounds de
+           seccoes — SO a lista agora; download depois da luz verde.
+           (Req. 7) -> Seccao 5.
+
+    OBJ-9  Aplicar boas praticas UI/UX modernas (paleta coerente light/dark,
+           tipografia self-host, motion com proposito, WCAG sem regressoes, estados
+           vazios/loading/erro consistentes, mobile-first).
+           (Req. 8) -> Seccoes 3.4, 3.5, 3.9, 6-Fase 3.
+
+
+------------------------------------------------------------------------------------
+3. ARQUITECTURA ALVO
+------------------------------------------------------------------------------------
+
+  ================================================================================
+  3.1 CAMADA DE DADOS / API (MOCK AGORA -> LARAVEL REST DEPOIS)
+  ================================================================================
+
+    3.1.1 PRINCIPIO ORIENTADOR
+        Hoje ha ~41 pontos de acoplamento directo ao SDK Supabase espalhados por
+        useEffect/handlers. A estrategia e introduzir UMA camada de acesso a dados
+        entre os componentes e a origem de dados, para que a troca Supabase -> mock
+        -> Laravel se faca num unico sitio, sem tocar nos componentes.
+
+        Fluxo alvo:
+          Componente/Pagina
+            -> hook de dominio (react-query: useNoticias(), useMissoes(), ...)
+              -> servico de modulo (services/api/noticias.ts)
+                -> client HTTP unico (lib/http.ts, axios/ky com interceptors)
+                  -> [MSW intercepta em dev/mock]  ou  [Laravel REST em producao]
+
+    3.1.2 ESTRUTURA DE PASTAS PROPOSTA
+        src/
+          lib/
+            http.ts                 -- client HTTP unico (axios ou ky) + interceptors
+            queryClient.ts          -- config do @tanstack/react-query
+          services/
+            api/
+              client.ts             -- re-export do http + helpers (get/post/put/del)
+              endpoints.ts          -- mapa central de rotas REST (contrato)
+              noticias.ts           -- CRUD noticias (list/get/create/update/remove)
+              legislacao.ts
+              missoes.ts
+              laboratorio.ts
+              producao.ts
+              qualidade.ts
+              financeiro.ts
+              rh.ts
+              investigacao.ts
+              processos.ts
+              documentos.ts
+              utilizadores.ts
+              rbac.ts
+              ...                   -- um ficheiro por modulo/recurso
+          types/
+            dto/                    -- DTOs/tipos partilhados (contrato com Laravel)
+              noticia.ts
+              missao.ts
+              paginated.ts          -- envelope generico { data, meta:{page,total} }
+              ...
+          hooks/
+            queries/                -- hooks react-query por dominio
+              useNoticias.ts
+              useMissoes.ts
+              ...
+          mocks/                    -- MSW (Fase 0..3)
+            browser.ts              -- setupWorker
+            server.ts               -- setupServer (para testes)
+            handlers/
+              index.ts
+              noticias.ts
+              missoes.ts
+              ...
+            fixtures/               -- dados ficticios (seed)
+              noticias.json
+              missoes.json
+              ...
+
+    3.1.3 CLIENT HTTP UNICO (lib/http.ts)
+        - Base: axios (recomendado; ecossistema de interceptors maduro) ou ky (mais
+          leve, fetch-based). Recomendacao: AXIOS pela familiaridade com interceptors
+          de token/refresh e por integrar bem com Sanctum (withCredentials).
+        - Configuracao:
+            * baseURL a partir de import.meta.env.VITE_API_URL.
+            * withCredentials: true (necessario para Sanctum cookie-based).
+            * Interceptor de request: injectar header Authorization Bearer (se modo
+              token) ou nada (se modo cookie SPA) + header X-Requested-With.
+            * Interceptor de response: tratamento central de 401 (logout/refresh),
+              419 (CSRF/sessao expirada Sanctum), 422 (mapear erros de validacao
+              Laravel para react-hook-form), 403 (sem permissao -> toast + UX), 5xx.
+            * Normalizacao do envelope de paginacao Laravel ({data, meta, links}).
+
+    3.1.4 CONTRATO DE ENDPOINTS POR MODULO (endpoints.ts)
+        Definir um mapa central, versionado, base para o backend Laravel. Convencao
+        REST por recurso (plural, kebab/snake conforme decisao de equipa). Exemplos:
+
+          GERAL
+            GET    /api/noticias?page=&per_page=&search=&status=
+            POST   /api/noticias
+            GET    /api/noticias/{id}
+            PUT    /api/noticias/{id}
+            DELETE /api/noticias/{id}
+            (identico para legislacao, hero-slides, mensagens, notificacoes,
+             utilizadores, departamentos)
+            GET    /api/rbac/roles
+            GET    /api/rbac/permissions
+            PUT    /api/rbac/permissions            -- matriz papel x modulo
+
+          LABORATORIO
+            /api/laboratorios, /api/analises, /api/resultados, /api/insumos
+
+          PRODUCAO
+            /api/produtos, /api/lotes, /api/planeamento, /api/distribuicao
+
+          QUALIDADE
+            /api/estacoes, /api/auditorias, /api/nao-conformidades, /api/animais,
+            /api/inseminacao/{centros|reprodutores|tanques}, /api/logs
+
+          RECURSOS & PRODUCAO
+            /api/stock/{itens|localizacoes|movimentos}, /api/agricultura,
+            /api/producao-pecuaria
+
+          GESTAO
+            /api/documentos (+ /versions, /permissions), /api/processos (+ /etapas)
+
+          FINANCEIRO & PATRIMONIO
+            /api/contas, /api/orcamentos, /api/activos, /api/manutencoes
+
+          PESSOAS & MISSOES
+            /api/rh/colaboradores, /api/missoes (+ /aprovar, /guia-marcha,
+            /prestacao-contas), /api/formacoes
+
+          INVESTIGACAO & BI
+            /api/linhas-pesquisa, /api/publicacoes, /api/avaliacoes (+ /aprovar),
+            /api/bi/institucional
+
+          AUTH (ver 3.2)
+            POST /api/login, POST /api/logout, GET /api/user,
+            GET /sanctum/csrf-cookie (se cookie-based)
+
+        NOTA: Agregacoes de KPI (Financeiro/Stock/Patrimonio/Dashboard/BI) devem ter
+        endpoints dedicados de resumo no Laravel (ex: GET /api/financeiro/resumo) para
+        eliminar a agregacao client-side pesada actual (ver gap 1.7).
+
+    3.1.5 DTOs / TIPOS PARTILHADOS
+        - Um DTO por recurso em src/types/dto/, que representa o contrato exacto do
+          JSON REST (camelCase no frontend; se o Laravel devolver snake_case, mapear
+          numa camada de (de)serializacao no servico ou usar API Resources Laravel em
+          camelCase — decisao a alinhar com a equipa backend).
+        - Envelope generico Paginated<T> = { data: T[]; meta: { currentPage, perPage,
+          total, lastPage } }.
+        - Estes tipos devem, sempre que possivel, derivar dos MESMOS schemas zod usados
+          nos formularios (z.infer<typeof schema>) para garantir contrato unico entre
+          formulario, validacao e REST (ver 3.7).
+
+    3.1.6 ESTRATEGIA DE MOCK: MSW (RECOMENDADO) vs FIXTURES
+        - RECOMENDACAO: MSW (Mock Service Worker). Intercepta ao nivel da rede (Service
+          Worker no browser / setupServer em testes), o que significa que o client HTTP,
+          interceptors, react-query e tratamento de erros sao exercitados de forma
+          IDENTICA ao futuro Laravel. A troca mock->real e literalmente desligar o
+          worker e apontar VITE_API_URL para o backend. Vantagem decisiva sobre uma
+          fake-API em memoria (que nao exercita a camada HTTP).
+        - Handlers em src/mocks/handlers/ replicam o contrato de 3.1.4, servindo dados
+          de src/mocks/fixtures/ (JSON com dados ficticios realistas do dominio IIV:
+          nomes de missoes, lotes de vacinas, resultados de analises, etc.).
+        - Fixtures podem ser seed inicial exportado/derivado dos dados actuais do
+          Supabase (opcional) para realismo.
+        - Controlo por env: VITE_API_MOCK=true activa o worker; =false usa Laravel.
+
+    3.1.7 PLANO DE MIGRACAO SUPABASE -> LARAVEL, MODULO A MODULO
+        Passo A (preparacao, sem trocar backend): centralizar TODAS as chamadas
+          supabase-js dentro dos servicos de modulo (services/api/*.ts). Nesta fase os
+          servicos ainda chamam supabase por dentro, mas os componentes ja so conhecem
+          o hook/servico. Isto isola o acoplamento em ~41 -> N ficheiros de servico.
+        Passo B: introduzir react-query nos hooks de dominio (cache, loading, erro,
+          invalidacao) substituindo useEffect+useState manuais.
+        Passo C: reimplementar cada servico contra o client HTTP + MSW (mock). Trabalhar
+          modulo a modulo, comecando pelos mais simples (Noticias, Legislacao,
+          Departamentos) e terminando nos complexos (Missoes, Processos, BI).
+        Passo D (quando o Laravel existir, OBRIGATORIO, nao opcional): desligar MSW,
+          apontar VITE_API_URL para o backend real, ajustar apenas (de)serializacao/
+          edge-cases. Componentes e hooks nao mudam. Este passo inclui, para alem das
+          tabelas de dados:
+            * STORAGE: os buckets Supabase (noticias, legislation, documents,
+              hero-slides, avatars) passam a ser servidos por um disco de ficheiros
+              Laravel (local ou S3-compativel) via endpoints proprios de upload/
+              download (ex: POST /api/uploads, URLs assinadas quando aplicavel).
+            * REALTIME: LiveStats, NotificationCenter, timeline de Processos e
+              Documentos usam hoje supabase.channel()/postgres_changes. Substituir
+              por: (a) polling com refetchInterval do react-query (mais simples,
+              suficiente para a maioria dos casos), ou (b) WebSockets via Laravel
+              Reverb/Pusher + Laravel Echo (para notificacoes verdadeiramente
+              instantaneas). Decidir por caso de uso (ver D12, Seccao 9).
+            * EDGE FUNCTIONS: "chat-assistant" (hoje usa o Lovable AI Gateway, ver
+              1.10/4.8) e "send-transactional-email" tornam-se endpoints/jobs
+              Laravel — o chat chama directamente um provedor de LLM (OpenAI/
+              Anthropic, chave propria do cliente), o email usa Laravel Mail/queues.
+            * SUPABASE-JS: remover a dependencia @supabase/supabase-js do frontend
+              por completo assim que o ultimo modulo migrar (ver Seccao 7).
+          Nao existe estado final de coexistencia Supabase+Laravel — o Supabase e
+          desligado por inteiro no fecho da Fase 4.
+        Ordem sugerida por complexidade crescente:
+          Noticias -> Legislacao -> Departamentos -> Utilizadores/RBAC -> Mensagens/
+          Notificacoes -> Laboratorio -> Producao -> Stock/Recursos -> Qualidade ->
+          Documentos -> Financeiro/Patrimonio -> RH/Formacoes -> Investigacao/Avaliacoes
+          -> Processos (BPM) -> Missoes -> Dashboard/BI (agregacoes).
+
+
+  ================================================================================
+  3.2 AUTENTICACAO & RBAC (SUPABASE AUTH -> SANCTUM/JWT)
+  ================================================================================
+
+    3.2.1 SITUACAO ACTUAL
+        - useAuth.tsx = wrapper fino sobre supabase.auth (onAuthStateChange/getSession/
+          signOut). Sessao em localStorage via supabase-js.
+        - Autorizacao REAL = RLS do Postgres. A RBAC em JS e apenas UX.
+
+    3.2.2 ESTRATEGIA DE AUTENTICACAO ALVO (LARAVEL SANCTUM)
+        Duas opcoes Sanctum; recomendar decidir com a equipa backend:
+          OPCAO A — SPA cookie-based (RECOMENDADA para SPA no mesmo dominio/subdominio):
+            * Fluxo: GET /sanctum/csrf-cookie -> POST /api/login (email/senha) -> cookie
+              de sessao httpOnly. Requests subsequentes com withCredentials:true.
+            * Vantagens: token nunca exposto a JS (mitiga XSS), CSRF gerido por Sanctum.
+            * Requisitos: SPA e API em dominios compativeis (config CORS + SANCTUM
+              stateful domains no Laravel).
+          OPCAO B — Token-based (Bearer) (para dominios distintos / mobile futuro):
+            * POST /api/login devolve token pessoal; guardar com cuidado (de preferencia
+              em memoria + refresh; evitar localStorage por XSS).
+            * Interceptor injecta Authorization: Bearer.
+        Para o portal (SPA web institucional), OPCAO A e a mais segura e simples.
+
+    3.2.3 O QUE MUDA NO FRONTEND
+        - Reescrever useAuth.tsx para falar com o client HTTP (login/logout/getUser)
+          em vez de supabase.auth. Manter a MESMA interface publica do hook (user,
+          session, signIn, signOut, loading) para minimizar impacto nas paginas.
+        - AuthProvider carrega GET /api/user no arranque (hidratacao da sessao).
+        - Paginas de auth (Login/Registar/RecuperarSenha/RedefinirSenha) trocam as
+          chamadas signInWithPassword/signUp/resetPasswordForEmail/updateUser por
+          endpoints REST equivalentes (POST /api/login, /api/register,
+          /api/forgot-password, /api/reset-password).
+        - Tratamento de 401/419 no interceptor -> redireccionar para /login.
+
+    3.2.4 O QUE TEM DE SER REIMPLEMENTADO NO BACKEND (CRITICO)
+        - O RLS do Postgres DESAPARECE ao sair do Supabase. A autorizacao REAL tem de
+          passar a ser feita no Laravel: Policies/Gates por recurso e/ou middleware por
+          modulo+papel, validando can_view/can_write no servidor para CADA endpoint.
+        - A matriz de permissoes (role_permissions) e os defaults (permissions.ts) devem
+          ser replicados/migrados para o backend como fonte de verdade de autorizacao.
+
+    3.2.5 O QUE SE MANTEM NO FRONTEND
+        - Os hooks de RBAC de frontend (useUserRole, RoleGuard, WriteGuard proposto)
+          MANTEM-SE como camada de UX (esconder nav/botoes, bloquear rotas), desde que
+          o backend valide TUDO de novo. O frontend nunca e a fronteira de seguranca.
+        - A pagina RBAC (matriz Papel x Modulo) passa a ler/gravar via /api/rbac/*.
+
+
+  ================================================================================
+  3.3 INTERNACIONALIZACAO (i18n) — PT (default) / EN
+  ================================================================================
+
+    3.3.1 BIBLIOTECA
+        - i18next + react-i18next + i18next-browser-languagedetector.
+        - PT como fallback e idioma por omissao (publico angolano). EN como segundo.
+
+    3.3.2 ESTRUTURA DE FICHEIROS DE TRADUCAO
+        src/i18n/
+          index.ts                  -- init i18next (fallbackLng: 'pt', supportedLngs)
+          locales/
+            pt/
+              common.json           -- botoes, acoes, estados (guardar, cancelar...)
+              nav.json              -- navegacao/header/footer
+              public/
+                home.json, sobre.json, servicos.json, noticias.json,
+                legislacao.json, contactos.json, termos.json, privacidade.json
+              auth.json
+              admin/
+                dashboard.json, utilizadores.json, rbac.json, laboratorio.json,
+                producao.json, qualidade.json, missoes.json, financeiro.json,
+                rh.json, investigacao.json, processos.json, documentos.json, ...
+              validation.json       -- mensagens zod partilhadas
+              enums.json            -- estados/etiquetas de dominio (ver gap 1.8.6)
+            en/  (espelho exacto da arvore pt/)
+        - Namespaces por area para carregamento eficiente e organizacao.
+
+    3.3.3 ESTRATEGIA DE EXTRACCAO DE STRINGS (~55 PAGINAS)
+        - Faseado, por area, alinhado com o roadmap (Seccao 6):
+          1. common/nav/validation/enums primeiro (maior reutilizacao).
+          2. Site publico (11 paginas) — maior visibilidade externa.
+          3. Auth (4 paginas).
+          4. Admin, modulo a modulo.
+        - Processo por pagina: substituir literais JSX por t('namespace:chave'),
+          preencher pt/*.json, depois traduzir para en/*.json.
+        - Cuidado com: toasts, meta descriptions (SEO.tsx), mensagens zod, placeholders,
+          aria-labels (nao esquecer acessibilidade).
+        - Ferramenta opcional: i18next-parser para extrair chaves automaticamente e
+          detectar strings em falta / orfas.
+
+    3.3.4 DATAS, NUMEROS E MOEDA
+        - Datas: substituir toLocaleDateString("pt-AO") por formatacao dependente do
+          idioma activo (Intl.DateTimeFormat com locale de i18next; ou i18next com
+          plugin de formatacao). pt-AO / en-GB conforme lingua.
+        - Numeros: Intl.NumberFormat por locale.
+        - Moeda: Kwanza (AOA). Intl.NumberFormat(locale, {style:'currency',
+          currency:'AOA'}). Criar helper formatKwanza(value, locale) centralizado.
+        - Centralizar em src/lib/format.ts (formatDate/formatNumber/formatKwanza) para
+          consistencia e para reagir a mudanca de idioma.
+
+
+  ================================================================================
+  3.4 TEMA (DARK / LIGHT)
+  ================================================================================
+
+    3.4.1 ACTIVACAO (BAIXO ESFORCO — INFRA JA EXISTE)
+        - next-themes ja instalado; tailwind darkMode:["class"] e .dark em index.css
+          ja prontos.
+        - Adicionar <ThemeProvider> (next-themes) no topo da app (App.tsx / main.tsx),
+          attribute="class", defaultTheme="system", enableSystem, disableTransitionOnChange.
+        - Adicionar toggle acessivel no Header (botao com icone sol/lua, aria-label
+          traduzido, focus-visible correcto). Considerar 3 estados: claro/escuro/sistema.
+
+    3.4.2 AUDITORIA DE CONTRASTE EM DARK MODE
+        - Como nenhuma pagina publica usa classes dark: e o admin so as usa
+          esporadicamente, e necessario percorrer os ecrans e garantir que TODOS os
+          tokens usam as variaveis HSL (bg-background, text-foreground, border-border,
+          etc.) em vez de cores fixas (ex: text-white, bg-gray-100 hardcoded).
+        - Validar contraste WCAG AA (4.5:1 texto normal, 3:1 texto grande) nos dois
+          temas, com foco em: cards com hover-lift, glass/glass-strong (backdrop-blur
+          pode reduzir contraste), badges de estado, graficos (--chart-1..5 devem ter
+          variantes dark legiveis), overlays de PageHero.
+        - Formalizar a paleta institucional (verde+dourado) numa escala de tons
+          acessivel para light e dark (ver 3.9 e Req. 8): definir --iiv-green-* e
+          --iiv-gold-* com valores testados nos dois modos.
+
+    3.4.3 PERSISTENCIA E FLASH
+        - next-themes trata persistencia (localStorage) e evita flash com o script
+          inline. Confirmar que o SSR-like flash nao ocorre no Vite (aplicar classe
+          antes do paint).
+
+
+  ================================================================================
+  3.5 SISTEMA DE ANIMACAO (FRAMER MOTION)
+  ================================================================================
+
+    3.5.1 BIBLIOTECA
+        - Framer Motion (pacote moderno "motion" no npm, ou "framer-motion").
+          Recomendacao: usar o pacote actual e documentar a versao escolhida.
+        - Principio-chave: MOTION COM PROPOSITO, nunca decorativo gratuito. Respeitar
+          SEMPRE prefers-reduced-motion (o HeroSlideshow ja o faz — manter esse padrao
+          e generalizar via hook useReducedMotion do Framer Motion).
+
+    3.5.2 ONDE APLICAR
+        - Transicoes de pagina (AnimatePresence no router; fade/slide subtil ao mudar
+          de rota, curto: 150-250ms).
+        - Reveal on scroll no site publico (seccoes que aparecem com fade/translate
+          suave; whileInView + viewport once).
+        - Hover/press states em cards, botoes e CTA (micro-interaccoes; escala/elevacao
+          subtil, coordenar com a util .hover-lift existente).
+        - Listas admin: animacao de entrada/saida de linhas em criacao/remocao (layout
+          animations comedidas; nao animar tabelas de centenas de linhas — ver 3.5.3).
+        - Modais/dialogs/drawers: entrada/saida coordenada (AnimatePresence) — cuidado
+          para nao colidir com as animacoes internas do Radix (usar uma das duas).
+        - Skeletons/estados de loading com shimmer (ja existe util .shimmer-bg).
+
+    3.5.3 ONDE NAO APLICAR
+        - Tabelas de dados grandes (centenas de linhas) — animar cada linha degrada
+          performance; preferir apenas transicao do container.
+        - Graficos recharts — recharts ja tem animacao propria; nao sobrepor.
+        - Qualquer sitio onde animacao prejudique legibilidade/velocidade de tarefas
+          administrativas repetitivas (o admin e ferramenta de trabalho, nao vitrine).
+        - Quando prefers-reduced-motion: reduce — degradar para transicoes instantaneas
+          ou opacidade minima.
+
+    3.5.4 ORGANIZACAO
+        - src/lib/motion.ts com variants reutilizaveis (fadeInUp, staggerContainer,
+          pageTransition) para consistencia e evitar duplicacao de config.
+
+
+  ================================================================================
+  3.6 TABELAS DE DADOS (TANSTACK TABLE)
+  ================================================================================
+
+    3.6.1 OBJECTIVO
+        - Introduzir @tanstack/react-table para dar sorting, filtering, column-visibility,
+          row-selection e paginacao real as ~41 tabelas admin (hoje <Table> shadcn com
+          .map() manual, sem qualquer destas capacidades — ver gap 1.8.10).
+
+    3.6.2 COMPONENTE GENERICO <DataTable>
+        - Criar src/components/data-table/DataTable.tsx (headless TanStack + shadcn
+          <Table> para apresentacao), com:
+            * definicao de colunas tipada (ColumnDef<T>);
+            * toolbar (pesquisa global, filtros por coluna, botao column-visibility);
+            * cabecalhos ordenaveis;
+            * paginacao (integrada com paginacao SERVER-SIDE — ver 3.6.3);
+            * seleccao de linhas (opcional, para accoes em lote);
+            * slot de RowActions (menu 3 pontos) reutilizavel (resolve gap 1.8.8);
+            * estados vazios/loading/erro consistentes (ver 3.9);
+            * i18n dos textos da tabela.
+        - Subcomponentes: DataTableToolbar, DataTablePagination, DataTableColumnHeader,
+          DataTableViewOptions, DataTableRowActions.
+
+    3.6.3 PAGINACAO — CRITERIO UNICO: SERVER-SIDE
+        - Hoje coexistem usePagination (server-side) e useClientPagination (memoria) —
+          inconsistente (gap 1.8.2). Definir SERVER-SIDE como padrao unico antes da API
+          Laravel: a DataTable pede pagina/tamanho/ordenacao/filtros ao servico, que os
+          traduz em query params (?page=&per_page=&sort=&filter=). Alinha com o envelope
+          Paginated<T> (3.1.5) e resolve os gaps de escala (1.7) — Inseminacao,
+          Agricultura, Producao Pecuaria, Missoes, RH, Investigacao, Formacoes.
+        - Enquanto em MSW, os handlers simulam paginacao/ordenacao server-side sobre as
+          fixtures, para o contrato ficar identico ao Laravel.
+
+    3.6.4 PLANO DE MIGRACAO DAS TABELAS
+        - Migrar em conjunto com a adopcao de react-query e servicos (3.1.7), tabela a
+          tabela. Comecar por uma pagina simples (ex: Utilizadores) como referencia,
+          depois replicar. Colunas por recurso ficam junto do modulo.
+
+
+  ================================================================================
+  3.7 FORMULARIOS (REACT HOOK FORM + ZOD)
+  ================================================================================
+
+    3.7.1 OBJECTIVO
+        - Adoptar react-hook-form + zod sistematicamente no admin (hoje 100% useState
+          manual + validacao ad hoc — gap 1.8.3). O site publico ja usa este padrao;
+          reutilizar a mesma abordagem.
+
+    3.7.2 SCHEMAS PARTILHADOS (CONTRATO UNICO)
+        - Um schema zod por recurso em src/types/dto/ (ou src/schemas/), fonte unica de:
+            * validacao do formulario (zodResolver);
+            * tipo TypeScript (z.infer<typeof schema>) usado tambem como DTO REST (3.1.5);
+            * mapeamento de erros 422 do Laravel de volta para os campos (setError).
+        - Mensagens de validacao via i18n (namespace validation) para PT/EN.
+
+    3.7.3 COMPONENTES REUTILIZAVEIS
+        - Usar <Form> do shadcn (ja existente, assente em react-hook-form).
+        - Criar <EntityFormDialog>/useEntityForm generico para os sub-formularios em
+          dialog quase identicos (CenterDialog/BreederDialog/TankDialog na Inseminacao,
+          ItemDialog/LocationDialog no Stock, AssetDialog/MaintDialog no Patrimonio —
+          gap 1.8.4). Configuravel por schema + campos + servico.
+        - Integrar com react-query (mutations) para submissao, invalidacao de cache,
+          toasts de sucesso/erro consistentes.
+
+    3.7.4 PLANO DE ADOPCAO
+        - Faseado por modulo, em conjunto com a migracao de servicos. Prioridade aos
+          formularios mais repetidos e aos multi-entidade (master-detail, gap 1.8.5),
+          onde a substituicao de Promise.all+.find() por lookup maps/joins do backend
+          traz maior ganho.
+
+
+  ================================================================================
+  3.8 GRAFICOS (RECHARTS) — PADRONIZACAO VISUAL
+  ================================================================================
+
+    3.8.1 OBJECTIVO
+        - Manter recharts (ja usado), mas unificar o aspecto visual de todos os graficos
+          (Dashboard 5 graficos, PainelDetalhe, Processos analitica, BI Institucional).
+
+    3.8.2 SISTEMA UNIFICADO
+        - Criar wrappers/tema central de grafico em src/components/charts/ (ex:
+          ChartContainer, presets de eixos/grelha/tooltip/legenda) que consomem os
+          tokens ja existentes --chart-1..5.
+        - Garantir variantes dark legiveis dos tokens de grafico (ver 3.4.2).
+        - Tooltips e legendas traduzidos (i18n) e formatados com os helpers de 3.3.4
+          (datas/numeros/Kwanza).
+        - Considerar o padrao "chart" do shadcn (assente em recharts) como base do
+          ChartContainer para consistencia com o resto do design system.
+        - Nao sobrepor Framer Motion a animacao nativa do recharts (ver 3.5.3).
+
+    3.8.3 CONSISTENCIA
+        - Paleta categorica coerente e acessivel (daltonismo) partilhada por todos os
+          graficos; mesma tipografia (DM Sans) e espacamentos; estados de "sem dados".
+
+
+  ================================================================================
+  3.9 DESIGN SYSTEM / COMPONENTES SHADCN
+  ================================================================================
+
+    3.9.1 COMPONENTES SHADCN A GARANTIR/INSTALAR
+        - Confirmar presenca e, se faltarem, adicionar: table (base da DataTable),
+          dropdown-menu (RowActions), dialog, sheet/drawer, form, tooltip, popover,
+          command (pesquisa), badge, skeleton, pagination, tabs, select, checkbox,
+          switch, toggle, sonner (toasts — ja existe). Padrao "chart" (3.8) e exemplos
+          de "data-table".
+        - sonner ja existe — consolidar toasts num unico sistema (evitar misturar
+          use-toast antigo com sonner).
+
+    3.9.2 TOKENS, TIPOGRAFIA E PALETA (UI/UX PRO — REQ. 8)
+        - Formalizar a paleta institucional verde+dourado numa escala de tons (50..900)
+          acessivel, mapeada a variaveis HSL para light e dark. Manter a identidade
+          actual — nao inventar cores novas, so sistematizar.
+        - Tipografia: migrar de @import Google Fonts para self-host via @fontsource
+          (@fontsource/space-grotesk + @fontsource/dm-sans, JA instalados). Remover o
+          @import de index.css (redundante, nao optimizado). Adicionar preconnect apenas
+          se algo continuar remoto (idealmente nada).
+        - Manter utilitarios custom existentes (.kicker, .editorial-rule, .lead, .glass,
+          .glass-strong, .gradient-*, .hover-lift, .shimmer-bg) — consolidar e documentar.
+
+    3.9.3 PADROES DE UI CONSISTENTES
+        - Estados vazios/loading/erro consistentes em TODA a app (componentes EmptyState,
+          LoadingState/Skeletons, ErrorState reutilizaveis) — hoje inconsistentes.
+        - Responsividade mobile-first: rever tabelas admin em ecrans pequenos (scroll
+          horizontal controlado / cartoes empilhados), Header/nav mobile, PageHero.
+        - Acessibilidade (WCAG): garantir que as mudancas NAO regridem a auditoria da
+          pagina Acessibilidade.tsx (axe-core). Focar focus-visible, aria-labels
+          (traduzidos), ordem de tabulacao, contraste (3.4.2), reduced-motion (3.5).
+
+    3.9.4 ABSTRACCOES TRANSVERSAIS (RESOLVEM OS 10 PADROES DE 1.8)
+        - useResourceCrud(recurso) / hooks react-query por dominio (padroes 1,5).
+        - Paginacao server-side unica (padrao 2).
+        - RHF+zod + EntityFormDialog (padroes 3,4).
+        - Registo central de enums de dominio -> src/lib/domain-enums.ts com labels
+          traduzidos e "tones"/variantes de badge (padrao 6).
+        - generateInstitutionalPdf(title, sections) unico (padrao 7): consolidar
+          jsPDF+autoTable+ensurePdfFonts (cabecalho/rodape institucional) usado em
+          Resultados/Lotes/Planeamento/Distribuicao/Auditorias/Acessibilidade/BI/Missoes.
+        - RowActions generico (padrao 8).
+        - <WriteGuard module="x"> em vez de {canEdit && ...} inline (padrao 9).
+        - <DataTable> TanStack (padrao 10).
+
+
+------------------------------------------------------------------------------------
+4. CORRECCOES DE CONTEUDO E REMOCAO DE LOVABLE
+------------------------------------------------------------------------------------
+    (Sao correccoes pontuais de conteudo/dados/config — NAO "paginas por terminar".)
+
+    4.1  Login.tsx expoe CREDENCIAIS DE DEMO em texto visivel na UI
+         (admin@iiv.demo / admin123, etc.). REMOVER da UI de producao.
+
+    4.2  DOMINIO DE EMAIL ERRADO: placeholder usa "@iiv.gov.mz" (Mocambique) em vez de
+         ".ao" (Angola) nas 4 paginas de auth. Corrigir para dominio institucional .ao
+         (confirmar dominio exacto com o cliente, ex: @iiv.gov.ao).
+
+    4.3  LINKS SOCIAIS MORTOS: Footer com icones sociais href="#" (placeholder, nao
+         funcionais). Substituir por URLs reais ou remover/ocultar os inexistentes.
+
+    4.4  SEO.tsx com DOMINIO DE PREVIEW LOVABLE: SITE_NAME/BASE_URL apontam para
+         iiv-insight-hub.lovable.app em vez do dominio de producao .gov.ao. Actualizar
+         (afecta canonical URLs, Open Graph, meta).
+
+    4.5  App.css e LIXO DE SCAFFOLD VITE nao usado. Remover.
+
+    4.6  @import de Google Fonts em index.css redundante (self-host @fontsource ja
+         instalado). Remover @import e importar @fontsource (ver 3.9.2).
+
+    4.7  PartnersBar sem LOGOTIPOS reais (6 parceiros so como texto: FAO, OIE/WOAH,
+         MINAGRIP, UAN, SADC, OMS). Candidato a imagens/logotipos oficiais (ver
+         Seccao 5 — media). Confirmar direitos de uso de cada logotipo com o cliente.
+
+    4.8  REMOCAO COMPLETA DE LOVABLE (requisito explicito do utilizador — ver 1.10):
+         a. Apagar a pasta .lovable/ (artefacto proprio da plataforma).
+         b. Remover "lovable-tagger" de package.json (devDependencies) e o import/uso
+            de componentTagger em vite.config.ts.
+         c. Reescrever README.md de raiz — conteudo proprio do projecto IIV/MINAGRIF
+            (stack, como correr localmente, estrutura de pastas), sem qualquer
+            referencia a Lovable.
+         d. Substituir todas as URLs "iiv-insight-hub.lovable.app" (sitemap.xml,
+            robots.txt, SEO.tsx BASE_URL, Index.tsx schema.org url) pelo dominio
+            institucional de producao (depende de D5).
+         e. Reescrever a Edge Function chat-assistant como endpoint/servico Laravel,
+            substituindo a chamada a "ai.gateway.lovable.dev"/LOVABLE_API_KEY por
+            chamada directa a um provedor de LLM proprio (OpenAI/Anthropic/outro —
+            decisao D11, Seccao 9). Esta tarefa fica naturalmente agendada para a
+            Fase 4 (quando o backend Laravel existir), mas os itens a-d nao tem
+            dependencias e podem ser feitos ja na Fase 0.
+
+    4.9  BUN vs NPM: o projecto tem bun.lock/bun.lockb e package-lock.json em
+         simultaneo (dois gestores de pacotes). Escolher UM (recomendado: manter o
+         que a equipa ja usa no dia-a-dia) e remover o lockfile do outro para evitar
+         inconsistencias de versao entre maquinas/CI.
+
+    NOTA: 4.2, 4.3, 4.4, 4.7, 4.8-d dependem de INFORMACAO do cliente (dominio real,
+    URLs sociais, logotipos autorizados) — ver Seccao 9 (Proximos Passos). Os
+    restantes itens de 4.8 (a, b, c) NAO dependem de nada e podem ser feitos de
+    imediato na Fase 0.
+
+
+------------------------------------------------------------------------------------
+5. PLANO DE MEDIA — LISTA DE ~30 FICHEIROS A PREPARAR (PEXELS)
+------------------------------------------------------------------------------------
+    IMPORTANTE: NAO descarregar nada agora. Esta e a lista pronta a executar quando o
+    utilizador der luz verde. Temas de pesquisa em INGLES (Pexels). Preferir imagens
+    licenca Pexels (uso livre) e verificar adequacao ao contexto veterinario/agricola
+    angolano. Videos em loop devem ser curtos (<= 20s), silenciosos, com fallback de
+    imagem estatica e desactivados sob prefers-reduced-motion.
+
+    LEGENDA COLUNAS: Nº | Local | Tipo | Pesquisa (EN) | Proporcao | Uso
+
+    -- SITE PUBLICO: HOME --
+    01 | Home / Hero slide 1        | Foto  | "veterinary laboratory researcher microscope" | 16:9  | bg estatico
+    02 | Home / Hero slide 2        | Foto  | "cattle herd africa savanna farm"              | 16:9  | bg estatico
+    03 | Home / Hero slide 3        | Foto  | "poultry farm chickens vaccination"            | 16:9  | bg estatico
+    04 | Home / Hero slide 4        | Foto  | "scientist pipette vaccine vial lab"           | 16:9  | bg estatico
+    05 | Home / Hero slide 5        | Foto  | "agriculture field crops africa aerial"        | 16:9  | bg estatico
+    06 | Home / Hero (opcional)     | Video | "laboratory research slow motion loop"         | 16:9  | video loop (fallback=01)
+    07 | Home / Seccao "Sobre" CTA  | Foto  | "african veterinarian examining animal"        | 4:3   | bg estatico
+    08 | Home / Seccao estatisticas | Foto  | "modern science laboratory clean"              | 21:9  | bg com overlay
+    09 | Home / Seccao servicos     | Foto  | "veterinary vaccine production facility"       | 3:2   | card/bg
+
+    -- SITE PUBLICO: SOBRE --
+    10 | Sobre / PageHero           | Foto  | "veterinary institute building africa"         | 21:9  | bg hero + overlay
+    11 | Sobre / Missao/Visao       | Foto  | "team scientists meeting laboratory"           | 4:3   | bloco lateral
+    12 | Sobre / Historia           | Foto  | "vintage laboratory equipment research"        | 3:2   | bloco
+
+    -- SITE PUBLICO: SERVICOS --
+    13 | Servicos / PageHero        | Foto  | "veterinary diagnostics testing sample"        | 21:9  | bg hero + overlay
+    14 | Servicos / Diagnostico     | Foto  | "petri dish culture bacteria lab"              | 1:1   | card
+    15 | Servicos / Vacinas         | Foto  | "vaccine vials production line"                | 1:1   | card
+    16 | Servicos / Inspeccao       | Foto  | "food safety inspection meat quality"          | 1:1   | card
+    17 | Servicos / Formacao        | Foto  | "training workshop scientists africa"          | 1:1   | card
+
+    -- SITE PUBLICO: NOTICIAS / LEGISLACAO --
+    18 | Noticias / PageHero        | Foto  | "newsroom press documents desk"                | 21:9  | bg hero + overlay
+    19 | Noticias / fallback card   | Foto  | "agriculture livestock generic news"           | 3:2   | imagem fallback quando noticia sem foto
+    20 | Legislacao / PageHero      | Foto  | "legal documents law books gavel"              | 21:9  | bg hero + overlay
+    21 | Legislacao / fallback      | Foto  | "official government document stamp"            | 3:2   | fallback
+
+    -- SITE PUBLICO: CONTACTOS --
+    22 | Contactos / PageHero       | Foto  | "office reception contact desk modern"         | 21:9  | bg hero + overlay
+    23 | Contactos / mapa/local     | Foto  | "luanda angola city aerial"                    | 4:3   | bloco lateral
+
+    -- AUTENTICACAO (painel branding split-screen) --
+    24 | Login / painel esquerdo    | Foto  | "microscope lab abstract green"                | 3:4   | bg painel (com overlay de gradiente)
+    25 | Registar / painel esquerdo | Foto  | "science teamwork collaboration"               | 3:4   | bg painel
+    26 | Recuperar/Redefinir painel | Foto  | "abstract green biology pattern"               | 3:4   | bg painel
+
+    -- PARCEIROS (PartnersBar) — confirmar direitos antes de usar --
+    27 | PartnersBar / textura      | Foto  | "subtle abstract green texture background"     | 21:9  | faixa de fundo subtil (logotipos oficiais vem do cliente, nao de Pexels)
+
+    -- ADMIN (uso comedido; ferramenta de trabalho, nao vitrine) --
+    28 | Admin / Login/entrada      | Foto  | "clean minimal green gradient background"      | 16:9  | bg discreto
+    29 | Admin / Dashboard vazio    | Foto  | "empty state illustration data minimal"        | 1:1   | ilustracao estado vazio (preferir SVG/ilustracao propria)
+    30 | Global / OG image social   | Foto  | "veterinary institute brand hero"              | 1200x630 | imagem Open Graph (SEO.tsx)
+
+    NOTAS DE PRODUCAO DE MEDIA:
+      - Optimizar: converter para WebP/AVIF, gerar tamanhos responsivos (srcset),
+        comprimir; guardar em src/assets/ organizado por area (hero/, sobre/, servicos/,
+        auth/, og/).
+      - Videos: MP4 (H.264) + WebM, poster de fallback, loop/muted/playsinline,
+        desligados sob prefers-reduced-motion.
+      - As 5 imagens existentes (hero-aves, hero-campo, hero-investigacao, hero-lab,
+        hero-vacinas) podem ser reaproveitadas/substituidas por estas, com relacao
+        tematica correcta (hoje sao reutilizadas de forma cruzada e repetitiva).
+      - Verificar licenca/atribuicao Pexels e adequacao cultural (contexto angolano).
+
+
+------------------------------------------------------------------------------------
+6. FASEAMENTO / ROADMAP (ORDEM E DEPENDENCIAS, SEM DATAS)
+------------------------------------------------------------------------------------
+
+  FASE 0 — FUNDACOES (pre-requisito de tudo)
+      - REMOVER Lovable (itens sem dependencias externas, 4.8 a/b/c): apagar .lovable/,
+        remover lovable-tagger (package.json + vite.config.ts), reescrever README.md.
+      - Escolher UM gestor de pacotes (npm vs bun) e remover o lockfile do outro — 4.9.
+      - Instalar dependencias novas (Seccao 7).
+      - Activar TEMA dark/light (ThemeProvider + toggle Header) — 3.4.
+      - i18n: init i18next + namespaces base (common/nav/validation/enums) + language
+        switcher no Header — 3.3.
+      - Arquitectura de dados MOCK: lib/http.ts, queryClient, estrutura services/api,
+        types/dto, MSW + fixtures + handlers base — 3.1.
+      - Tipografia self-host (@fontsource) + remover @import + remover App.css — 3.9.2/4.
+      - Formalizar paleta/tokens light+dark — 3.9.2.
+      - Componentes base do design system: <DataTable>, <EntityFormDialog>, EmptyState/
+        LoadingState/ErrorState, ChartContainer, generateInstitutionalPdf, WriteGuard,
+        RowActions, domain-enums, lib/motion.ts, lib/format.ts — 3.5-3.9.
+      DEPENDENCIAS: nenhuma (base).
+
+  FASE 1 — SITE PUBLICO
+      - i18n de todas as paginas publicas (extraccao PT + traducao EN) — 3.3.3.
+      - Aplicar dark: e tokens em todas as paginas publicas (contraste WCAG) — 3.4.2.
+      - Animacao com proposito (page transitions, reveal on scroll, hover) — 3.5.
+      - Migrar acesso a dados publico (noticias/legislacao/contactos/hero/stats) para
+        servicos + react-query + MSW — 3.1.7.
+      - Correccoes de conteudo publico: SEO domain, links sociais, PartnersBar,
+        placeholders/dominio auth — Seccao 4.
+      DEPENDE DE: Fase 0.
+
+  FASE 2 — ADMIN (TABELAS + FORMULARIOS + DADOS)
+      - Migrar acesso a dados admin para servicos + react-query + MSW, modulo a modulo
+        (ordem de 3.1.7).
+      - Substituir tabelas por <DataTable> TanStack com paginacao server-side unica —
+        3.6 (resolve gaps de escala 1.7).
+      - Adoptar RHF+zod + EntityFormDialog nos formularios admin — 3.7.
+      - Padronizar graficos (ChartContainer) — 3.8.
+      - i18n admin, modulo a modulo — 3.3.
+      - Consolidar PDF, enums, RowActions, WriteGuard — 3.9.4.
+      - Dark mode/contraste nas paginas admin — 3.4.2.
+      DEPENDE DE: Fase 0 (componentes base); pode correr em paralelo parcial com Fase 1.
+
+  FASE 3 — MEDIA + POLISH + AUDITORIA
+      - Descarregar/optimizar os ~30 ficheiros de media (Seccao 5) — apos luz verde.
+      - Integrar media (heros, backgrounds, auth panels, OG, carrosseis embla).
+      - Polish de micro-interaccoes e estados vazios/loading/erro finais.
+      - Auditoria de acessibilidade completa (axe-core / pagina Acessibilidade) para
+        garantir ZERO regressao WCAG; auditoria de contraste final light/dark.
+      - Auditoria de performance (Lighthouse): fontes, imagens, bundle, animacoes.
+      DEPENDE DE: Fases 1 e 2; luz verde para media.
+
+  FASE 4 — MIGRACAO REAL PARA LARAVEL (quando o backend existir) — DESCOMISSIONAMENTO
+           TOTAL DO SUPABASE, NAO APENAS "TROCA DE SDK"
+      - Migrar autenticacao Supabase Auth -> Sanctum (reescrever useAuth + paginas auth)
+        — 3.2.
+      - Migrar STORAGE (buckets noticias/legislation/documents/hero-slides/avatars)
+        para disco de ficheiros Laravel (local/S3) — 3.1.7 Passo D.
+      - Migrar REALTIME (LiveStats, NotificationCenter, Processos, Documentos) para
+        polling react-query ou Laravel Reverb/Echo — 3.1.7 Passo D (decisao D12).
+      - Reescrever chat-assistant e send-transactional-email como endpoints/jobs
+        Laravel, removendo a dependencia do Lovable AI Gateway — 4.8-e (decisao D11).
+      - Desligar MSW, apontar VITE_API_URL para Laravel, ajustar (de)serializacao e
+        edge-cases por modulo — 3.1.7 Passo D.
+      - Validar que a autorizacao REAL esta implementada no backend (Policies/Gates) —
+        3.2.4 (CRITICO: RLS deixou de existir).
+      - REMOVER POR COMPLETO a dependencia @supabase/supabase-js e todas as
+        configuracoes/variaveis de ambiente Supabase do frontend — criterio de
+        saida desta fase (nao opcional): zero referencias a Supabase no codigo.
+      DEPENDE DE: backend Laravel pronto; Fases 0-2.
+
+
+------------------------------------------------------------------------------------
+7. DEPENDENCIAS NPM A ADICIONAR
+------------------------------------------------------------------------------------
+
+    NOVAS (a instalar):
+      - motion (ou framer-motion)      -> animacoes (Framer Motion) — 3.5.
+      - @tanstack/react-table          -> tabelas de dados (sorting/filter/paginacao) — 3.6.
+      - i18next                        -> nucleo i18n — 3.3.
+      - react-i18next                  -> binding React do i18next — 3.3.
+      - i18next-browser-languagedetector -> deteccao de idioma — 3.3.
+      - axios                          -> client HTTP unico (ou 'ky' como alternativa) — 3.1.3.
+      - msw                            -> mock de rede (dev + testes) — 3.1.6.
+
+    JA INSTALADAS — PASSAR A USAR:
+      - @tanstack/react-query          -> activar como camada de dados/cache — 3.1.
+      - next-themes                    -> activar ThemeProvider + toggle — 3.4.
+      - @fontsource/dm-sans            -> self-host tipografia — 3.9.2.
+      - @fontsource/space-grotesk      -> self-host tipografia — 3.9.2.
+      - embla-carousel(-react)         -> carrosseis de media — 3.5/5.
+      - react-hook-form + zod          -> adoptar no admin — 3.7.
+      - class-variance-authority       -> continuar (variantes de componentes).
+
+    OPCIONAL / A CONSIDERAR:
+      - zustand (ou Context leve)      -> estado de UI global (ex: preferencias, filtros
+                                          persistentes) SE necessario — Req. 4.
+      - i18next-parser (devDep)        -> extraccao/auditoria de chaves i18n — 3.3.3.
+      - @tanstack/react-query-devtools (devDep) -> debug de queries.
+
+    A REMOVER JA NA FASE 0 (sem dependencias, requisito explicito — ver 4.8/4.9):
+      - lovable-tagger (devDependency)  -> remover de package.json + plugin em
+                                          vite.config.ts.
+      - lockfile duplicado (bun.lock/bun.lockb OU package-lock.json, manter so um).
+
+    A REMOVER OBRIGATORIAMENTE NO FIM DA FASE 4 (backend 100% Laravel — sem
+    coexistencia definitiva com Supabase; nao e opcional):
+      - @supabase/supabase-js          -> quando TODOS os modulos migrarem para
+                                          Laravel (dados, auth, storage, realtime,
+                                          edge functions) — ver Fase 4, 3.1.7 Passo D.
+
+
+------------------------------------------------------------------------------------
+8. RISCOS E MITIGACOES
+------------------------------------------------------------------------------------
+
+    R1  Autorizacao real depende do RLS Supabase; ao migrar, o RLS desaparece.
+        MITIGACAO: reimplementar autorizacao no Laravel (Policies/Gates/middleware) —
+        3.2.4. Nunca confiar na RBAC de frontend como fronteira de seguranca.
+
+    R2  Migracao dos ~41 pontos de acoplamento Supabase e extensa e propensa a regressao.
+        MITIGACAO: faseamento modulo a modulo (3.1.7), do simples ao complexo; MSW
+        garante contrato identico ao Laravel; testar cada modulo antes de avancar.
+
+    R3  Contrato REST divergir da implementacao real do Laravel (snake vs camel,
+        paginacao, formatos de erro).
+        MITIGACAO: fixar cedo o contrato (endpoints.ts + DTOs + envelope Paginated),
+        alinhar com a equipa backend ANTES da Fase 4; usar API Resources Laravel.
+
+    R4  i18n em ~55 paginas e trabalhoso e sujeito a strings esquecidas.
+        MITIGACAO: extraccao faseada por area; i18next-parser para detectar chaves em
+        falta/orfas; PT como fallback garante que nada "parte" se faltar traducao.
+
+    R5  Dark mode pode expor contrastes maus (cores hardcoded, glass/backdrop-blur).
+        MITIGACAO: auditoria de contraste sistematica (3.4.2); forcar uso de tokens HSL;
+        validar WCAG AA nos dois temas.
+
+    R6  Animacoes podem degradar performance (tabelas grandes) ou acessibilidade.
+        MITIGACAO: motion com proposito (3.5.3); respeitar prefers-reduced-motion;
+        nao animar linhas de tabelas grandes.
+
+    R7  Regressao na auditoria de acessibilidade existente (Acessibilidade.tsx/axe-core).
+        MITIGACAO: correr axe-core apos cada fase; incluir a11y na definicao de "pronto".
+
+    R8  Complexidade dos modulos pesados (Missoes ~757 linhas, Processos BPM, BI).
+        MITIGACAO: deixar para o fim da ordem de migracao; abstraccoes ja maduras e
+        testadas nos modulos simples antes de os atacar.
+
+    R9  Dependencias de conteudo do cliente (dominio real, logotipos, URLs sociais).
+        MITIGACAO: recolher cedo (Seccao 9); nao bloquear implementacao tecnica por isso.
+
+    R10 Media Pexels — licenca/adequacao cultural.
+        MITIGACAO: verificar licenca Pexels; curadoria com contexto angolano; logotipos
+        oficiais vem do cliente, nao de bancos de imagem.
+
+    R11 Descomissionamento do Supabase e mais do que trocar o SDK: Storage, Realtime
+        e Edge Functions (chat-assistant no Lovable AI Gateway, send-transactional-
+        email) precisam de equivalente funcional no Laravel antes do "apagar" final.
+        MITIGACAO: mapear cada servico Supabase para o seu equivalente Laravel logo
+        na Fase 0/3.1.7 (disco de ficheiros, polling/Reverb, Mail/jobs, chamada a LLM
+        proprio); nao apagar nada em producao antes do equivalente estar validado.
+
+    R12 Chat assistant perde o backend actual (Lovable AI Gateway) ao remover Lovable/
+        Supabase; sem substituicao, a funcionalidade de chat desaparece.
+        MITIGACAO: decidir cedo o provedor de LLM proprio (D11) e orcar a
+        reimplementacao como parte da Fase 4, nao como detalhe tardio.
+
+
+------------------------------------------------------------------------------------
+9. PROXIMOS PASSOS (DECISOES/APROVACOES NECESSARIAS ANTES DE IMPLEMENTAR)
+------------------------------------------------------------------------------------
+
+    D1  Aprovar este plano e o faseamento (Seccao 6).
+
+    D2  Confirmar o pacote de animacao: "motion" (moderno) vs "framer-motion" (classico).
+
+    D3  Confirmar o client HTTP: axios (recomendado) vs ky.
+
+    D4  Confirmar a estrategia de auth Sanctum: OPCAO A cookie-based SPA (recomendada)
+        vs OPCAO B token Bearer — 3.2.2. Alinhar com a equipa backend Laravel.
+
+    D5  Fornecer INFORMACAO DE CONTEUDO do cliente:
+          - dominio institucional REAL (para SEO e emails; ex: iiv.gov.ao?) — 4.2/4.4;
+          - URLs reais das redes sociais (ou confirmar que nao existem) — 4.3;
+          - logotipos oficiais autorizados dos 6 parceiros (FAO, WOAH, MINAGRIP, UAN,
+            SADC, OMS) e direitos de uso — 4.7.
+
+    D6  Dar LUZ VERDE ao download de media Pexels (Seccao 5) — so entao se executa.
+
+    D7  Confirmar remocao definitiva das credenciais de demo do Login (4.1) e se e
+        preciso um ambiente de demo separado.
+
+    D8  Definir estado global: introduzir zustand ou manter Context leve? — Req. 4.
+
+    D9  Alinhar convencao do contrato REST com o backend (snake vs camelCase, formato
+        de paginacao e de erros) — R3.
+
+    D10 Confirmar variaveis de ambiente e dominios (VITE_API_URL, VITE_API_MOCK,
+        SANCTUM stateful domains, CORS) para dev/staging/producao.
+
+    D11 Escolher o provedor de LLM proprio para substituir o Lovable AI Gateway no
+        chat-assistant (ex: OpenAI, Anthropic, outro) e quem fornece a chave de API
+        — 4.8-e, R12.
+
+    D12 Escolher a estrategia de tempo-real pos-Supabase: polling via react-query
+        (mais simples) vs WebSockets (Laravel Reverb/Pusher + Echo) — por caso de
+        uso (LiveStats, NotificationCenter, Processos, Documentos) — 3.1.7 Passo D.
+
+    D13 Confirmar gestor de pacotes unico do projecto: npm ou bun (hoje coexistem
+        lockfiles dos dois) — 4.9.
+
+    APOS estas decisoes, iniciar pela FASE 0 (fundacoes).
+
+====================================================================================
+ FIM DO PLANO
+====================================================================================
