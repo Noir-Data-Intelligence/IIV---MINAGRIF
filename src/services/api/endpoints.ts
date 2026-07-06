@@ -1,8 +1,10 @@
 /**
  * Mapa central de rotas REST — fonte única de verdade das URLs da API.
  *
- * Todas as URLs são RELATIVAS à baseURL (`VITE_API_URL`, ex.
- * "http://localhost:8081/api"), por isso NÃO incluem o prefixo `/api`.
+ * Todas as URLs são RELATIVAS à baseURL (`VITE_API_URL`, por omissão "/api" —
+ * relativo de propósito, para funcionar em qualquer porta local; em produção
+ * com o backend Laravel real, aponta para o URL absoluto da API), por isso NÃO
+ * incluem o prefixo `/api`.
  * Ex.: endpoints.noticias.list === "/noticias" -> pedido a ".../api/noticias".
  *
  * Por agora só o módulo `noticias` tem implementação real (serviço + handlers

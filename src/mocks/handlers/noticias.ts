@@ -11,7 +11,7 @@ import type { Paginated } from "@/types/dto/paginated";
  *
  * Os paths usam o wildcard `*` no início (padrão recomendado pela documentação
  * MSW) para casar independentemente da baseURL exacta configurada em http.ts
- * (`http://localhost:8081/api`). Assim `*​/api/noticias` intercepta o pedido
+ * (por omissão relativa, "/api"). Assim `*​/api/noticias` intercepta o pedido
  * real seja qual for o host/porta.
  */
 
