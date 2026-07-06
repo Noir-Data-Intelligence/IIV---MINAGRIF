@@ -1,0 +1,67 @@
+{
+  "seo": {
+    "title": "Contactos",
+    "description": "Envie-nos uma mensagem, consulte horários, contactos e estações regionais do Instituto de Investigação Veterinária de Angola."
+  },
+  "hero": {
+    "kicker": "Fale Connosco",
+    "title": "Entre em contacto com o Instituto.",
+    "lead": "Esclareça dúvidas, solicite análises ou inicie uma parceria com o IIV.",
+    "breadcrumb": "Contactos"
+  },
+  "form": {
+    "kicker": "Mensagem",
+    "title": "Envie-nos uma mensagem",
+    "lead": "Resposta em até dois dias úteis.",
+    "labels": {
+      "nome": "Nome",
+      "email": "Email",
+      "assunto": "Assunto",
+      "mensagem": "Mensagem"
+    },
+    "placeholders": {
+      "nome": "O seu nome",
+      "email": "seu@email.com",
+      "assunto": "Assunto da mensagem",
+      "mensagem": "Escreva a sua mensagem..."
+    },
+    "submit": "Enviar mensagem",
+    "submitting": "A enviar..."
+  },
+  "validation": {
+    "nomeCurto": "Nome demasiado curto",
+    "emailInvalido": "Email inválido",
+    "assuntoCurto": "Assunto demasiado curto",
+    "mensagemCurta": "Mensagem demasiado curta"
+  },
+  "sidebar": {
+    "kicker": "Sede",
+    "title": "Instituto de Investigação Veterinária"
+  },
+  "contactLabels": {
+    "morada": "Morada",
+    "telefone": "Telefone",
+    "email": "Email",
+    "horario": "Horário"
+  },
+  "map": {
+    "kicker": "Como chegar",
+    "title": "A nossa localização",
+    "lead": "Sede do Instituto em Luanda. Visitas técnicas mediante marcação prévia.",
+    "iframeTitle": "Mapa da sede do IIV em Luanda",
+    "copyright": "Mapa: © OpenStreetMap contributors —",
+    "viewFull": "ver mapa completo"
+  },
+  "estacoes": {
+    "kicker": "Rede Nacional",
+    "title": "Estações regionais",
+    "lead": "Presença em todas as principais regiões do país, ao serviço de produtores e médicos veterinários."
+  },
+  "toast": {
+    "validationTitle": "Verifique os campos",
+    "validationFallback": "Dados inválidos",
+    "errorTitle": "Erro ao enviar",
+    "successTitle": "Mensagem enviada",
+    "successDescription": "Entraremos em contacto brevemente."
+  }
+}

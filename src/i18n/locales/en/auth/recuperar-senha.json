@@ -1,0 +1,25 @@
+{
+  "backToPortal": "Back to portal",
+  "brand": {
+    "title": "Recover\nPassword",
+    "subtitle": "Enter your institutional email and you will receive instructions to reset your password."
+  },
+  "footer": {
+    "copyright": "© {{year}} IIV — All rights reserved"
+  },
+  "form": {
+    "title": "Recover access",
+    "subtitle": "Enter the email associated with your account to receive the instructions.",
+    "emailLabel": "Institutional email",
+    "emailPlaceholder": "name@iiv.gov.ao",
+    "submitDefault": "Send Instructions",
+    "submitLoading": "Sending..."
+  },
+  "rememberedPassword": "Remembered your password?",
+  "backToLogin": "Back to login",
+  "toast": {
+    "errorTitle": "Error",
+    "successTitle": "Email sent",
+    "successDescription": "Check your inbox to reset your password."
+  }
+}

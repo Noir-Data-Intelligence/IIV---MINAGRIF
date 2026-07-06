@@ -1,0 +1,35 @@
+{
+  "list": {
+    "seo": {
+      "title": "News",
+      "description": "News, campaigns and initiatives from Angola's Veterinary Research Institute."
+    },
+    "hero": {
+      "kicker": "Press Room",
+      "title": "Institutional news and updates.",
+      "lead": "Follow the projects, campaigns and initiatives of the Veterinary Research Institute.",
+      "breadcrumb": "News"
+    },
+    "filters": {
+      "all": "All"
+    },
+    "state": {
+      "empty": "No news found for this category.",
+      "readMore": "Read article"
+    }
+  },
+  "detail": {
+    "back": "News",
+    "seo": {
+      "fallbackDescription": "IIV news published on {{date}}.",
+      "notFoundTitle": "News article not found",
+      "notFoundDescription": "The requested news article is not available."
+    },
+    "notFound": {
+      "title": "News article not found",
+      "message": "The news article you are looking for may have been removed or is not published.",
+      "back": "Back to news"
+    },
+    "empty": "Content coming soon."
+  }
+}

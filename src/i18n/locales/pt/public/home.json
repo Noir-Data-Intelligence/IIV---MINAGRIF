@@ -1,0 +1,45 @@
+{
+  "seo": {
+    "title": "Instituto de Investigação Veterinária de Angola",
+    "description": "Investigação científica, diagnóstico laboratorial e produção de vacinas ao serviço da saúde animal e segurança alimentar em Angola."
+  },
+  "editorial": {
+    "kicker": "Edição Nº 01 — 2026",
+    "title": "Investigar para proteger a saúde animal de Angola.",
+    "lead": "O Instituto de Investigação Veterinária é a instituição pública responsável pela investigação científica, produção de vacinas e diagnóstico laboratorial ao serviço da pecuária e da saúde pública nacional.",
+    "body": "Desde 1965, o IIV apoia o desenvolvimento do sector agropecuário em todas as províncias do país, com uma rede integrada de laboratórios, estações regionais e parcerias com organizações internacionais de referência.",
+    "cta": "Conheça o Instituto"
+  },
+  "services": {
+    "kicker": "O que fazemos",
+    "title": "Áreas de atuação",
+    "viewAll": "Ver todos os serviços",
+    "featuredLabel": "Destaque",
+    "itemLabel": "Serviço",
+    "learnMore": "Saber mais",
+    "items": [
+      { "title": "Diagnóstico Laboratorial", "desc": "Análises completas em virologia, bacteriologia e patologia animal." },
+      { "title": "Produção de Vacinas", "desc": "Fabrico de imunobiológicos veterinários com padrão internacional." },
+      { "title": "Investigação Científica", "desc": "Pesquisa aplicada à saúde animal e segurança alimentar." },
+      { "title": "Formação Técnica", "desc": "Capacitação de quadros para o sector veterinário nacional." }
+    ]
+  },
+  "manifesto": {
+    "quote": "“A nossa missão é gerar conhecimento científico que proteja os rebanhos, fortaleça a economia rural e assegure alimentos seguros para todos os angolanos.”",
+    "author": "Direcção do IIV",
+    "authorRole": "Instituto de Investigação Veterinária"
+  },
+  "news": {
+    "kicker": "Em destaque",
+    "title": "Últimas notícias",
+    "viewAll": "Arquivo completo",
+    "empty": "Sem notícias publicadas no momento."
+  },
+  "cta": {
+    "kicker": "Trabalhar connosco",
+    "title": "Precisa de análises, vacinas ou consultoria técnica?",
+    "body": "A nossa equipa está disponível para apoiar produtores, médicos veterinários, instituições públicas e parceiros internacionais. Entre em contacto.",
+    "contact": "Contacte-nos",
+    "services": "Ver serviços"
+  }
+}

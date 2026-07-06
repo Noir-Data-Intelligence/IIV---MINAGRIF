@@ -1,0 +1,32 @@
+{
+  "brand": {
+    "orgNameLine1": "Veterinary Research",
+    "orgNameLine2": "Institute",
+    "description": "Public institution dedicated to research, diagnostics and production in the field of animal health in Angola."
+  },
+  "nav": {
+    "heading": "Navigation",
+    "links": {
+      "about": "About IIV",
+      "services": "Services",
+      "legislation": "Legislation",
+      "news": "News"
+    }
+  },
+  "legal": {
+    "heading": "Legal",
+    "terms": "Terms of Use",
+    "privacy": "Privacy Policy",
+    "legislation": "Applicable Legislation"
+  },
+  "contact": {
+    "heading": "Contacts",
+    "address": "Luanda, Angola",
+    "phone": "+244 222 000 000",
+    "email": "info@iiv.gov.ao"
+  },
+  "bottom": {
+    "copyright": "Veterinary Research Institute",
+    "rights": "All rights reserved"
+  }
+}

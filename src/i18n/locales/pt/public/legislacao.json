@@ -1,0 +1,39 @@
+{
+  "seo": {
+    "title": "Legislação",
+    "description": "Diplomas, normas e regulamentos aplicáveis à saúde animal e à actividade veterinária em Angola."
+  },
+  "hero": {
+    "kicker": "Quadro Legal",
+    "title": "Legislação e regulamentação do sector.",
+    "lead": "Diplomas, normas e regulamentos aplicáveis à saúde animal e ao exercício da actividade veterinária em Angola.",
+    "breadcrumb": "Legislação"
+  },
+  "search": {
+    "placeholder": "Pesquisar legislação..."
+  },
+  "tabs": {
+    "todos": "Todos",
+    "tipos": {
+      "lei": "Lei",
+      "decreto": "Decreto",
+      "regulamento": "Regulamento",
+      "norma": "Norma",
+      "portaria": "Portaria"
+    }
+  },
+  "list": {
+    "viewDetails": "Ver detalhes",
+    "empty": "Nenhum diploma encontrado."
+  },
+  "detail": {
+    "notFound": {
+      "title": "Diploma não encontrado",
+      "back": "Voltar à legislação"
+    },
+    "back": "Voltar",
+    "download": "Descarregar PDF",
+    "pdfUnavailable": "Documento PDF ainda não disponível para este diploma.",
+    "numberPrefix": "Nº"
+  }
+}

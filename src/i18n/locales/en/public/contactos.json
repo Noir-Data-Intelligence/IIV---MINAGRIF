@@ -1,0 +1,67 @@
+{
+  "seo": {
+    "title": "Contact",
+    "description": "Send us a message, check hours, contacts and regional stations of Angola's Veterinary Research Institute."
+  },
+  "hero": {
+    "kicker": "Get In Touch",
+    "title": "Get in touch with the Institute.",
+    "lead": "Clarify questions, request analyses or start a partnership with IIV.",
+    "breadcrumb": "Contact"
+  },
+  "form": {
+    "kicker": "Message",
+    "title": "Send us a message",
+    "lead": "Response within two business days.",
+    "labels": {
+      "nome": "Name",
+      "email": "Email",
+      "assunto": "Subject",
+      "mensagem": "Message"
+    },
+    "placeholders": {
+      "nome": "Your name",
+      "email": "your@email.com",
+      "assunto": "Message subject",
+      "mensagem": "Write your message..."
+    },
+    "submit": "Send message",
+    "submitting": "Sending..."
+  },
+  "validation": {
+    "nomeCurto": "Name too short",
+    "emailInvalido": "Invalid email",
+    "assuntoCurto": "Subject too short",
+    "mensagemCurta": "Message too short"
+  },
+  "sidebar": {
+    "kicker": "Headquarters",
+    "title": "Veterinary Research Institute"
+  },
+  "contactLabels": {
+    "morada": "Address",
+    "telefone": "Phone",
+    "email": "Email",
+    "horario": "Hours"
+  },
+  "map": {
+    "kicker": "How to get here",
+    "title": "Our location",
+    "lead": "Institute headquarters in Luanda. Technical visits by prior appointment.",
+    "iframeTitle": "Map of IIV headquarters in Luanda",
+    "copyright": "Map: © OpenStreetMap contributors —",
+    "viewFull": "view full map"
+  },
+  "estacoes": {
+    "kicker": "National Network",
+    "title": "Regional stations",
+    "lead": "Presence in all the country's main regions, serving producers and veterinary professionals."
+  },
+  "toast": {
+    "validationTitle": "Check the fields",
+    "validationFallback": "Invalid data",
+    "errorTitle": "Error sending",
+    "successTitle": "Message sent",
+    "successDescription": "We will get in touch shortly."
+  }
+}

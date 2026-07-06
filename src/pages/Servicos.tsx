@@ -1,119 +1,116 @@
 import { Link } from "react-router-dom";
 import { Microscope, Syringe, FlaskConical, BookOpen, ShieldCheck, FileText, ArrowRight, Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
 import { PageHero } from "@/components/layout/PageHero";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import i18n from "@/i18n";
+import ptServicos from "@/i18n/locales/pt/public/servicos.json";
+import enServicos from "@/i18n/locales/en/public/servicos.json";
 import heroLab from "@/assets/hero/hero-lab.jpg";
 import heroVacinas from "@/assets/hero/hero-vacinas.jpg";
 import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
 import heroCampo from "@/assets/hero/hero-campo.jpg";
 import heroAves from "@/assets/hero/hero-aves.jpg";
 
-const servicos = [
-  {
-    icon: Microscope,
-    kicker: "01 — Diagnóstico",
-    title: "Diagnóstico Laboratorial",
-    desc: "Análises completas em virologia, bacteriologia, parasitologia, serologia e patologia animal. Resultados fiáveis com tecnologia de ponta e validação metodológica rigorosa.",
-    caps: ["Virologia veterinária", "Bacteriologia e antibiograma", "Parasitologia", "Histopatologia"],
-    image: heroLab,
-  },
-  {
-    icon: Syringe,
-    kicker: "02 — Produção",
-    title: "Produção de Vacinas",
-    desc: "Fabricação de vacinas autógenas e comerciais, soros hiperimunes e reagentes de diagnóstico para o sector veterinário angolano e regional.",
-    caps: ["Vacinas autógenas", "Soros hiperimunes", "Reagentes de diagnóstico", "Controlo de qualidade"],
-    image: heroVacinas,
-  },
-  {
-    icon: FlaskConical,
-    kicker: "03 — Investigação",
-    title: "Investigação Científica",
-    desc: "Projectos de investigação aplicada em saúde animal, epidemiologia e segurança alimentar, com parcerias nacionais e internacionais.",
-    caps: ["Epidemiologia veterinária", "Doenças emergentes", "Segurança alimentar", "Publicação científica"],
-    image: heroInvestigacao,
-  },
-  {
-    icon: BookOpen,
-    kicker: "04 — Formação",
-    title: "Formação Técnica",
-    desc: "Programas de capacitação para técnicos veterinários, laboratoristas e profissionais do sector agropecuário em todas as províncias.",
-    caps: ["Acções de formação", "Estágios curriculares", "Workshops técnicos", "Certificação"],
-    image: heroCampo,
-  },
-  {
-    icon: ShieldCheck,
-    kicker: "05 — Qualidade",
-    title: "Controlo de Qualidade",
-    desc: "Validação de métodos, auditorias internas e certificação de conformidade com normas internacionais ISO e OIE.",
-    caps: ["Validação de métodos", "Auditorias", "Não-conformidades", "Acreditação"],
-    image: heroAves,
-  },
-  {
-    icon: FileText,
-    kicker: "06 — Consultoria",
-    title: "Consultoria e Pareceres",
-    desc: "Emissão de pareceres técnicos e consultoria especializada para entidades públicas, organizações e parceiros privados.",
-    caps: ["Pareceres oficiais", "Consultoria técnica", "Apoio regulamentar", "Estudos de impacto"],
-    image: heroInvestigacao,
-  },
+// Namespace "servicos" não faz parte do bundle central (src/i18n/index.ts, que
+// só regista "common"/"nav"). Registamo-lo aqui em runtime para manter esta
+// página autónoma sem tocar na configuração global do i18next.
+if (!i18n.hasResourceBundle("pt", "servicos")) i18n.addResourceBundle("pt", "servicos", ptServicos, true, true);
+if (!i18n.hasResourceBundle("en", "servicos")) i18n.addResourceBundle("en", "servicos", enServicos, true, true);
+
+const servicoMeta = [
+  { icon: Microscope, image: heroLab },
+  { icon: Syringe, image: heroVacinas },
+  { icon: FlaskConical, image: heroInvestigacao },
+  { icon: BookOpen, image: heroCampo },
+  { icon: ShieldCheck, image: heroAves },
+  { icon: FileText, image: heroInvestigacao },
 ];
 
+interface ServicoItem {
+  kicker: string;
+  title: string;
+  desc: string;
+  caps: string[];
+}
+
 export default function Servicos() {
+  const { t } = useTranslation("servicos");
+  const prefersReducedMotion = useReducedMotion();
+
+  // Se o utilizador preferir menos movimento, os variants ficam "vazios" (sem transição visível).
+  const revealVariants = prefersReducedMotion ? {} : fadeInUp;
+  const containerVariants = prefersReducedMotion ? {} : staggerContainer;
+
+  const servicos = t("items", { returnObjects: true }) as unknown as ServicoItem[];
+
   return (
     <>
       <SEO
-        title="Serviços"
-        description="Diagnóstico laboratorial, produção de vacinas, investigação, formação e consultoria do Instituto de Investigação Veterinária."
+        title={t("seo.title")}
+        description={t("seo.description")}
         path="/servicos"
       />
       <PageHero
-        kicker="Áreas de Atuação"
-        title="Serviços ao sector veterinário e à saúde pública."
-        lead="Diagnóstico, produção, investigação, formação e consultoria — uma gama integrada de serviços técnicos."
+        kicker={t("hero.kicker")}
+        title={t("hero.title")}
+        lead={t("hero.lead")}
         image={heroLab}
-        breadcrumb={[{ label: "Serviços" }]}
+        breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
       <section className="py-24">
         <div className="container space-y-24">
           {servicos.map((s, i) => {
             const reverse = i % 2 === 1;
+            const { icon: Icon, image } = servicoMeta[i];
             return (
-              <article
+              <motion.article
                 key={s.title}
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-80px" }}
                 className="grid gap-10 lg:grid-cols-2 items-center pb-24 border-b border-border/40 last:border-b-0 last:pb-0"
               >
-                <div className={reverse ? "lg:order-2" : ""}>
+                <motion.div variants={revealVariants} className={reverse ? "lg:order-2" : ""}>
                   <div className="overflow-hidden rounded-2xl">
-                    <img src={s.image} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
+                    <img src={image} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
                   </div>
-                </div>
-                <div className={reverse ? "lg:order-1 lg:pr-10" : "lg:pl-10"}>
+                </motion.div>
+                <motion.div variants={revealVariants} className={reverse ? "lg:order-1 lg:pr-10" : "lg:pl-10"}>
                   <p className="kicker text-[hsl(var(--iiv-gold))]">
                     <span className="editorial-rule mr-3" /> {s.kicker}
                   </p>
                   <div className="flex items-center gap-4 mt-5 mb-2">
-                    <s.icon className="h-7 w-7 text-primary" strokeWidth={1.5} />
+                    <Icon className="h-7 w-7 text-primary" strokeWidth={1.5} />
                   </div>
                   <h2 className="font-serif text-3xl md:text-4xl leading-tight">{s.title}</h2>
                   <p className="mt-5 text-muted-foreground leading-relaxed">{s.desc}</p>
-                  <ul className="mt-6 grid grid-cols-2 gap-3">
+                  <motion.ul
+                    className="mt-6 grid grid-cols-2 gap-3"
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-80px" }}
+                  >
                     {s.caps.map((c) => (
-                      <li key={c} className="flex items-center gap-2 text-sm">
+                      <motion.li key={c} variants={revealVariants} className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-[hsl(var(--iiv-gold))] shrink-0" />
                         <span>{c}</span>
-                      </li>
+                      </motion.li>
                     ))}
-                  </ul>
+                  </motion.ul>
                   <Button asChild variant="outline" className="mt-7 rounded-xl">
                     <Link to="/contactos">
-                      Solicitar este serviço <ArrowRight className="ml-2 h-4 w-4" />
+                      {t("cta")} <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                </div>
-              </article>
+                </motion.div>
+              </motion.article>
             );
           })}
         </div>

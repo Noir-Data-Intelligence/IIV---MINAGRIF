@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import type { TFunction } from "i18next";
+import { motion, useReducedMotion } from "framer-motion";
 import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
 import { PageHero } from "@/components/layout/PageHero";
 import { Input } from "@/components/ui/input";
@@ -7,23 +10,34 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
+import { useSubmitContactMessage } from "@/hooks/queries/useContactMessages";
+import type { ApiError } from "@/lib/http";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import i18n from "@/i18n";
+import ptContactos from "@/i18n/locales/pt/public/contactos.json";
+import enContactos from "@/i18n/locales/en/public/contactos.json";
 import heroCampo from "@/assets/hero/hero-campo.jpg";
 
-const contactSchema = z.object({
-  nome: z.string().trim().min(2, "Nome demasiado curto").max(100),
-  email: z.string().trim().email("Email inválido").max(255),
-  assunto: z.string().trim().min(2, "Assunto demasiado curto").max(200),
-  mensagem: z.string().trim().min(5, "Mensagem demasiado curta").max(2000),
-});
+// Namespace "contactos" não faz parte do bundle central (src/i18n/index.ts,
+// que só regista "common"/"nav"). Registamo-lo aqui em runtime para manter
+// esta página autónoma sem tocar na configuração global do i18next.
+if (!i18n.hasResourceBundle("pt", "contactos")) i18n.addResourceBundle("pt", "contactos", ptContactos, true, true);
+if (!i18n.hasResourceBundle("en", "contactos")) i18n.addResourceBundle("en", "contactos", enContactos, true, true);
 
-const contactos = [
-  { icon: MapPin, label: "Morada", value: "Rua do IIV, Luanda, Angola" },
-  { icon: Phone, label: "Telefone", value: "+244 222 000 000" },
-  { icon: Mail, label: "Email", value: "info@iiv.gov.ao" },
-  { icon: Clock, label: "Horário", value: "Segunda a Sexta, 08:00 — 16:00" },
-];
+/**
+ * Schema zod construído com `t()` para que as mensagens de validação sigam o
+ * idioma activo. Reconstruído por render (via `useMemo` dependente de `t`),
+ * custo desprezável para um formulário validado apenas no submit.
+ */
+function buildContactSchema(t: TFunction) {
+  return z.object({
+    nome: z.string().trim().min(2, t("validation.nomeCurto")).max(100),
+    email: z.string().trim().email(t("validation.emailInvalido")).max(255),
+    assunto: z.string().trim().min(2, t("validation.assuntoCurto")).max(200),
+    mensagem: z.string().trim().min(5, t("validation.mensagemCurta")).max(2000),
+  });
+}
 
 const estacoes = [
   { nome: "Estação Regional do Huambo", cidade: "Huambo" },
@@ -35,11 +49,26 @@ const estacoes = [
 ];
 
 export default function Contactos() {
-  const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation("contactos");
+  const shouldReduceMotion = useReducedMotion();
+  const { mutateAsync: submitMessage, isPending: submitting } = useSubmitContactMessage();
+
+  const contactSchema = useMemo(() => buildContactSchema(t), [t]);
+
+  const contactos = useMemo(
+    () => [
+      { icon: MapPin, label: t("contactLabels.morada"), value: "Rua do IIV, Luanda, Angola" },
+      { icon: Phone, label: t("contactLabels.telefone"), value: "+244 222 000 000" },
+      { icon: Mail, label: t("contactLabels.email"), value: "info@iiv.gov.ao" },
+      { icon: Clock, label: t("contactLabels.horario"), value: "Segunda a Sexta, 08:00 — 16:00" },
+    ],
+    [t],
+  );
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    const formEl = e.currentTarget;
+    const formData = new FormData(formEl);
     const raw = {
       nome: String(formData.get("nome") || ""),
       email: String(formData.get("email") || ""),
@@ -49,102 +78,98 @@ export default function Contactos() {
     const parsed = contactSchema.safeParse(raw);
     if (!parsed.success) {
       toast({
-        title: "Verifique os campos",
-        description: parsed.error.errors[0]?.message ?? "Dados inválidos",
+        title: t("toast.validationTitle"),
+        description: parsed.error.errors[0]?.message ?? t("toast.validationFallback"),
         variant: "destructive",
       });
       return;
     }
 
-    setSubmitting(true);
-    const id = crypto.randomUUID();
-    const { nome, email, assunto, mensagem } = parsed.data;
-    const { error } = await supabase
-      .from("contact_messages")
-      .insert([{ id, nome, email, assunto, mensagem }]);
-
-    if (error) {
-      setSubmitting(false);
-      toast({ title: "Erro ao enviar", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    // Notificação por e-mail à equipa (silencioso se ainda não configurado)
     try {
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "contact-team-notification",
-          recipientEmail: "info@iiv.gov.ao",
-          idempotencyKey: `contact-${id}`,
-          templateData: parsed.data,
-        },
+      // Cast: nesta versão do zod (3.25.x) o tipo inferido de `safeParse().data`
+      // marca incorrectamente todos os campos como opcionais mesmo sem
+      // refinements (reproduzido isoladamente fora deste ficheiro) — em
+      // runtime, após `parsed.success`, os 4 campos estão sempre presentes.
+      await submitMessage(parsed.data as typeof raw);
+      // NOTA: a notificação por e-mail à equipa (hoje feita, em produção, pela
+      // edge function Supabase `send-transactional-email`) passa a ser
+      // responsabilidade do backend Laravel (Fase 4), disparada ao processar
+      // este POST. O endpoint mock não simula esse envio.
+      formEl.reset();
+      toast({ title: t("toast.successTitle"), description: t("toast.successDescription") });
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        title: t("toast.errorTitle"),
+        description: apiError?.message,
+        variant: "destructive",
       });
-    } catch {
-      // O e-mail de notificação é opcional; mensagem já foi guardada
     }
-
-    setSubmitting(false);
-    (e.target as HTMLFormElement).reset();
-    toast({ title: "Mensagem enviada", description: "Entraremos em contacto brevemente." });
   }
-
 
   return (
     <>
-      <SEO
-        title="Contactos"
-        description="Envie-nos uma mensagem, consulte horários, contactos e estações regionais do Instituto de Investigação Veterinária de Angola."
-        path="/contactos"
-      />
+      <SEO title={t("seo.title")} description={t("seo.description")} path="/contactos" />
       <PageHero
-        kicker="Fale Connosco"
-        title="Entre em contacto com o Instituto."
-        lead="Esclareça dúvidas, solicite análises ou inicie uma parceria com o IIV."
+        kicker={t("hero.kicker")}
+        title={t("hero.title")}
+        lead={t("hero.lead")}
         image={heroCampo}
-        breadcrumb={[{ label: "Contactos" }]}
+        breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
       {/* Form + info */}
       <section className="py-24">
         <div className="container">
-          <div className="grid gap-12 lg:grid-cols-12">
+          <motion.div
+            className="grid gap-12 lg:grid-cols-12"
+            initial={shouldReduceMotion ? undefined : "hidden"}
+            animate={shouldReduceMotion ? undefined : "visible"}
+            variants={shouldReduceMotion ? undefined : staggerContainer}
+          >
             {/* FORM */}
-            <div className="lg:col-span-7">
-              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> Mensagem</p>
-              <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">Envie-nos uma mensagem</h2>
-              <p className="mt-4 text-muted-foreground">Resposta em até dois dias úteis.</p>
+            <motion.div
+              className="lg:col-span-7"
+              variants={shouldReduceMotion ? undefined : fadeInUp}
+            >
+              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("form.kicker")}</p>
+              <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("form.title")}</h2>
+              <p className="mt-4 text-muted-foreground">{t("form.lead")}</p>
 
               <form className="mt-10 space-y-5" onSubmit={onSubmit}>
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="nome">Nome</Label>
-                    <Input id="nome" required placeholder="O seu nome" className="h-11 rounded-xl" />
+                    <Label htmlFor="nome">{t("form.labels.nome")}</Label>
+                    <Input id="nome" name="nome" required placeholder={t("form.placeholders.nome")} className="h-11 rounded-xl" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" required placeholder="seu@email.com" className="h-11 rounded-xl" />
+                    <Label htmlFor="email">{t("form.labels.email")}</Label>
+                    <Input id="email" name="email" type="email" required placeholder={t("form.placeholders.email")} className="h-11 rounded-xl" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="assunto">Assunto</Label>
-                  <Input id="assunto" required placeholder="Assunto da mensagem" className="h-11 rounded-xl" />
+                  <Label htmlFor="assunto">{t("form.labels.assunto")}</Label>
+                  <Input id="assunto" name="assunto" required placeholder={t("form.placeholders.assunto")} className="h-11 rounded-xl" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="mensagem">Mensagem</Label>
-                  <Textarea id="mensagem" required rows={6} placeholder="Escreva a sua mensagem..." className="rounded-xl" />
+                  <Label htmlFor="mensagem">{t("form.labels.mensagem")}</Label>
+                  <Textarea id="mensagem" name="mensagem" required rows={6} placeholder={t("form.placeholders.mensagem")} className="rounded-xl" />
                 </div>
                 <Button type="submit" disabled={submitting} size="lg" className="h-12 rounded-xl px-6 text-sm font-semibold">
-                  {submitting ? "A enviar..." : (<>Enviar mensagem <Send className="ml-2 h-4 w-4" /></>)}
+                  {submitting ? t("form.submitting") : (<>{t("form.submit")} <Send className="ml-2 h-4 w-4" /></>)}
                 </Button>
               </form>
-            </div>
+            </motion.div>
 
             {/* INFO */}
-            <aside className="lg:col-span-5 lg:pl-8 space-y-6">
+            <motion.aside
+              className="lg:col-span-5 lg:pl-8 space-y-6"
+              variants={shouldReduceMotion ? undefined : fadeInUp}
+            >
               <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
                 <div className="gradient-green p-7 text-primary-foreground">
-                  <p className="kicker text-[hsl(var(--iiv-gold))]">Sede</p>
-                  <h3 className="font-serif text-2xl mt-3 leading-tight">Instituto de Investigação Veterinária</h3>
+                  <p className="kicker text-[hsl(var(--iiv-gold))]">{t("sidebar.kicker")}</p>
+                  <h3 className="font-serif text-2xl mt-3 leading-tight">{t("sidebar.title")}</h3>
                 </div>
                 <ul className="divide-y divide-border/60">
                   {contactos.map((c) => (
@@ -160,8 +185,8 @@ export default function Contactos() {
                   ))}
                 </ul>
               </div>
-            </aside>
-          </div>
+            </motion.aside>
+          </motion.div>
         </div>
       </section>
 
@@ -169,15 +194,13 @@ export default function Contactos() {
       <section className="section-divider py-20">
         <div className="container">
           <div className="mb-10 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> Como chegar</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">A nossa localização</h2>
-            <p className="mt-4 text-muted-foreground">
-              Sede do Instituto em Luanda. Visitas técnicas mediante marcação prévia.
-            </p>
+            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("map.kicker")}</p>
+            <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("map.title")}</h2>
+            <p className="mt-4 text-muted-foreground">{t("map.lead")}</p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-border/60 shadow-elegant">
             <iframe
-              title="Mapa da sede do IIV em Luanda"
+              title={t("map.iframeTitle")}
               src="https://www.openstreetmap.org/export/embed.html?bbox=13.20%2C-8.85%2C13.30%2C-8.78&layer=mapnik&marker=-8.815%2C13.246"
               loading="lazy"
               className="w-full h-[420px] border-0"
@@ -185,14 +208,14 @@ export default function Contactos() {
             />
           </div>
           <p className="mt-3 text-xs text-muted-foreground text-center">
-            Mapa: © OpenStreetMap contributors —{" "}
+            {t("map.copyright")}{" "}
             <a
               href="https://www.openstreetmap.org/?mlat=-8.815&mlon=13.246#map=14/-8.815/13.246"
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-foreground"
             >
-              ver mapa completo
+              {t("map.viewFull")}
             </a>
           </p>
         </div>
@@ -202,21 +225,29 @@ export default function Contactos() {
       <section className="section-divider py-24 bg-accent/30">
         <div className="container">
           <div className="mb-12 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> Rede Nacional</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">Estações regionais</h2>
-            <p className="mt-4 text-muted-foreground">
-              Presença em todas as principais regiões do país, ao serviço de produtores e médicos veterinários.
-            </p>
+            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("estacoes.kicker")}</p>
+            <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("estacoes.title")}</h2>
+            <p className="mt-4 text-muted-foreground">{t("estacoes.lead")}</p>
           </div>
-          <div className="grid gap-px bg-border rounded-2xl overflow-hidden border border-border/60 sm:grid-cols-2 lg:grid-cols-3">
+          <motion.div
+            className="grid gap-px bg-border rounded-2xl overflow-hidden border border-border/60 sm:grid-cols-2 lg:grid-cols-3"
+            initial={shouldReduceMotion ? undefined : "hidden"}
+            whileInView={shouldReduceMotion ? undefined : "visible"}
+            viewport={{ once: true, amount: 0.2 }}
+            variants={shouldReduceMotion ? undefined : staggerContainer}
+          >
             {estacoes.map((e) => (
-              <div key={e.nome} className="bg-card p-6">
+              <motion.div
+                key={e.nome}
+                className="bg-card p-6"
+                variants={shouldReduceMotion ? undefined : fadeInUp}
+              >
                 <MapPin className="h-4 w-4 text-[hsl(var(--iiv-gold))] mb-3" />
                 <p className="font-serif text-lg leading-tight">{e.nome}</p>
                 <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">{e.cidade}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
     </>

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { useHeroSlides } from "@/hooks/queries/useHeroSlides";
 
 import heroLab from "@/assets/hero/hero-lab.jpg";
 import heroVacinas from "@/assets/hero/hero-vacinas.jpg";
@@ -37,29 +37,24 @@ export function HeroSlideshow() {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<number | null>(null);
+  const { data, isError } = useHeroSlides();
 
+  // Quando os dados chegarem (ou em caso de array vazio/erro), mantém-se o
+  // fallback para `defaultSlides` — mesma resiliência que a versão Supabase já
+  // tinha.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("hero_slides")
-        .select("*")
-        .eq("published", true)
-        .order("sort_order");
-      if (cancelled || !data || data.length === 0) return;
-      const mapped: Slide[] = data.map((r: any, i: number) => ({
-        image: r.image_url || fallbackImages[i % fallbackImages.length],
-        kicker: r.kicker,
-        title: r.title,
-        subtitle: r.subtitle,
-        cta: r.cta_label,
-        link: r.cta_link,
-      }));
-      setSlides(mapped);
-      setCurrent(0);
-    })();
-    return () => { cancelled = true; };
-  }, []);
+    if (isError || !data || data.length === 0) return;
+    const mapped: Slide[] = data.map((r, i) => ({
+      image: r.imageUrl || fallbackImages[i % fallbackImages.length],
+      kicker: r.kicker,
+      title: r.title,
+      subtitle: r.subtitle,
+      cta: r.ctaLabel,
+      link: r.ctaLink,
+    }));
+    setSlides(mapped);
+    setCurrent(0);
+  }, [data, isError]);
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % slides.length), []);
   const prev = useCallback(() => setCurrent((c) => (c - 1 + slides.length) % slides.length), []);

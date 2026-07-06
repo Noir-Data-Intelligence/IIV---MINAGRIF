@@ -23,5 +23,9 @@
     "title": "Ocorreu um erro",
     "defaultMessage": "Não foi possível carregar os dados. Tenta novamente.",
     "retry": "Tentar novamente"
+  },
+  "breadcrumb": {
+    "home": "Início",
+    "ariaLabel": "Trilha de navegação"
   }
 }

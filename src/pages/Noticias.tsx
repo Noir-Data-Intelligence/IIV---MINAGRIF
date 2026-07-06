@@ -1,69 +1,62 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { PageHero } from "@/components/layout/PageHero";
 import { SEO } from "@/components/SEO";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { useNoticiasList } from "@/hooks/queries/useNoticias";
+import i18n from "@/i18n";
+import ptNoticias from "@/i18n/locales/pt/public/noticias.json";
+import enNoticias from "@/i18n/locales/en/public/noticias.json";
 import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
+import heroLab from "@/assets/hero/hero-lab.jpg";
+import heroVacinas from "@/assets/hero/hero-vacinas.jpg";
 
-interface Noticia {
-  id: string;
-  slug: string;
-  titulo: string;
-  resumo: string | null;
-  categoria: string;
-  image_path: string | null;
-  destaque: boolean;
-  published_at: string | null;
-  created_at: string;
-}
+// Namespace "noticias" partilhado por Noticias.tsx e NoticiaDetalhe.tsx. Registado aqui
+// via addResourceBundle (em vez de em src/i18n/index.ts, que não deve ser editado nesta tarefa).
+i18n.addResourceBundle("pt", "noticias", ptNoticias, true, false);
+i18n.addResourceBundle("en", "noticias", enNoticias, true, false);
+
+/** Sentinela interno do filtro "sem categoria seleccionada" — não é um valor de dados. */
+const ALL_CATEGORY = "__all__";
+
+/** Imagens de recurso quando a notícia não tem `image_path` resolúvel (sem storage real ainda). */
+const fallbackImages = [heroVacinas, heroInvestigacao, heroLab];
+const imageUrl = (path: string | null, i: number) => path || fallbackImages[i % fallbackImages.length];
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString("pt-AO", { day: "2-digit", month: "long", year: "numeric" });
 }
 
-const imageUrl = (path: string | null) =>
-  path ? supabase.storage.from("noticias").getPublicUrl(path).data.publicUrl : heroInvestigacao;
-
 export default function Noticias() {
-  const [items, setItems] = useState<Noticia[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [cat, setCat] = useState("Todas");
+  const { t } = useTranslation("noticias");
+  const shouldReduceMotion = useReducedMotion();
+  const [cat, setCat] = useState<string>(ALL_CATEGORY);
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("noticias")
-        .select("id,slug,titulo,resumo,categoria,image_path,destaque,published_at,created_at")
-        .eq("published", true)
-        .order("destaque", { ascending: false })
-        .order("published_at", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
-      setItems(data ?? []);
-      setLoading(false);
-    })();
-  }, []);
+  const { data, isLoading } = useNoticiasList({ page: 1, perPage: 50, published: true });
+  const items = useMemo(() => data?.data ?? [], [data]);
 
-  const categorias = ["Todas", ...Array.from(new Set(items.map((n) => n.categoria)))];
-  const filtered = items.filter((n) => cat === "Todas" || n.categoria === cat);
+  const categorias = useMemo(
+    () => [ALL_CATEGORY, ...Array.from(new Set(items.map((n) => n.categoria)))],
+    [items],
+  );
+  const filtered = cat === ALL_CATEGORY ? items : items.filter((n) => n.categoria === cat);
   const destaque = filtered[0];
   const restantes = filtered.slice(1);
 
   return (
     <>
-      <SEO
-        title="Notícias"
-        description="Notícias, campanhas e iniciativas do Instituto de Investigação Veterinária de Angola."
-        path="/noticias"
-      />
+      <SEO title={t("list.seo.title")} description={t("list.seo.description")} path="/noticias" />
       <PageHero
-        kicker="Sala de Imprensa"
-        title="Notícias e actualizações institucionais."
-        lead="Acompanhe os projectos, campanhas e iniciativas do Instituto de Investigação Veterinária."
+        kicker={t("list.hero.kicker")}
+        title={t("list.hero.title")}
+        lead={t("list.hero.lead")}
         image={heroInvestigacao}
-        breadcrumb={[{ label: "Notícias" }]}
+        breadcrumb={[{ label: t("list.hero.breadcrumb") }]}
       />
 
       <section className="py-10 border-b border-border/40">
@@ -74,11 +67,18 @@ export default function Noticias() {
                 key={c}
                 onClick={() => setCat(c)}
                 className={cn(
-                  "rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-colors",
-                  cat === c ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent",
+                  "relative rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-colors",
+                  cat === c ? "text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent",
                 )}
               >
-                {c}
+                {cat === c && (
+                  <motion.span
+                    layoutId="noticias-cat-indicator"
+                    className="absolute inset-0 rounded-full bg-primary"
+                    transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <span className="relative">{c === ALL_CATEGORY ? t("list.filters.all") : c}</span>
               </button>
             ))}
           </div>
@@ -87,7 +87,7 @@ export default function Noticias() {
 
       <section className="py-16">
         <div className="container space-y-16">
-          {loading ? (
+          {isLoading ? (
             <div className="grid gap-10 lg:grid-cols-12">
               <Skeleton className="lg:col-span-7 aspect-[16/10] rounded-2xl" />
               <div className="lg:col-span-5 space-y-4">
@@ -97,53 +97,73 @@ export default function Noticias() {
               </div>
             </div>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-20">Sem notícias para esta categoria.</p>
+            <p className="text-center text-muted-foreground py-20">{t("list.state.empty")}</p>
           ) : (
             <>
               {destaque && (
-                <Link to={`/noticias/${destaque.slug}`} className="group grid gap-10 lg:grid-cols-12 items-center">
-                  <div className="lg:col-span-7 overflow-hidden rounded-2xl">
-                    <img
-                      src={imageUrl(destaque.image_path)}
-                      alt={destaque.titulo}
-                      className="aspect-[16/10] w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="lg:col-span-5">
-                    <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-4">
-                      <span className="text-[hsl(var(--iiv-gold))]">{destaque.categoria}</span>
-                      <span className="h-px w-4 bg-border" />
-                      <time>{fmt(destaque.published_at ?? destaque.created_at)}</time>
+                <motion.div
+                  initial={shouldReduceMotion ? undefined : "hidden"}
+                  whileInView={shouldReduceMotion ? undefined : "visible"}
+                  viewport={{ once: true, amount: 0.2 }}
+                  variants={shouldReduceMotion ? undefined : fadeInUp}
+                >
+                  <Link to={`/noticias/${destaque.slug}`} className="group grid gap-10 lg:grid-cols-12 items-center">
+                    <div className="lg:col-span-7 overflow-hidden rounded-2xl">
+                      <img
+                        src={imageUrl(destaque.image_path, 0)}
+                        alt={destaque.titulo}
+                        className="aspect-[16/10] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
                     </div>
-                    <h2 className="font-serif text-3xl md:text-4xl leading-tight group-hover:text-primary transition-colors">
-                      {destaque.titulo}
-                    </h2>
-                    {destaque.resumo && <p className="mt-5 text-muted-foreground leading-relaxed">{destaque.resumo}</p>}
-                    <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                      Ler artigo <ArrowUpRight className="h-4 w-4" />
-                    </span>
-                  </div>
-                </Link>
+                    <div className="lg:col-span-5">
+                      <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-4">
+                        <span className="text-[hsl(var(--iiv-gold))]">{destaque.categoria}</span>
+                        <span className="h-px w-4 bg-border" />
+                        <time>{fmt(destaque.published_at ?? destaque.created_at)}</time>
+                      </div>
+                      <h2 className="font-serif text-3xl md:text-4xl leading-tight group-hover:text-primary transition-colors">
+                        {destaque.titulo}
+                      </h2>
+                      {destaque.resumo && <p className="mt-5 text-muted-foreground leading-relaxed">{destaque.resumo}</p>}
+                      <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                        {t("list.state.readMore")} <ArrowUpRight className="h-4 w-4" />
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
               )}
 
               {restantes.length > 0 && (
-                <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 border-t border-border/40 pt-16">
-                  {restantes.map((n) => (
-                    <Link key={n.id} to={`/noticias/${n.slug}`} className="group">
-                      <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted mb-5">
-                        <img src={imageUrl(n.image_path)} alt={n.titulo} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                      </div>
-                      <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-                        <span className="text-[hsl(var(--iiv-gold))]">{n.categoria}</span>
-                        <span className="h-px w-4 bg-border" />
-                        <time>{fmt(n.published_at ?? n.created_at)}</time>
-                      </div>
-                      <h3 className="font-serif text-xl leading-tight group-hover:text-primary transition-colors">{n.titulo}</h3>
-                      {n.resumo && <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-2">{n.resumo}</p>}
-                    </Link>
+                <motion.div
+                  className="grid gap-10 md:grid-cols-2 lg:grid-cols-3 border-t border-border/40 pt-16"
+                  initial={shouldReduceMotion ? undefined : "hidden"}
+                  whileInView={shouldReduceMotion ? undefined : "visible"}
+                  viewport={{ once: true, amount: 0.15 }}
+                  variants={shouldReduceMotion ? undefined : staggerContainer}
+                >
+                  {restantes.map((n, i) => (
+                    <motion.div key={n.id} variants={shouldReduceMotion ? undefined : fadeInUp}>
+                      <Link to={`/noticias/${n.slug}`} className="group">
+                        <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted mb-5">
+                          <img
+                            src={imageUrl(n.image_path, i + 1)}
+                            alt={n.titulo}
+                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
+                          <span className="text-[hsl(var(--iiv-gold))]">{n.categoria}</span>
+                          <span className="h-px w-4 bg-border" />
+                          <time>{fmt(n.published_at ?? n.created_at)}</time>
+                        </div>
+                        <h3 className="font-serif text-xl leading-tight group-hover:text-primary transition-colors">{n.titulo}</h3>
+                        {n.resumo && <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-2">{n.resumo}</p>}
+                      </Link>
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
               )}
             </>
           )}

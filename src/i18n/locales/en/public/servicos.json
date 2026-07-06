@@ -1,0 +1,51 @@
+{
+  "seo": {
+    "title": "Services",
+    "description": "Laboratory diagnostics, vaccine production, research, training and consultancy from the Veterinary Research Institute."
+  },
+  "hero": {
+    "kicker": "Areas of Activity",
+    "title": "Services for the veterinary sector and public health.",
+    "lead": "Diagnostics, production, research, training and consultancy — an integrated range of technical services.",
+    "breadcrumb": "Services"
+  },
+  "cta": "Request this service",
+  "items": [
+    {
+      "kicker": "01 — Diagnostics",
+      "title": "Laboratory Diagnostics",
+      "desc": "Comprehensive analyses in virology, bacteriology, parasitology, serology and animal pathology. Reliable results through advanced technology and rigorous methodological validation.",
+      "caps": ["Veterinary virology", "Bacteriology and antibiogram", "Parasitology", "Histopathology"]
+    },
+    {
+      "kicker": "02 — Production",
+      "title": "Vaccine Production",
+      "desc": "Manufacture of autogenous and commercial vaccines, hyperimmune sera and diagnostic reagents for the Angolan and regional veterinary sector.",
+      "caps": ["Autogenous vaccines", "Hyperimmune sera", "Diagnostic reagents", "Quality control"]
+    },
+    {
+      "kicker": "03 — Research",
+      "title": "Scientific Research",
+      "desc": "Applied research projects in animal health, epidemiology and food security, developed through national and international partnerships.",
+      "caps": ["Veterinary epidemiology", "Emerging diseases", "Food security", "Scientific publication"]
+    },
+    {
+      "kicker": "04 — Training",
+      "title": "Technical Training",
+      "desc": "Capacity-building programmes for veterinary technicians, laboratory staff and agricultural sector professionals across all provinces.",
+      "caps": ["Training courses", "Curricular internships", "Technical workshops", "Certification"]
+    },
+    {
+      "kicker": "05 — Quality",
+      "title": "Quality Control",
+      "desc": "Method validation, internal audits and certification of compliance with international ISO and WOAH (OIE) standards.",
+      "caps": ["Method validation", "Audits", "Non-conformities", "Accreditation"]
+    },
+    {
+      "kicker": "06 — Consultancy",
+      "title": "Consultancy and Expert Opinions",
+      "desc": "Issuance of technical opinions and specialised consultancy for public entities, organisations and private partners.",
+      "caps": ["Official opinions", "Technical consultancy", "Regulatory support", "Impact studies"]
+    }
+  ]
+}

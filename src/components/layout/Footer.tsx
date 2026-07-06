@@ -1,7 +1,30 @@
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Linkedin, Youtube, Twitter, Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
+import { Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { fadeInUp } from "@/lib/motion";
+import i18n from "@/i18n";
+import ptFooter from "@/i18n/locales/pt/public/footer.json";
+import enFooter from "@/i18n/locales/en/public/footer.json";
+
+// Namespace "footer" não faz parte do bundle central (src/i18n/index.ts, que só
+// regista "common"/"nav"). Registamo-lo aqui em runtime para manter este componente
+// autónomo sem tocar na configuração global do i18next.
+if (!i18n.hasResourceBundle("pt", "footer")) i18n.addResourceBundle("pt", "footer", ptFooter, true, true);
+if (!i18n.hasResourceBundle("en", "footer")) i18n.addResourceBundle("en", "footer", enFooter, true, true);
 
 export function Footer() {
+  const { t } = useTranslation("footer");
+  const prefersReducedMotion = useReducedMotion();
+  const revealVariants = prefersReducedMotion ? {} : fadeInUp;
+
+  const navLinks = [
+    { to: "/sobre", label: t("nav.links.about") },
+    { to: "/servicos", label: t("nav.links.services") },
+    { to: "/legislacao", label: t("nav.links.legislation") },
+    { to: "/noticias", label: t("nav.links.news") },
+  ];
+
   return (
     <footer className="relative overflow-hidden">
       {/* Main footer */}
@@ -12,7 +35,13 @@ export function Footer() {
           <div className="absolute bottom-10 left-10 h-60 w-60 rounded-full border border-primary-foreground" />
         </div>
 
-        <div className="container relative py-14">
+        <motion.div
+          className="container relative py-14"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={revealVariants}
+        >
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
             {/* Brand */}
             <div className="space-y-4">
@@ -21,25 +50,20 @@ export function Footer() {
                   IIV
                 </div>
                 <div>
-                  <p className="font-serif text-sm leading-tight">Instituto de Investigação</p>
-                  <p className="font-serif text-sm leading-tight opacity-70">Veterinária</p>
+                  <p className="font-serif text-sm leading-tight">{t("brand.orgNameLine1")}</p>
+                  <p className="font-serif text-sm leading-tight opacity-70">{t("brand.orgNameLine2")}</p>
                 </div>
               </div>
               <p className="text-sm leading-relaxed opacity-70 max-w-xs">
-                Instituição pública dedicada à investigação, diagnóstico e produção no domínio da saúde animal em Angola.
+                {t("brand.description")}
               </p>
             </div>
 
             {/* Links */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-widest opacity-50 mb-4">Navegação</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-widest opacity-50 mb-4">{t("nav.heading")}</h4>
               <ul className="space-y-2.5">
-                {[
-                  { to: "/sobre", label: "Sobre o IIV" },
-                  { to: "/servicos", label: "Serviços" },
-                  { to: "/legislacao", label: "Legislação" },
-                  { to: "/noticias", label: "Notícias" },
-                ].map((link) => (
+                {navLinks.map((link) => (
                   <li key={link.to}>
                     <Link to={link.to} className="text-sm opacity-70 hover:opacity-100 transition-opacity flex items-center gap-1 group">
                       {link.label}
@@ -52,61 +76,43 @@ export function Footer() {
 
             {/* Legal */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-widest opacity-50 mb-4">Legal</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-widest opacity-50 mb-4">{t("legal.heading")}</h4>
               <ul className="space-y-2.5">
-                <li><Link to="/termos" className="text-sm opacity-70 hover:opacity-100 transition-opacity">Termos de Uso</Link></li>
-                <li><Link to="/privacidade" className="text-sm opacity-70 hover:opacity-100 transition-opacity">Política de Privacidade</Link></li>
-                <li><Link to="/legislacao" className="text-sm opacity-70 hover:opacity-100 transition-opacity">Legislação Aplicável</Link></li>
+                <li><Link to="/termos" className="text-sm opacity-70 hover:opacity-100 transition-opacity">{t("legal.terms")}</Link></li>
+                <li><Link to="/privacidade" className="text-sm opacity-70 hover:opacity-100 transition-opacity">{t("legal.privacy")}</Link></li>
+                <li><Link to="/legislacao" className="text-sm opacity-70 hover:opacity-100 transition-opacity">{t("legal.legislation")}</Link></li>
               </ul>
             </div>
 
             {/* Contact */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-widest opacity-50 mb-4">Contactos</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-widest opacity-50 mb-4">{t("contact.heading")}</h4>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2.5 text-sm opacity-70">
                   <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                  <span>Luanda, Angola</span>
+                  <span>{t("contact.address")}</span>
                 </li>
                 <li className="flex items-center gap-2.5 text-sm opacity-70">
                   <Phone className="h-4 w-4 shrink-0" />
-                  <span>+244 222 000 000</span>
+                  <span>{t("contact.phone")}</span>
                 </li>
                 <li className="flex items-center gap-2.5 text-sm opacity-70">
                   <Mail className="h-4 w-4 shrink-0" />
-                  <span>info@iiv.gov.ao</span>
+                  <span>{t("contact.email")}</span>
                 </li>
               </ul>
 
-              {/* Social */}
-              <div className="mt-5 flex gap-2">
-                {[
-                  { icon: Facebook, label: "Facebook" },
-                  { icon: Twitter, label: "X" },
-                  { icon: Instagram, label: "Instagram" },
-                  { icon: Linkedin, label: "LinkedIn" },
-                  { icon: Youtube, label: "YouTube" },
-                ].map((s) => (
-                  <a
-                    key={s.label}
-                    href="#"
-                    aria-label={s.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-foreground/5 hover:bg-primary-foreground/10 transition-colors"
-                  >
-                    <s.icon className="h-4 w-4 opacity-70" />
-                  </a>
-                ))}
-              </div>
+              {/* TODO: adicionar redes sociais reais quando confirmadas (ver PLANO-ATUALIZACAO-FRONTEND.txt secao 9, decisao D5) */}
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Bottom bar */}
       <div className="bg-[hsl(152_48%_10%)] text-primary-foreground">
         <div className="container py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs opacity-50">
-          <span>© {new Date().getFullYear()} Instituto de Investigação Veterinária</span>
-          <span>Todos os direitos reservados</span>
+          <span>© {new Date().getFullYear()} {t("bottom.copyright")}</span>
+          <span>{t("bottom.rights")}</span>
         </div>
       </div>
     </footer>

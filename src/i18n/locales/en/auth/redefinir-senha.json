@@ -1,0 +1,30 @@
+{
+  "backToPortal": "Back to portal",
+  "brand": {
+    "title": "Set a new\nPassword",
+    "subtitle": "Choose a secure password for your institutional account."
+  },
+  "footer": {
+    "copyright": "© {{year}} IIV — All rights reserved"
+  },
+  "form": {
+    "title": "New password",
+    "subtitleReady": "Set your new password below.",
+    "subtitleValidating": "Validating the recovery link...",
+    "passwordLabel": "New password",
+    "passwordPlaceholder": "At least 6 characters",
+    "confirmLabel": "Confirm password",
+    "submitDefault": "Update Password",
+    "submitLoading": "Updating..."
+  },
+  "backToLogin": "Back to login",
+  "toast": {
+    "shortPasswordTitle": "Password too short",
+    "shortPasswordDescription": "Use at least 6 characters.",
+    "mismatchTitle": "Passwords don't match",
+    "mismatchDescription": "The passwords do not match.",
+    "errorTitle": "Error",
+    "successTitle": "Password updated",
+    "successDescription": "You can now sign in with your new password."
+  }
+}

@@ -1,13 +1,48 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, LogIn, ArrowLeft, ShieldCheck } from "lucide-react";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
+import ptLogin from "@/i18n/locales/pt/auth/login.json";
+import enLogin from "@/i18n/locales/en/auth/login.json";
+
+const AUTH_LOGIN_NS = "auth-login";
+if (!i18n.hasResourceBundle("pt", AUTH_LOGIN_NS)) {
+  i18n.addResourceBundle("pt", AUTH_LOGIN_NS, ptLogin);
+}
+if (!i18n.hasResourceBundle("en", AUTH_LOGIN_NS)) {
+  i18n.addResourceBundle("en", AUTH_LOGIN_NS, enLogin);
+}
+
+/** Divide um texto por "\n" e insere <br /> entre as linhas (mantém traduções como frases simples). */
+function renderMultiline(text: string) {
+  const lines = text.split("\n");
+  return lines.map((line, i) => (
+    <Fragment key={i}>
+      {line}
+      {i < lines.length - 1 && <br />}
+    </Fragment>
+  ));
+}
+
+const DEMO_ACCOUNTS = [
+  { roleKey: "admin", email: "admin@iiv.demo", password: "admin123" },
+  { roleKey: "tecnico", email: "tecnico@iiv.demo", password: "tecnico123" },
+  { roleKey: "gestor", email: "gestor@iiv.demo", password: "gestor123" },
+  { roleKey: "diretor", email: "diretor@iiv.demo", password: "diretor123" },
+  { roleKey: "colaborador", email: "colaborador@iiv.demo", password: "colaborador123" },
+] as const;
 
 export default function Login() {
+  const { t } = useTranslation(AUTH_LOGIN_NS);
+  const shouldReduceMotion = useReducedMotion();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -22,16 +57,21 @@ export default function Login() {
     setLoading(false);
 
     if (error) {
-      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+      toast({ title: t("toast.loginErrorTitle"), description: error.message, variant: "destructive" });
     } else {
       navigate("/admin");
     }
   };
 
   return (
-    <div className="min-h-screen flex">
+    <motion.div
+      className="min-h-screen flex"
+      variants={staggerContainer}
+      initial={shouldReduceMotion ? false : "hidden"}
+      animate="visible"
+    >
       {/* Left panel - branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden gradient-primary">
+      <motion.div className="hidden lg:flex lg:w-1/2 relative overflow-hidden gradient-primary" variants={fadeIn}>
         {/* Decorative pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-secondary/10 blur-3xl" />
@@ -43,7 +83,7 @@ export default function Login() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
           <div>
             <Link to="/" className="inline-flex items-center gap-2 text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" /> Voltar ao portal
+              <ArrowLeft className="h-4 w-4" /> {t("backToPortal")}
             </Link>
           </div>
 
@@ -53,34 +93,34 @@ export default function Login() {
             </div>
             <div>
               <h1 className="font-serif text-4xl leading-[1.15]">
-                Instituto de<br />Investigação<br />Veterinária
+                {renderMultiline(t("brand.title"))}
               </h1>
               <p className="mt-4 text-lg text-primary-foreground/70 max-w-sm leading-relaxed">
-                Sistema integrado de gestão laboratorial, produção e controle de qualidade.
+                {t("brand.subtitle")}
               </p>
             </div>
 
             <div className="flex items-center gap-3 rounded-xl bg-primary-foreground/10 backdrop-blur-sm p-4 border border-primary-foreground/10 max-w-sm">
               <ShieldCheck className="h-5 w-5 shrink-0 text-primary-foreground/80" />
               <p className="text-sm text-primary-foreground/70">
-                Acesso seguro e encriptado. Os seus dados estão protegidos.
+                {t("brand.securityNote")}
               </p>
             </div>
           </div>
 
           <p className="text-xs text-primary-foreground/40">
-            © {new Date().getFullYear()} IIV — Todos os direitos reservados
+            {t("footer.copyright", { year: new Date().getFullYear() })}
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Right panel - form */}
-      <div className="flex-1 flex items-center justify-center bg-background px-6 py-12">
+      <motion.div className="flex-1 flex items-center justify-center bg-background px-6 py-12" variants={fadeInUp}>
         <div className="w-full max-w-sm space-y-8">
           {/* Mobile header */}
           <div className="lg:hidden text-center space-y-3">
             <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" /> Voltar ao portal
+              <ArrowLeft className="h-4 w-4" /> {t("backToPortal")}
             </Link>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-serif font-bold text-2xl">
               IIV
@@ -89,27 +129,27 @@ export default function Login() {
 
           {/* Form header */}
           <div className="space-y-2">
-            <h2 className="font-serif text-2xl font-bold text-foreground">Bem-vindo de volta</h2>
-            <p className="text-muted-foreground text-sm">Introduza as suas credenciais para aceder ao sistema.</p>
+            <h2 className="font-serif text-2xl font-bold text-foreground">{t("form.title")}</h2>
+            <p className="text-muted-foreground text-sm">{t("form.subtitle")}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email institucional</Label>
+              <Label htmlFor="email" className="text-sm font-medium">{t("form.emailLabel")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nome@iiv.gov.mz"
+                placeholder={t("form.emailPlaceholder")}
                 required
                 className="h-11"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium">Palavra-passe</Label>
-                <Link to="/recuperar-senha" className="text-xs text-primary hover:underline">Esqueceu?</Link>
+                <Label htmlFor="password" className="text-sm font-medium">{t("form.passwordLabel")}</Label>
+                <Link to="/recuperar-senha" className="text-xs text-primary hover:underline">{t("form.forgotPassword")}</Link>
               </div>
               <div className="relative">
                 <Input
@@ -117,7 +157,7 @@ export default function Login() {
                   type={showPw ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={t("form.passwordPlaceholder")}
                   required
                   className="h-11 pr-10"
                 />
@@ -132,41 +172,37 @@ export default function Login() {
             </div>
             <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
               <LogIn className="mr-2 h-4 w-4" />
-              {loading ? "A entrar..." : "Entrar no sistema"}
+              {loading ? t("form.submitLoading") : t("form.submitDefault")}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
-            Não tem conta?{" "}
-            <Link to="/registar" className="font-medium text-primary hover:underline">Solicitar acesso</Link>
+            {t("noAccount")}{" "}
+            <Link to="/registar" className="font-medium text-primary hover:underline">{t("requestAccess")}</Link>
           </p>
 
-          {/* Quick access demo credentials */}
-          <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acesso rápido (demo)</p>
-            <div className="grid gap-1.5">
-              {[
-                { label: "Admin", email: "admin@iiv.demo", password: "admin123" },
-                { label: "Técnico", email: "tecnico@iiv.demo", password: "tecnico123" },
-                { label: "Gestor", email: "gestor@iiv.demo", password: "gestor123" },
-                { label: "Director", email: "diretor@iiv.demo", password: "diretor123" },
-                { label: "Colaborador", email: "colaborador@iiv.demo", password: "colaborador123" },
-              ].map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                  onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
-                >
-                  <span className="font-medium">{acc.label}</span>
-                  <span className="opacity-60">{acc.email}</span>
-                </button>
-              ))}
+          {/* Quick access demo credentials — visível apenas em desenvolvimento, nunca no build de produção */}
+          {import.meta.env.DEV && (
+            <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("demo.title")}</p>
+              <div className="grid gap-1.5">
+                {DEMO_ACCOUNTS.map((acc) => (
+                  <button
+                    key={acc.email}
+                    type="button"
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+                    onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
+                  >
+                    <span className="font-medium">{t(`demo.roles.${acc.roleKey}`)}</span>
+                    <span className="opacity-60">{acc.email}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 text-center">{t("demo.hint")}</p>
             </div>
-            <p className="text-[10px] text-muted-foreground/60 text-center">Clique num perfil para preencher automaticamente</p>
-          </div>
+          )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

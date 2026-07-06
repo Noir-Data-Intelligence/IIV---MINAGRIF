@@ -1,0 +1,38 @@
+{
+  "backToPortal": "Voltar ao portal",
+  "brand": {
+    "title": "Instituto de\nInvestigação\nVeterinária",
+    "subtitle": "Sistema integrado de gestão laboratorial, produção e controle de qualidade.",
+    "securityNote": "Acesso seguro e encriptado. Os seus dados estão protegidos."
+  },
+  "footer": {
+    "copyright": "© {{year}} IIV — Todos os direitos reservados"
+  },
+  "form": {
+    "title": "Bem-vindo de volta",
+    "subtitle": "Introduza as suas credenciais para aceder ao sistema.",
+    "emailLabel": "Email institucional",
+    "emailPlaceholder": "nome@iiv.gov.ao",
+    "passwordLabel": "Palavra-passe",
+    "passwordPlaceholder": "••••••••",
+    "forgotPassword": "Esqueceu?",
+    "submitDefault": "Entrar no sistema",
+    "submitLoading": "A entrar..."
+  },
+  "noAccount": "Não tem conta?",
+  "requestAccess": "Solicitar acesso",
+  "demo": {
+    "title": "Acesso rápido (demo)",
+    "hint": "Clique num perfil para preencher automaticamente",
+    "roles": {
+      "admin": "Admin",
+      "tecnico": "Técnico",
+      "gestor": "Gestor",
+      "diretor": "Director",
+      "colaborador": "Colaborador"
+    }
+  },
+  "toast": {
+    "loginErrorTitle": "Erro ao entrar"
+  }
+}

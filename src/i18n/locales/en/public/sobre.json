@@ -1,0 +1,45 @@
+{
+  "seo": {
+    "title": "About IIV",
+    "description": "History, mission, vision and organisational structure of Angola's Veterinary Research Institute."
+  },
+  "hero": {
+    "kicker": "Who We Are",
+    "title": "An institution serving animal health in Angola.",
+    "lead": "Learn about the history, mission and structure of the Veterinary Research Institute.",
+    "breadcrumb": "About"
+  },
+  "intro": {
+    "kicker": "The Institute",
+    "title": "Over six decades supporting Angolan livestock farming.",
+    "lead": "IIV is a public research institution overseen by the Ministry of Agriculture and Fisheries, with national competencies in animal health diagnostics, production and surveillance.",
+    "text": "Since its founding in 1965, IIV has played a central role in safeguarding livestock health, supporting veterinary professionals in the public and private sectors, and strengthening national food security."
+  },
+  "timeline": {
+    "kicker": "Timeline",
+    "title": "Our history",
+    "items": [
+      { "year": "1965", "title": "Founding", "text": "Establishment of the Institute as the country's central veterinary diagnostic laboratory." },
+      { "year": "1985", "title": "Regional expansion", "text": "Opening of the first regional stations, extending technical coverage across the territory." },
+      { "year": "2005", "title": "Vaccine production", "text": "Start of domestic production of veterinary immunobiologicals for the internal market." },
+      { "year": "2020", "title": "Modernisation", "text": "Technological renewal of laboratories and adoption of international quality practices." },
+      { "year": "2026", "title": "Digital platform", "text": "Launch of the integrated institutional portal, with online laboratory management and production." }
+    ]
+  },
+  "values": {
+    "kicker": "Principles",
+    "title": "Mission, vision and values",
+    "items": [
+      { "title": "Mission", "text": "Promote research, diagnostics and production in the field of animal health, contributing to food security and Angola's sustainable development." },
+      { "title": "Vision", "text": "To be a reference institution in veterinary research at regional and continental level, with recognised impact on public health." },
+      { "title": "Values", "text": "Scientific excellence, integrity, inter-institutional collaboration and commitment to public health and animal welfare." }
+    ]
+  },
+  "structure": {
+    "kicker": "Organisation",
+    "title": "Organisational structure",
+    "text": "IIV is organised into four main departments — Diagnostics, Production, Research and Administration — each with specialised sub-departments ensuring full coverage of the national veterinary sector's needs.",
+    "imageAlt": "IIV laboratories",
+    "departments": ["Diagnostics", "Production", "Research", "Administration"]
+  }
+}

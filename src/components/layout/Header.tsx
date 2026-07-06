@@ -2,9 +2,25 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+
+/** Variant local (não exportado) para o menu mobile: expande/recolhe altura + fade, curto e subtil. */
+const mobileNavVariants: Variants = {
+  hidden: { opacity: 0, height: 0 },
+  visible: {
+    opacity: 1,
+    height: "auto",
+    transition: { duration: 0.25, ease: "easeOut" },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    transition: { duration: 0.2, ease: "easeOut" },
+  },
+};
 
 const navItems = [
   { key: "home", path: "/" },
@@ -19,13 +35,15 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { t } = useTranslation("nav");
+  const prefersReducedMotion = useReducedMotion();
+  const navVariants = prefersReducedMotion ? {} : mobileNavVariants;
 
   return (
     <header className="sticky top-0 z-50">
       {/* Top bar */}
       <div className="gradient-primary text-primary-foreground">
         <div className="container flex h-9 items-center justify-between text-xs font-medium tracking-wide">
-          <span className="opacity-80">Instituto de Investigação Veterinária — República de Angola</span>
+          <span className="opacity-80">{t("topBar")}</span>
           <Link to="/login" className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
             {t("restrictedArea")} <ChevronRight className="h-3 w-3" />
           </Link>
@@ -40,8 +58,8 @@ export function Header() {
               IIV
             </div>
             <div className="hidden sm:block">
-              <p className="font-serif text-base leading-tight tracking-tight">Instituto de Investigação</p>
-              <p className="font-serif text-base leading-tight tracking-tight text-primary">Veterinária</p>
+              <p className="font-serif text-base leading-tight tracking-tight">{t("orgNameLine1")}</p>
+              <p className="font-serif text-base leading-tight tracking-tight text-primary">{t("orgNameLine2")}</p>
             </div>
           </Link>
 
@@ -86,26 +104,35 @@ export function Header() {
       </div>
 
       {/* Mobile nav */}
-      {mobileMenuOpen && (
-        <nav className="lg:hidden glass-strong border-t shadow-elevated">
-          <div className="container flex flex-col gap-1 py-3">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  location.pathname === item.path
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                }`}
-              >
-                {t(item.key)}
-              </Link>
-            ))}
-          </div>
-        </nav>
-      )}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.nav
+            key="mobile-nav"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={navVariants}
+            className="lg:hidden glass-strong border-t shadow-elevated overflow-hidden"
+          >
+            <div className="container flex flex-col gap-1 py-3">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    location.pathname === item.path
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {t(item.key)}
+                </Link>
+              ))}
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

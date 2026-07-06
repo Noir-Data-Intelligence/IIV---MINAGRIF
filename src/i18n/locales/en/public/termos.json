@@ -1,0 +1,35 @@
+{
+  "seo": {
+    "title": "Terms of Use",
+    "description": "Terms and conditions governing the use of the Veterinary Research Institute's portal."
+  },
+  "hero": {
+    "kicker": "Legal Documents",
+    "title": "Terms of Use",
+    "lead": "Conditions applicable to the use of the IIV's institutional portal.",
+    "breadcrumb": "Terms"
+  },
+  "sections": {
+    "scope": {
+      "title": "1. Scope",
+      "body": "These terms govern access to and use of the portal of the Veterinary Research Institute (IIV), a public entity of the Republic of Angola, under the oversight of the Ministry of Agriculture and Fisheries."
+    },
+    "use": {
+      "title": "2. Permitted use",
+      "body": "The content of this portal is intended exclusively for informational and educational purposes and to support the national veterinary sector. Its use for unauthorised commercial purposes is prohibited, as is any attempt at improper access to restricted areas."
+    },
+    "ip": {
+      "title": "3. Intellectual property",
+      "body": "All published content (texts, images, trademarks, documents) is the property of the IIV or its respective rights holders and is protected under applicable copyright and industrial property legislation."
+    },
+    "liability": {
+      "title": "4. Limitation of liability",
+      "body": "The IIV makes every effort to keep information up to date but does not guarantee the absence of errors, nor is it liable for decisions taken solely on the basis of the portal's content without formal technical consultation."
+    },
+    "changes": {
+      "title": "5. Amendments",
+      "body": "The IIV reserves the right to update these terms at any time. The version in force is always the one published at this address."
+    }
+  },
+  "lastUpdated": "Last updated: May 2026."
+}

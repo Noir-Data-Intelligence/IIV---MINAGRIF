@@ -1,61 +1,86 @@
 import { Target, Eye, Users, Award } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
 import { PageHero } from "@/components/layout/PageHero";
 import { SEO } from "@/components/SEO";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import i18n from "@/i18n";
+import ptSobre from "@/i18n/locales/pt/public/sobre.json";
+import enSobre from "@/i18n/locales/en/public/sobre.json";
 import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
 import heroLab from "@/assets/hero/hero-lab.jpg";
 
-const valores = [
-  { icon: Target, title: "Missão", text: "Promover a investigação, o diagnóstico e a produção no domínio da saúde animal, contribuindo para a segurança alimentar e o desenvolvimento sustentável de Angola." },
-  { icon: Eye, title: "Visão", text: "Ser uma instituição de referência em investigação veterinária a nível regional e continental, com impacto reconhecido na saúde pública." },
-  { icon: Users, title: "Valores", text: "Excelência científica, integridade, colaboração interinstitucional e compromisso com a saúde pública e o bem-estar animal." },
-];
+// Namespace "sobre" não faz parte do bundle central (src/i18n/index.ts, que só
+// regista "common"/"nav"). Registamo-lo aqui em runtime para manter esta página
+// autónoma sem tocar na configuração global do i18next.
+if (!i18n.hasResourceBundle("pt", "sobre")) i18n.addResourceBundle("pt", "sobre", ptSobre, true, true);
+if (!i18n.hasResourceBundle("en", "sobre")) i18n.addResourceBundle("en", "sobre", enSobre, true, true);
 
-const timeline = [
-  { ano: "1965", titulo: "Fundação", text: "Criação do Instituto enquanto laboratório central de diagnóstico veterinário do país." },
-  { ano: "1985", titulo: "Expansão regional", text: "Abertura das primeiras estações regionais, alargando a cobertura técnica ao território." },
-  { ano: "2005", titulo: "Produção de vacinas", text: "Início da produção nacional de imunobiológicos veterinários para o mercado interno." },
-  { ano: "2020", titulo: "Modernização", text: "Renovação tecnológica dos laboratórios e adopção de práticas internacionais de qualidade." },
-  { ano: "2026", titulo: "Plataforma digital", text: "Lançamento do portal institucional integrado, com gestão laboratorial e produção em linha." },
-];
+const valorIcons = [Target, Eye, Users];
+
+interface TimelineItem {
+  year: string;
+  title: string;
+  text: string;
+}
+
+interface ValueItem {
+  title: string;
+  text: string;
+}
 
 export default function Sobre() {
+  const { t } = useTranslation("sobre");
+  const prefersReducedMotion = useReducedMotion();
+
+  // Se o utilizador preferir menos movimento, os variants ficam "vazios" (sem transição visível).
+  const revealVariants = prefersReducedMotion ? {} : fadeInUp;
+  const containerVariants = prefersReducedMotion ? {} : staggerContainer;
+
+  const timeline = t("timeline.items", { returnObjects: true }) as unknown as TimelineItem[];
+  const valores = t("values.items", { returnObjects: true }) as unknown as ValueItem[];
+  const departments = t("structure.departments", { returnObjects: true }) as unknown as string[];
+
   return (
     <>
       <SEO
-        title="Sobre o IIV"
-        description="História, missão, visão e estrutura organizacional do Instituto de Investigação Veterinária de Angola."
+        title={t("seo.title")}
+        description={t("seo.description")}
         path="/sobre"
       />
       <PageHero
-        kicker="Quem Somos"
-        title="Uma instituição ao serviço da saúde animal em Angola."
-        lead="Conheça a história, a missão e a estrutura do Instituto de Investigação Veterinária."
+        kicker={t("hero.kicker")}
+        title={t("hero.title")}
+        lead={t("hero.lead")}
         image={heroInvestigacao}
-        breadcrumb={[{ label: "Sobre" }]}
+        breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
       {/* INTRO EDITORIAL */}
       <section className="py-24">
         <div className="container">
-          <div className="grid gap-12 md:grid-cols-12">
-            <div className="md:col-span-5">
-              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> O Instituto</p>
+          <motion.div
+            className="grid gap-12 md:grid-cols-12"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            <motion.div variants={revealVariants} className="md:col-span-5">
+              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("intro.kicker")}</p>
               <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">
-                Mais de seis décadas a apoiar a pecuária angolana.
+                {t("intro.title")}
               </h2>
-            </div>
-            <div className="md:col-span-6 md:col-start-7">
+            </motion.div>
+            <motion.div variants={revealVariants} className="md:col-span-6 md:col-start-7">
               <p className="lead">
-                O IIV é uma instituição pública de investigação tutelada pelo Ministério da Agricultura e Pescas,
-                com competências nacionais em diagnóstico, produção e vigilância no domínio da saúde animal.
+                {t("intro.lead")}
               </p>
               <p className="mt-5 text-muted-foreground leading-relaxed">
-                Desde a sua fundação, em 1965, o IIV desempenha um papel central na defesa sanitária do efectivo
-                pecuário, no apoio aos médicos veterinários do sector público e privado e no reforço da segurança
-                alimentar nacional.
+                {t("intro.text")}
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -63,22 +88,32 @@ export default function Sobre() {
       <section className="section-divider py-24 bg-accent/30">
         <div className="container">
           <div className="mb-14">
-            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> Linha do tempo</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5">A nossa história</h2>
+            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("timeline.kicker")}</p>
+            <h2 className="font-serif text-3xl md:text-4xl mt-5">{t("timeline.title")}</h2>
           </div>
-          <div className="space-y-12">
-            {timeline.map((t) => (
-              <div key={t.ano} className="grid gap-6 md:grid-cols-12 items-start border-t border-border/40 pt-10">
+          <motion.div
+            className="space-y-12"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            {timeline.map((item) => (
+              <motion.div
+                key={item.year}
+                variants={revealVariants}
+                className="grid gap-6 md:grid-cols-12 items-start border-t border-border/40 pt-10"
+              >
                 <div className="md:col-span-3">
-                  <p className="font-serif text-5xl md:text-6xl text-primary tracking-tight">{t.ano}</p>
+                  <p className="font-serif text-5xl md:text-6xl text-primary tracking-tight">{item.year}</p>
                 </div>
                 <div className="md:col-span-8 md:col-start-5">
-                  <h3 className="font-serif text-xl md:text-2xl mb-3">{t.titulo}</h3>
-                  <p className="text-muted-foreground leading-relaxed max-w-2xl">{t.text}</p>
+                  <h3 className="font-serif text-xl md:text-2xl mb-3">{item.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl">{item.text}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -86,48 +121,61 @@ export default function Sobre() {
       <section className="section-divider py-24">
         <div className="container">
           <div className="mb-14 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> Princípios</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5">Missão, visão e valores</h2>
+            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("values.kicker")}</p>
+            <h2 className="font-serif text-3xl md:text-4xl mt-5">{t("values.title")}</h2>
           </div>
-          <div className="grid gap-px bg-border rounded-2xl overflow-hidden border border-border/60">
-            {valores.map((v) => (
-              <div key={v.title} className="bg-card p-8 md:p-10 grid md:grid-cols-12 gap-6 items-start">
-                <div className="md:col-span-3">
-                  <v.icon className="h-8 w-8 text-[hsl(var(--iiv-gold))] mb-4" strokeWidth={1.5} />
-                  <h3 className="font-serif text-2xl">{v.title}</h3>
-                </div>
-                <p className="md:col-span-8 md:col-start-5 text-muted-foreground leading-relaxed">{v.text}</p>
-              </div>
-            ))}
-          </div>
+          <motion.div
+            className="grid gap-px bg-border rounded-2xl overflow-hidden border border-border/60"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            {valores.map((v, i) => {
+              const Icon = valorIcons[i];
+              return (
+                <motion.div key={v.title} variants={revealVariants} className="bg-card p-8 md:p-10 grid md:grid-cols-12 gap-6 items-start">
+                  <div className="md:col-span-3">
+                    <Icon className="h-8 w-8 text-[hsl(var(--iiv-gold))] mb-4" strokeWidth={1.5} />
+                    <h3 className="font-serif text-2xl">{v.title}</h3>
+                  </div>
+                  <p className="md:col-span-8 md:col-start-5 text-muted-foreground leading-relaxed">{v.text}</p>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
       </section>
 
       {/* ESTRUTURA */}
       <section className="section-divider py-24 bg-accent/30">
         <div className="container">
-          <div className="grid gap-12 lg:grid-cols-2 items-center">
-            <div className="overflow-hidden rounded-2xl">
-              <img src={heroLab} alt="Laboratórios do IIV" className="aspect-[4/5] w-full object-cover" loading="lazy" />
-            </div>
-            <div>
-              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> Organização</p>
-              <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">Estrutura organizacional</h2>
+          <motion.div
+            className="grid gap-12 lg:grid-cols-2 items-center"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            <motion.div variants={revealVariants} className="overflow-hidden rounded-2xl">
+              <img src={heroLab} alt={t("structure.imageAlt")} className="aspect-[4/5] w-full object-cover" loading="lazy" />
+            </motion.div>
+            <motion.div variants={revealVariants}>
+              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("structure.kicker")}</p>
+              <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("structure.title")}</h2>
               <p className="mt-6 text-muted-foreground leading-relaxed">
-                O IIV está organizado em quatro departamentos principais — Diagnóstico, Produção, Investigação e
-                Administração — cada um com subdepartamentos especializados que asseguram cobertura completa das
-                necessidades do sector veterinário nacional.
+                {t("structure.text")}
               </p>
               <div className="mt-8 grid grid-cols-2 gap-px bg-border rounded-xl overflow-hidden border border-border/60">
-                {["Diagnóstico", "Produção", "Investigação", "Administração"].map((d) => (
+                {departments.map((d) => (
                   <div key={d} className="bg-card p-5">
                     <Award className="h-4 w-4 text-[hsl(var(--iiv-gold))] mb-2" />
                     <p className="font-serif text-lg">{d}</p>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
     </>

@@ -1,0 +1,30 @@
+{
+  "backToPortal": "Back to portal",
+  "brand": {
+    "title": "Join the\nVeterinary\nResearch\nInstitute",
+    "subtitle": "Create your account to access the integrated laboratory management system.",
+    "securityNote": "Your account will be verified by email before activation."
+  },
+  "footer": {
+    "copyright": "© {{year}} IIV — All rights reserved"
+  },
+  "form": {
+    "title": "Create Account",
+    "subtitle": "Fill in your details to request access to the system.",
+    "nameLabel": "Full Name",
+    "namePlaceholder": "Your full name",
+    "emailLabel": "Institutional email",
+    "emailPlaceholder": "name@iiv.gov.ao",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "At least 6 characters",
+    "submitDefault": "Create Account",
+    "submitLoading": "Signing up..."
+  },
+  "haveAccount": "Already have an account?",
+  "loginLink": "Sign in",
+  "toast": {
+    "errorTitle": "Sign-up error",
+    "successTitle": "Account created!",
+    "successDescription": "Check your email to confirm your account."
+  }
+}

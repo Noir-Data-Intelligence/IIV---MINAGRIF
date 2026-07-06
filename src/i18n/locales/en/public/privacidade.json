@@ -1,0 +1,40 @@
+{
+  "seo": {
+    "title": "Privacy Policy",
+    "description": "How the IIV collects, uses and protects personal data on the institutional portal."
+  },
+  "hero": {
+    "kicker": "Legal Documents",
+    "title": "Privacy Policy",
+    "lead": "Our commitment to protecting the personal data of the portal's users.",
+    "breadcrumb": "Privacy"
+  },
+  "sections": {
+    "controller": {
+      "title": "1. Data controller",
+      "body": "The Veterinary Research Institute (IIV) is the controller responsible for the processing of personal data collected through this portal."
+    },
+    "dataCollected": {
+      "title": "2. Data collected",
+      "body": "We collect only the data strictly necessary: name, e-mail and message (in the contact form); access credentials (in the restricted area); and anonymised technical browsing data (access logs and IP address for security purposes)."
+    },
+    "purpose": {
+      "title": "3. Purpose",
+      "body": "Data is used to respond to requests, manage laboratory services, comply with legal obligations and improve the portal's user experience."
+    },
+    "retention": {
+      "title": "4. Retention",
+      "body": "Data is retained for the period strictly necessary to fulfil the purposes for which it was collected, or for the periods required by law."
+    },
+    "rights": {
+      "title": "5. Data subject rights",
+      "bodyBefore": "The data subject has the right to access, rectify, erase and object to the processing of their data. To exercise these rights, contact us at",
+      "bodyAfter": "."
+    },
+    "security": {
+      "title": "6. Security",
+      "body": "We adopt appropriate technical and organisational measures to protect data against unauthorised access, loss, alteration or improper disclosure."
+    }
+  },
+  "lastUpdated": "Last updated: May 2026."
+}

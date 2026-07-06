@@ -1,0 +1,35 @@
+{
+  "seo": {
+    "title": "Termos de Uso",
+    "description": "Termos e condições de utilização do portal do Instituto de Investigação Veterinária."
+  },
+  "hero": {
+    "kicker": "Documentos Legais",
+    "title": "Termos de Uso",
+    "lead": "Condições aplicáveis à utilização do portal institucional do IIV.",
+    "breadcrumb": "Termos"
+  },
+  "sections": {
+    "scope": {
+      "title": "1. Âmbito",
+      "body": "Os presentes termos regulam o acesso e a utilização do portal do Instituto de Investigação Veterinária (IIV), entidade pública da República de Angola, tutelada pelo Ministério da Agricultura e Pescas."
+    },
+    "use": {
+      "title": "2. Utilização permitida",
+      "body": "O conteúdo deste portal destina-se exclusivamente a fins informativos, educativos e de apoio ao sector veterinário nacional. É proibida a sua utilização para fins comerciais não autorizados, bem como qualquer tentativa de acesso indevido a áreas restritas."
+    },
+    "ip": {
+      "title": "3. Propriedade intelectual",
+      "body": "Todos os conteúdos publicados (textos, imagens, marcas, documentos) são propriedade do IIV ou dos respectivos titulares, encontrando-se protegidos pela legislação aplicável em matéria de direitos de autor e propriedade industrial."
+    },
+    "liability": {
+      "title": "4. Limitação de responsabilidade",
+      "body": "O IIV envida esforços para manter a informação actualizada, mas não garante a inexistência de erros nem se responsabiliza por decisões tomadas exclusivamente com base no conteúdo do portal sem consulta técnica formal."
+    },
+    "changes": {
+      "title": "5. Alterações",
+      "body": "O IIV reserva-se o direito de actualizar os presentes termos a qualquer momento. A versão em vigor é sempre a publicada neste endereço."
+    }
+  },
+  "lastUpdated": "Última actualização: Maio de 2026."
+}

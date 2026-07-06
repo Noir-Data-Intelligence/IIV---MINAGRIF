@@ -1,0 +1,45 @@
+{
+  "seo": {
+    "title": "Sobre o IIV",
+    "description": "História, missão, visão e estrutura organizacional do Instituto de Investigação Veterinária de Angola."
+  },
+  "hero": {
+    "kicker": "Quem Somos",
+    "title": "Uma instituição ao serviço da saúde animal em Angola.",
+    "lead": "Conheça a história, a missão e a estrutura do Instituto de Investigação Veterinária.",
+    "breadcrumb": "Sobre"
+  },
+  "intro": {
+    "kicker": "O Instituto",
+    "title": "Mais de seis décadas a apoiar a pecuária angolana.",
+    "lead": "O IIV é uma instituição pública de investigação tutelada pelo Ministério da Agricultura e Pescas, com competências nacionais em diagnóstico, produção e vigilância no domínio da saúde animal.",
+    "text": "Desde a sua fundação, em 1965, o IIV desempenha um papel central na defesa sanitária do efectivo pecuário, no apoio aos médicos veterinários do sector público e privado e no reforço da segurança alimentar nacional."
+  },
+  "timeline": {
+    "kicker": "Linha do tempo",
+    "title": "A nossa história",
+    "items": [
+      { "year": "1965", "title": "Fundação", "text": "Criação do Instituto enquanto laboratório central de diagnóstico veterinário do país." },
+      { "year": "1985", "title": "Expansão regional", "text": "Abertura das primeiras estações regionais, alargando a cobertura técnica ao território." },
+      { "year": "2005", "title": "Produção de vacinas", "text": "Início da produção nacional de imunobiológicos veterinários para o mercado interno." },
+      { "year": "2020", "title": "Modernização", "text": "Renovação tecnológica dos laboratórios e adopção de práticas internacionais de qualidade." },
+      { "year": "2026", "title": "Plataforma digital", "text": "Lançamento do portal institucional integrado, com gestão laboratorial e produção em linha." }
+    ]
+  },
+  "values": {
+    "kicker": "Princípios",
+    "title": "Missão, visão e valores",
+    "items": [
+      { "title": "Missão", "text": "Promover a investigação, o diagnóstico e a produção no domínio da saúde animal, contribuindo para a segurança alimentar e o desenvolvimento sustentável de Angola." },
+      { "title": "Visão", "text": "Ser uma instituição de referência em investigação veterinária a nível regional e continental, com impacto reconhecido na saúde pública." },
+      { "title": "Valores", "text": "Excelência científica, integridade, colaboração interinstitucional e compromisso com a saúde pública e o bem-estar animal." }
+    ]
+  },
+  "structure": {
+    "kicker": "Organização",
+    "title": "Estrutura organizacional",
+    "text": "O IIV está organizado em quatro departamentos principais — Diagnóstico, Produção, Investigação e Administração — cada um com subdepartamentos especializados que asseguram cobertura completa das necessidades do sector veterinário nacional.",
+    "imageAlt": "Laboratórios do IIV",
+    "departments": ["Diagnóstico", "Produção", "Investigação", "Administração"]
+  }
+}

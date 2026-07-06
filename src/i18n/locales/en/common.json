@@ -23,5 +23,9 @@
     "title": "Something went wrong",
     "defaultMessage": "Could not load the data. Please try again.",
     "retry": "Try again"
+  },
+  "breadcrumb": {
+    "home": "Home",
+    "ariaLabel": "Breadcrumb"
   }
 }

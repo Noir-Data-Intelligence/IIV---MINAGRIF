@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { fadeInUp } from "@/lib/motion";
 
 interface PageHeroProps {
   kicker?: string;
@@ -12,6 +15,10 @@ interface PageHeroProps {
 }
 
 export function PageHero({ kicker, title, lead, image, breadcrumb, align = "left" }: PageHeroProps) {
+  const { t } = useTranslation("common");
+  const prefersReducedMotion = useReducedMotion();
+  const revealVariants = prefersReducedMotion ? {} : fadeInUp;
+
   return (
     <section className="relative isolate overflow-hidden bg-[hsl(var(--iiv-green-dark))] text-primary-foreground">
       {image && (
@@ -29,10 +36,10 @@ export function PageHero({ kicker, title, lead, image, breadcrumb, align = "left
               "mb-6 flex items-center gap-1.5 text-xs text-primary-foreground/60",
               align === "center" && "justify-center",
             )}
-            aria-label="Breadcrumb"
+            aria-label={t("breadcrumb.ariaLabel")}
           >
             <Link to="/" className="hover:text-primary-foreground transition-colors">
-              Início
+              {t("breadcrumb.home")}
             </Link>
             {breadcrumb.map((b, i) => (
               <span key={i} className="flex items-center gap-1.5">
@@ -49,27 +56,29 @@ export function PageHero({ kicker, title, lead, image, breadcrumb, align = "left
           </nav>
         )}
 
-        {kicker && (
-          <div className={cn("kicker mb-5 text-[hsl(var(--iiv-gold))]", align === "center" && "flex justify-center")}>
-            <span className="inline-block h-px w-8 align-middle bg-[hsl(var(--iiv-gold))]" />
-            <span className="ml-3">{kicker}</span>
-          </div>
-        )}
+        <motion.div initial="hidden" animate="visible" variants={revealVariants}>
+          {kicker && (
+            <div className={cn("kicker mb-5 text-[hsl(var(--iiv-gold))]", align === "center" && "flex justify-center")}>
+              <span className="inline-block h-px w-8 align-middle bg-[hsl(var(--iiv-gold))]" />
+              <span className="ml-3">{kicker}</span>
+            </div>
+          )}
 
-        <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-normal leading-[1.08] tracking-tight max-w-3xl">
-          {title}
-        </h1>
+          <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-normal leading-[1.08] tracking-tight max-w-3xl">
+            {title}
+          </h1>
 
-        {lead && (
-          <p
-            className={cn(
-              "mt-6 max-w-2xl text-base md:text-lg opacity-80 leading-relaxed",
-              align === "center" && "mx-auto",
-            )}
-          >
-            {lead}
-          </p>
-        )}
+          {lead && (
+            <p
+              className={cn(
+                "mt-6 max-w-2xl text-base md:text-lg opacity-80 leading-relaxed",
+                align === "center" && "mx-auto",
+              )}
+            >
+              {lead}
+            </p>
+          )}
+        </motion.div>
 
         <div
           className={cn(

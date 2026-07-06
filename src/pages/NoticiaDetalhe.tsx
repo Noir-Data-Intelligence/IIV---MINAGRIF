@@ -1,53 +1,42 @@
-import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { SEO } from "@/components/SEO";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
+import { fadeInUp } from "@/lib/motion";
+import { useNoticia } from "@/hooks/queries/useNoticias";
+import i18n from "@/i18n";
+import ptNoticias from "@/i18n/locales/pt/public/noticias.json";
+import enNoticias from "@/i18n/locales/en/public/noticias.json";
 import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
 
-interface Noticia {
-  id: string;
-  slug: string;
-  titulo: string;
-  resumo: string | null;
-  conteudo: string | null;
-  categoria: string;
-  image_path: string | null;
-  published_at: string | null;
-  created_at: string;
-}
+// Namespace "noticias" partilhado por Noticias.tsx e NoticiaDetalhe.tsx. Registado aqui
+// via addResourceBundle (em vez de em src/i18n/index.ts, que não deve ser editado nesta tarefa).
+i18n.addResourceBundle("pt", "noticias", ptNoticias, true, false);
+i18n.addResourceBundle("en", "noticias", enNoticias, true, false);
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString("pt-AO", { day: "2-digit", month: "long", year: "numeric" });
 }
 
-const imageUrl = (path: string | null) =>
-  path ? supabase.storage.from("noticias").getPublicUrl(path).data.publicUrl : heroInvestigacao;
+const imageUrl = (path: string | null) => path || heroInvestigacao;
 
 export default function NoticiaDetalhe() {
   const { slug } = useParams<{ slug: string }>();
-  const [item, setItem] = useState<Noticia | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const { t } = useTranslation("noticias");
+  const shouldReduceMotion = useReducedMotion();
 
-  useEffect(() => {
-    if (!slug) return;
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from("noticias")
-        .select("*")
-        .eq("slug", slug)
-        .eq("published", true)
-        .maybeSingle();
-      if (!data) setNotFound(true);
-      else setItem(data as Noticia);
-      setLoading(false);
-    })();
-  }, [slug]);
+  // useNoticia(id) chama GET /api/noticias/:id — o handler mock (src/mocks/handlers/noticias.ts)
+  // já resolve tanto por `id` como por `slug` (`n.id === id || n.slug === id`), pelo que reutilizamos
+  // o hook existente directamente com o slug, sem necessidade de alterar service/handler partilhados.
+  const { data: item, isLoading, isError } = useNoticia(slug ?? "");
 
-  if (loading) {
+  // O endpoint de detalhe não filtra por `published` (ao contrário da antiga query Supabase), por
+  // isso aplicamos aqui a mesma regra de visibilidade pública: notícia não publicada = não encontrada.
+  const notFound = !isLoading && (isError || !item || !item.published);
+
+  if (isLoading) {
     return (
       <div className="container py-20 max-w-4xl space-y-6">
         <Skeleton className="h-8 w-40" />
@@ -61,11 +50,15 @@ export default function NoticiaDetalhe() {
   if (notFound || !item) {
     return (
       <div className="container py-32 text-center">
-        <SEO title="Notícia não encontrada" description="A notícia procurada não está disponível." path={`/noticias/${slug}`} />
-        <h1 className="font-serif text-3xl mb-4">Notícia não encontrada</h1>
-        <p className="text-muted-foreground mb-8">A notícia que procura pode ter sido removida ou não está publicada.</p>
+        <SEO
+          title={t("detail.seo.notFoundTitle")}
+          description={t("detail.seo.notFoundDescription")}
+          path={`/noticias/${slug ?? ""}`}
+        />
+        <h1 className="font-serif text-3xl mb-4">{t("detail.notFound.title")}</h1>
+        <p className="text-muted-foreground mb-8">{t("detail.notFound.message")}</p>
         <Link to="/noticias" className="inline-flex items-center gap-2 text-primary font-semibold">
-          <ArrowLeft className="h-4 w-4" /> Voltar às notícias
+          <ArrowLeft className="h-4 w-4" /> {t("detail.notFound.back")}
         </Link>
       </div>
     );
@@ -77,16 +70,21 @@ export default function NoticiaDetalhe() {
     <>
       <SEO
         title={item.titulo}
-        description={item.resumo ?? `Notícia do IIV publicada em ${fmt(item.published_at ?? item.created_at)}.`}
+        description={item.resumo ?? t("detail.seo.fallbackDescription", { date: fmt(item.published_at ?? item.created_at) })}
         path={`/noticias/${item.slug}`}
         type="article"
         image={item.image_path ? imageUrl(item.image_path) : undefined}
       />
 
-      <article className="pt-16 pb-24">
+      <motion.article
+        className="pt-16 pb-24"
+        initial={shouldReduceMotion ? undefined : "hidden"}
+        animate={shouldReduceMotion ? undefined : "visible"}
+        variants={shouldReduceMotion ? undefined : fadeInUp}
+      >
         <div className="container max-w-4xl">
           <Link to="/noticias" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-8">
-            <ArrowLeft className="h-4 w-4" /> Notícias
+            <ArrowLeft className="h-4 w-4" /> {t("detail.back")}
           </Link>
 
           <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-4">
@@ -109,10 +107,10 @@ export default function NoticiaDetalhe() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground italic">Conteúdo em preparação.</p>
+            <p className="text-muted-foreground italic">{t("detail.empty")}</p>
           )}
         </div>
-      </article>
+      </motion.article>
     </>
   );
 }

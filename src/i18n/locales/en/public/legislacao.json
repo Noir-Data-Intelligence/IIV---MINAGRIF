@@ -1,0 +1,39 @@
+{
+  "seo": {
+    "title": "Legislation",
+    "description": "Legal instruments, standards and regulations applicable to animal health and veterinary practice in Angola."
+  },
+  "hero": {
+    "kicker": "Legal Framework",
+    "title": "Sector legislation and regulation.",
+    "lead": "Legal instruments, standards and regulations applicable to animal health and veterinary practice in Angola.",
+    "breadcrumb": "Legislation"
+  },
+  "search": {
+    "placeholder": "Search legislation..."
+  },
+  "tabs": {
+    "todos": "All",
+    "tipos": {
+      "lei": "Law",
+      "decreto": "Decree",
+      "regulamento": "Regulation",
+      "norma": "Standard",
+      "portaria": "Ordinance"
+    }
+  },
+  "list": {
+    "viewDetails": "View details",
+    "empty": "No legal instrument found."
+  },
+  "detail": {
+    "notFound": {
+      "title": "Legal instrument not found",
+      "back": "Back to legislation"
+    },
+    "back": "Back",
+    "download": "Download PDF",
+    "pdfUnavailable": "PDF document not yet available for this instrument.",
+    "numberPrefix": "No."
+  }
+}

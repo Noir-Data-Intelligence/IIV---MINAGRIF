@@ -1,0 +1,13 @@
+{
+  "kicker": "Parceiros institucionais",
+  "title": "Cooperação nacional e internacional",
+  "ariaLabel": "Lista de parceiros institucionais",
+  "items": {
+    "fao": { "name": "FAO", "desc": "Food and Agriculture Organization" },
+    "oie": { "name": "OIE / WOAH", "desc": "Organização Mundial da Saúde Animal" },
+    "minagrip": { "name": "MINAGRIP", "desc": "Ministério da Agricultura e Pescas" },
+    "uan": { "name": "UAN", "desc": "Universidade Agostinho Neto" },
+    "sadc": { "name": "SADC", "desc": "Comunidade de Desenvolvimento da África Austral" },
+    "oms": { "name": "OMS", "desc": "Organização Mundial da Saúde" }
+  }
+}

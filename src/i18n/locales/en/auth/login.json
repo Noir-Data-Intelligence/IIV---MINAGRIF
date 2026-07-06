@@ -1,0 +1,38 @@
+{
+  "backToPortal": "Back to portal",
+  "brand": {
+    "title": "Veterinary\nResearch\nInstitute",
+    "subtitle": "Integrated system for laboratory management, production and quality control.",
+    "securityNote": "Secure and encrypted access. Your data is protected."
+  },
+  "footer": {
+    "copyright": "© {{year}} IIV — All rights reserved"
+  },
+  "form": {
+    "title": "Welcome back",
+    "subtitle": "Enter your credentials to access the system.",
+    "emailLabel": "Institutional email",
+    "emailPlaceholder": "name@iiv.gov.ao",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "forgotPassword": "Forgot?",
+    "submitDefault": "Sign in",
+    "submitLoading": "Signing in..."
+  },
+  "noAccount": "Don't have an account?",
+  "requestAccess": "Request access",
+  "demo": {
+    "title": "Quick access (demo)",
+    "hint": "Click a profile to auto-fill the form",
+    "roles": {
+      "admin": "Admin",
+      "tecnico": "Technician",
+      "gestor": "Manager",
+      "diretor": "Director",
+      "colaborador": "Staff"
+    }
+  },
+  "toast": {
+    "loginErrorTitle": "Sign-in error"
+  }
+}

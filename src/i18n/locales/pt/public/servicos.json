@@ -1,0 +1,51 @@
+{
+  "seo": {
+    "title": "Serviços",
+    "description": "Diagnóstico laboratorial, produção de vacinas, investigação, formação e consultoria do Instituto de Investigação Veterinária."
+  },
+  "hero": {
+    "kicker": "Áreas de Atuação",
+    "title": "Serviços ao sector veterinário e à saúde pública.",
+    "lead": "Diagnóstico, produção, investigação, formação e consultoria — uma gama integrada de serviços técnicos.",
+    "breadcrumb": "Serviços"
+  },
+  "cta": "Solicitar este serviço",
+  "items": [
+    {
+      "kicker": "01 — Diagnóstico",
+      "title": "Diagnóstico Laboratorial",
+      "desc": "Análises completas em virologia, bacteriologia, parasitologia, serologia e patologia animal. Resultados fiáveis com tecnologia de ponta e validação metodológica rigorosa.",
+      "caps": ["Virologia veterinária", "Bacteriologia e antibiograma", "Parasitologia", "Histopatologia"]
+    },
+    {
+      "kicker": "02 — Produção",
+      "title": "Produção de Vacinas",
+      "desc": "Fabricação de vacinas autógenas e comerciais, soros hiperimunes e reagentes de diagnóstico para o sector veterinário angolano e regional.",
+      "caps": ["Vacinas autógenas", "Soros hiperimunes", "Reagentes de diagnóstico", "Controlo de qualidade"]
+    },
+    {
+      "kicker": "03 — Investigação",
+      "title": "Investigação Científica",
+      "desc": "Projectos de investigação aplicada em saúde animal, epidemiologia e segurança alimentar, com parcerias nacionais e internacionais.",
+      "caps": ["Epidemiologia veterinária", "Doenças emergentes", "Segurança alimentar", "Publicação científica"]
+    },
+    {
+      "kicker": "04 — Formação",
+      "title": "Formação Técnica",
+      "desc": "Programas de capacitação para técnicos veterinários, laboratoristas e profissionais do sector agropecuário em todas as províncias.",
+      "caps": ["Acções de formação", "Estágios curriculares", "Workshops técnicos", "Certificação"]
+    },
+    {
+      "kicker": "05 — Qualidade",
+      "title": "Controlo de Qualidade",
+      "desc": "Validação de métodos, auditorias internas e certificação de conformidade com normas internacionais ISO e OIE.",
+      "caps": ["Validação de métodos", "Auditorias", "Não-conformidades", "Acreditação"]
+    },
+    {
+      "kicker": "06 — Consultoria",
+      "title": "Consultoria e Pareceres",
+      "desc": "Emissão de pareceres técnicos e consultoria especializada para entidades públicas, organizações e parceiros privados.",
+      "caps": ["Pareceres oficiais", "Consultoria técnica", "Apoio regulamentar", "Estudos de impacto"]
+    }
+  ]
+}

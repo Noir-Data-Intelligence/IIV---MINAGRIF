@@ -1,0 +1,30 @@
+{
+  "backToPortal": "Voltar ao portal",
+  "brand": {
+    "title": "Definir nova\nPalavra-passe",
+    "subtitle": "Escolha uma palavra-passe segura para a sua conta institucional."
+  },
+  "footer": {
+    "copyright": "© {{year}} IIV — Todos os direitos reservados"
+  },
+  "form": {
+    "title": "Nova palavra-passe",
+    "subtitleReady": "Defina a sua nova palavra-passe abaixo.",
+    "subtitleValidating": "A validar o link de recuperação...",
+    "passwordLabel": "Nova palavra-passe",
+    "passwordPlaceholder": "Mínimo 6 caracteres",
+    "confirmLabel": "Confirmar palavra-passe",
+    "submitDefault": "Atualizar Palavra-passe",
+    "submitLoading": "A atualizar..."
+  },
+  "backToLogin": "Voltar ao login",
+  "toast": {
+    "shortPasswordTitle": "Palavra-passe curta",
+    "shortPasswordDescription": "Use pelo menos 6 caracteres.",
+    "mismatchTitle": "Não coincidem",
+    "mismatchDescription": "As palavras-passe não correspondem.",
+    "errorTitle": "Erro",
+    "successTitle": "Palavra-passe atualizada",
+    "successDescription": "Pode entrar com a nova palavra-passe."
+  }
+}

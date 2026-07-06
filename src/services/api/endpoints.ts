@@ -21,11 +21,19 @@ export const endpoints = {
     list: "/legislacao",
     detail: (id: string) => `/legislacao/${id}`,
   },
+  heroSlides: {
+    list: "/hero-slides",
+  },
+  publicStats: {
+    summary: "/public/stats",
+  },
+  contactMessages: {
+    create: "/contact-messages",
+  },
 
   // --- Módulos futuros (contrato documentado, ainda sem implementação) -----
   //
   // GERAL
-  //   heroSlides:    "/hero-slides"           (+ detail /{id})
   //   mensagens:     "/mensagens"             (+ detail /{id})
   //   notificacoes:  "/notificacoes"          (+ detail /{id})
   //   utilizadores:  "/utilizadores"          (+ detail /{id})

@@ -1,0 +1,25 @@
+{
+  "backToPortal": "Voltar ao portal",
+  "brand": {
+    "title": "Recuperar\nPalavra-passe",
+    "subtitle": "Insira o seu email institucional e receberá instruções para redefinir a sua palavra-passe."
+  },
+  "footer": {
+    "copyright": "© {{year}} IIV — Todos os direitos reservados"
+  },
+  "form": {
+    "title": "Recuperar acesso",
+    "subtitle": "Introduza o email associado à sua conta para receber as instruções.",
+    "emailLabel": "Email institucional",
+    "emailPlaceholder": "nome@iiv.gov.ao",
+    "submitDefault": "Enviar Instruções",
+    "submitLoading": "A enviar..."
+  },
+  "rememberedPassword": "Lembrou-se da palavra-passe?",
+  "backToLogin": "Voltar ao login",
+  "toast": {
+    "errorTitle": "Erro",
+    "successTitle": "Email enviado",
+    "successDescription": "Verifique a sua caixa de email para redefinir a palavra-passe."
+  }
+}

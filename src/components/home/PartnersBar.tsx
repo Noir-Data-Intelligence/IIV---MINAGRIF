@@ -1,43 +1,59 @@
-const partners = [
-  { name: "FAO", desc: "Food and Agriculture Organization" },
-  { name: "OIE / WOAH", desc: "Organização Mundial da Saúde Animal" },
-  { name: "MINAGRIP", desc: "Ministério da Agricultura e Pescas" },
-  { name: "UAN", desc: "Universidade Agostinho Neto" },
-  { name: "SADC", desc: "Comunidade de Desenvolvimento da África Austral" },
-  { name: "OMS", desc: "Organização Mundial da Saúde" },
-];
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import i18n from "@/i18n";
+import ptPartners from "@/i18n/locales/pt/public/partners.json";
+import enPartners from "@/i18n/locales/en/public/partners.json";
+
+// Namespace "partners" não faz parte do bundle central (src/i18n/index.ts, que só
+// regista "common"/"nav"). Registamo-lo aqui em runtime para manter este componente
+// autónomo sem tocar na configuração global do i18next.
+if (!i18n.hasResourceBundle("pt", "partners")) i18n.addResourceBundle("pt", "partners", ptPartners, true, true);
+if (!i18n.hasResourceBundle("en", "partners")) i18n.addResourceBundle("en", "partners", enPartners, true, true);
+
+const partnerKeys = ["fao", "oie", "minagrip", "uan", "sadc", "oms"] as const;
 
 export function PartnersBar() {
+  const { t } = useTranslation("partners");
+  const prefersReducedMotion = useReducedMotion();
+  const containerVariants = prefersReducedMotion ? {} : staggerContainer;
+  const itemVariants = prefersReducedMotion ? {} : fadeInUp;
+
   return (
     <section className="section-divider py-16 md:py-20">
       <div className="container">
         <div className="text-center mb-10">
           <p className="kicker text-[hsl(var(--iiv-gold))] justify-center inline-flex">
-            <span className="editorial-rule mr-3" /> Parceiros institucionais
+            <span className="editorial-rule mr-3" /> {t("kicker")}
           </p>
           <h2 className="font-serif text-2xl md:text-3xl mt-4">
-            Cooperação nacional e internacional
+            {t("title")}
           </h2>
         </div>
-        <div
+        <motion.div
           className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-border rounded-2xl overflow-hidden border border-border/60"
           role="list"
-          aria-label="Lista de parceiros institucionais"
+          aria-label={t("ariaLabel")}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={containerVariants}
         >
-          {partners.map((p) => (
-            <div
-              key={p.name}
+          {partnerKeys.map((key) => (
+            <motion.div
+              key={key}
               role="listitem"
-              title={p.desc}
+              title={t(`items.${key}.desc`)}
               className="bg-card aspect-[3/2] flex flex-col items-center justify-center p-4 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+              variants={itemVariants}
             >
-              <p className="font-serif text-xl md:text-2xl text-primary tracking-tight">{p.name}</p>
+              <p className="font-serif text-xl md:text-2xl text-primary tracking-tight">{t(`items.${key}.name`)}</p>
               <p className="text-[10px] text-muted-foreground text-center mt-1 line-clamp-2 uppercase tracking-wider">
-                {p.desc}
+                {t(`items.${key}.desc`)}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

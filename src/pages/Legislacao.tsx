@@ -1,62 +1,68 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Download, Search, FileText } from "lucide-react";
 import { PageHero } from "@/components/layout/PageHero";
 import { SEO } from "@/components/SEO";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
+import { useLegislacaoList } from "@/hooks/queries/useLegislacao";
+import { LEGISLACAO_TIPOS } from "@/types/dto/legislacao";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import i18n from "@/i18n";
+import ptLegislacao from "@/i18n/locales/pt/public/legislacao.json";
+import enLegislacao from "@/i18n/locales/en/public/legislacao.json";
 import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
 
-interface Item {
-  id: string; num: string; slug: string; titulo: string;
-  descricao: string | null; tipo: string; ano: string; pdf_path: string | null;
-}
-
-const tipos = ["Todos", "Lei", "Decreto", "Regulamento", "Norma", "Portaria"];
+// Namespace "legislacao" não faz parte do bundle central (src/i18n/index.ts,
+// que só regista "common"/"nav"). Registamo-lo aqui em runtime para manter
+// esta página autónoma sem tocar na configuração global do i18next.
+if (!i18n.hasResourceBundle("pt", "legislacao")) i18n.addResourceBundle("pt", "legislacao", ptLegislacao, true, true);
+if (!i18n.hasResourceBundle("en", "legislacao")) i18n.addResourceBundle("en", "legislacao", enLegislacao, true, true);
 
 export default function Legislacao() {
+  const { t } = useTranslation("legislacao");
+  const tipoLabels: Record<string, string> = {
+    Todos: t("tabs.todos"),
+    Lei: t("tabs.tipos.lei"),
+    Decreto: t("tabs.tipos.decreto"),
+    Regulamento: t("tabs.tipos.regulamento"),
+    Norma: t("tabs.tipos.norma"),
+    Portaria: t("tabs.tipos.portaria"),
+  };
+  const tipos = ["Todos", ...LEGISLACAO_TIPOS];
   const [tipo, setTipo] = useState("Todos");
   const [q, setQ] = useState("");
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
+  const shouldReduceMotion = useReducedMotion();
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("legislation")
-        .select("*")
-        .eq("published", true)
-        .order("num");
-      setItems((data as Item[]) ?? []);
-      setLoading(false);
-    })();
-  }, []);
+  const { data: items = [], isLoading: loading } = useLegislacaoList({ published: true });
 
   const filtered = useMemo(() => {
     return items.filter((l) => {
       const matchTipo = tipo === "Todos" || l.tipo === tipo;
-      const matchQ = !q || l.titulo.toLowerCase().includes(q.toLowerCase()) || (l.descricao || "").toLowerCase().includes(q.toLowerCase());
+      const matchQ =
+        !q ||
+        l.titulo.toLowerCase().includes(q.toLowerCase()) ||
+        (l.descricao || "").toLowerCase().includes(q.toLowerCase());
       return matchTipo && matchQ;
     });
   }, [items, tipo, q]);
 
-  const pdfUrl = (path: string) => supabase.storage.from("legislation").getPublicUrl(path).data.publicUrl;
-
   return (
     <>
       <SEO
-        title="Legislação"
-        description="Diplomas, normas e regulamentos aplicáveis à saúde animal e à actividade veterinária em Angola."
+        title={t("seo.title")}
+        description={t("seo.description")}
         path="/legislacao"
       />
       <PageHero
-        kicker="Quadro Legal"
-        title="Legislação e regulamentação do sector."
-        lead="Diplomas, normas e regulamentos aplicáveis à saúde animal e ao exercício da actividade veterinária em Angola."
+        kicker={t("hero.kicker")}
+        title={t("hero.title")}
+        lead={t("hero.lead")}
         image={heroInvestigacao}
-        breadcrumb={[{ label: "Legislação" }]}
+        breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
       <section className="py-10 border-b border-border/40 bg-accent/20">
@@ -70,7 +76,7 @@ export default function Legislacao() {
                     value={t}
                     className="rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wider data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
-                    {t}
+                    {tipoLabels[t] ?? t}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -80,7 +86,7 @@ export default function Legislacao() {
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Pesquisar legislação..."
+                placeholder={t("search.placeholder")}
                 className="pl-9 h-11 rounded-xl"
               />
             </div>
@@ -92,17 +98,28 @@ export default function Legislacao() {
         <div className="container max-w-5xl">
           {loading ? (
             <div className="space-y-6">
-              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
-              <p className="text-muted-foreground">Nenhum diploma encontrado.</p>
+              <p className="text-muted-foreground">{t("list.empty")}</p>
             </div>
           ) : (
-            <ul>
+            <motion.ul
+              variants={shouldReduceMotion ? undefined : staggerContainer}
+              initial={shouldReduceMotion ? false : "hidden"}
+              whileInView={shouldReduceMotion ? undefined : "visible"}
+              viewport={{ once: true, margin: "-80px" }}
+            >
               {filtered.map((l) => (
-                <li key={l.id} className="grid grid-cols-12 gap-6 items-center py-8 border-b border-border/40 first:border-t group hover:bg-accent/20 transition-colors -mx-4 px-4 rounded-xl">
+                <motion.li
+                  key={l.id}
+                  variants={shouldReduceMotion ? undefined : fadeInUp}
+                  className="grid grid-cols-12 gap-6 items-center py-8 border-b border-border/40 first:border-t group hover:bg-accent/20 transition-colors -mx-4 px-4 rounded-xl"
+                >
                   <div className="col-span-2">
                     <Link to={`/legislacao/${l.slug}`} className="block">
                       <p className="font-serif text-4xl md:text-5xl text-primary/30 group-hover:text-[hsl(var(--iiv-gold))] tracking-tight transition-colors">
@@ -112,27 +129,40 @@ export default function Legislacao() {
                   </div>
                   <div className="col-span-10 md:col-span-7">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="kicker text-[hsl(var(--iiv-gold))]">{l.tipo}</span>
+                      <span className="kicker text-[hsl(var(--iiv-gold))]">{tipoLabels[l.tipo] ?? l.tipo}</span>
                       <span className="font-mono text-[11px] text-muted-foreground">{l.ano}</span>
                     </div>
                     <Link to={`/legislacao/${l.slug}`}>
-                      <h3 className="font-serif text-xl md:text-2xl leading-tight hover:text-primary transition-colors">{l.titulo}</h3>
+                      <h3 className="font-serif text-xl md:text-2xl leading-tight hover:text-primary transition-colors">
+                        {l.titulo}
+                      </h3>
                     </Link>
-                    {l.descricao && <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{l.descricao}</p>}
+                    {l.descricao && (
+                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{l.descricao}</p>
+                    )}
                   </div>
                   <div className="col-span-12 md:col-span-3 md:text-right flex md:justify-end gap-4">
-                    <Link to={`/legislacao/${l.slug}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all">
-                      Ver detalhes
+                    <Link
+                      to={`/legislacao/${l.slug}`}
+                      className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all"
+                    >
+                      {t("list.viewDetails")}
                     </Link>
-                    {l.pdf_path && (
-                      <a href={pdfUrl(l.pdf_path)} download target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--iiv-gold))] hover:gap-3 transition-all">
+                    {l.pdfUrl && (
+                      <a
+                        href={l.pdfUrl}
+                        download
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--iiv-gold))] hover:gap-3 transition-all"
+                      >
                         <Download className="h-4 w-4" />
                       </a>
                     )}
                   </div>
-                </li>
+                </motion.li>
               ))}
-            </ul>
+            </motion.ul>
           )}
         </div>
       </section>

@@ -1,0 +1,35 @@
+{
+  "list": {
+    "seo": {
+      "title": "Notícias",
+      "description": "Notícias, campanhas e iniciativas do Instituto de Investigação Veterinária de Angola."
+    },
+    "hero": {
+      "kicker": "Sala de Imprensa",
+      "title": "Notícias e actualizações institucionais.",
+      "lead": "Acompanhe os projectos, campanhas e iniciativas do Instituto de Investigação Veterinária.",
+      "breadcrumb": "Notícias"
+    },
+    "filters": {
+      "all": "Todas"
+    },
+    "state": {
+      "empty": "Sem notícias para esta categoria.",
+      "readMore": "Ler artigo"
+    }
+  },
+  "detail": {
+    "back": "Notícias",
+    "seo": {
+      "fallbackDescription": "Notícia do IIV publicada em {{date}}.",
+      "notFoundTitle": "Notícia não encontrada",
+      "notFoundDescription": "A notícia procurada não está disponível."
+    },
+    "notFound": {
+      "title": "Notícia não encontrada",
+      "message": "A notícia que procura pode ter sido removida ou não está publicada.",
+      "back": "Voltar às notícias"
+    },
+    "empty": "Conteúdo em preparação."
+  }
+}

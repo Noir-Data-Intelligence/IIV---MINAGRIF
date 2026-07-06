@@ -1,0 +1,40 @@
+{
+  "seo": {
+    "title": "Política de Privacidade",
+    "description": "Como o IIV recolhe, utiliza e protege dados pessoais no portal institucional."
+  },
+  "hero": {
+    "kicker": "Documentos Legais",
+    "title": "Política de Privacidade",
+    "lead": "Compromisso com a protecção dos dados pessoais dos utilizadores do portal.",
+    "breadcrumb": "Privacidade"
+  },
+  "sections": {
+    "controller": {
+      "title": "1. Responsável pelo tratamento",
+      "body": "O Instituto de Investigação Veterinária (IIV) é o responsável pelo tratamento dos dados pessoais recolhidos através do presente portal."
+    },
+    "dataCollected": {
+      "title": "2. Dados recolhidos",
+      "body": "Recolhemos apenas os dados estritamente necessários: nome, e-mail e mensagem (no formulário de contacto); credenciais de acesso (na área restrita); e dados técnicos de navegação anonimizados (logs de acesso e endereço IP para fins de segurança)."
+    },
+    "purpose": {
+      "title": "3. Finalidade",
+      "body": "Os dados são utilizados para responder a pedidos, gerir os serviços laboratoriais, cumprir obrigações legais e melhorar a experiência de utilização do portal."
+    },
+    "retention": {
+      "title": "4. Conservação",
+      "body": "Os dados são conservados pelo tempo estritamente necessário ao cumprimento das finalidades para que foram recolhidos, ou pelos prazos exigidos por lei."
+    },
+    "rights": {
+      "title": "5. Direitos do titular",
+      "bodyBefore": "O titular dos dados tem direito de acesso, rectificação, eliminação e oposição ao tratamento. Para exercer estes direitos, contacte-nos através do endereço",
+      "bodyAfter": "."
+    },
+    "security": {
+      "title": "6. Segurança",
+      "body": "Adoptamos medidas técnicas e organizacionais adequadas para proteger os dados contra acessos não autorizados, perda, alteração ou divulgação indevida."
+    }
+  },
+  "lastUpdated": "Última actualização: Maio de 2026."
+}

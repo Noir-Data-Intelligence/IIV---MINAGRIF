@@ -1,13 +1,40 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, ArrowLeft, KeyRound } from "lucide-react";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
+import ptRecuperarSenha from "@/i18n/locales/pt/auth/recuperar-senha.json";
+import enRecuperarSenha from "@/i18n/locales/en/auth/recuperar-senha.json";
+
+const AUTH_RECUPERAR_SENHA_NS = "auth-recuperar-senha";
+if (!i18n.hasResourceBundle("pt", AUTH_RECUPERAR_SENHA_NS)) {
+  i18n.addResourceBundle("pt", AUTH_RECUPERAR_SENHA_NS, ptRecuperarSenha);
+}
+if (!i18n.hasResourceBundle("en", AUTH_RECUPERAR_SENHA_NS)) {
+  i18n.addResourceBundle("en", AUTH_RECUPERAR_SENHA_NS, enRecuperarSenha);
+}
+
+/** Divide um texto por "\n" e insere <br /> entre as linhas (mantém traduções como frases simples). */
+function renderMultiline(text: string) {
+  const lines = text.split("\n");
+  return lines.map((line, i) => (
+    <Fragment key={i}>
+      {line}
+      {i < lines.length - 1 && <br />}
+    </Fragment>
+  ));
+}
 
 export default function RecuperarSenha() {
+  const { t } = useTranslation(AUTH_RECUPERAR_SENHA_NS);
+  const shouldReduceMotion = useReducedMotion();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -21,16 +48,21 @@ export default function RecuperarSenha() {
     setLoading(false);
 
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: t("toast.errorTitle"), description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Email enviado", description: "Verifique a sua caixa de email para redefinir a palavra-passe." });
+      toast({ title: t("toast.successTitle"), description: t("toast.successDescription") });
     }
   };
 
   return (
-    <div className="min-h-screen flex">
+    <motion.div
+      className="min-h-screen flex"
+      variants={staggerContainer}
+      initial={shouldReduceMotion ? false : "hidden"}
+      animate="visible"
+    >
       {/* Left panel - branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden gradient-primary">
+      <motion.div className="hidden lg:flex lg:w-1/2 relative overflow-hidden gradient-primary" variants={fadeIn}>
         <div className="absolute inset-0">
           <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-secondary/10 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full bg-primary-foreground/5 blur-3xl" />
@@ -41,7 +73,7 @@ export default function RecuperarSenha() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
           <div>
             <Link to="/" className="inline-flex items-center gap-2 text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" /> Voltar ao portal
+              <ArrowLeft className="h-4 w-4" /> {t("backToPortal")}
             </Link>
           </div>
 
@@ -51,27 +83,27 @@ export default function RecuperarSenha() {
             </div>
             <div>
               <h1 className="font-serif text-4xl leading-[1.15]">
-                Recuperar<br />Palavra-passe
+                {renderMultiline(t("brand.title"))}
               </h1>
               <p className="mt-4 text-lg text-primary-foreground/70 max-w-sm leading-relaxed">
-                Insira o seu email institucional e receberá instruções para redefinir a sua palavra-passe.
+                {t("brand.subtitle")}
               </p>
             </div>
           </div>
 
           <p className="text-xs text-primary-foreground/40">
-            © {new Date().getFullYear()} IIV — Todos os direitos reservados
+            {t("footer.copyright", { year: new Date().getFullYear() })}
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Right panel - form */}
-      <div className="flex-1 flex items-center justify-center bg-background px-6 py-12">
+      <motion.div className="flex-1 flex items-center justify-center bg-background px-6 py-12" variants={fadeInUp}>
         <div className="w-full max-w-sm space-y-8">
           {/* Mobile header */}
           <div className="lg:hidden text-center space-y-3">
             <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" /> Voltar ao portal
+              <ArrowLeft className="h-4 w-4" /> {t("backToPortal")}
             </Link>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
               <KeyRound className="h-7 w-7" />
@@ -80,27 +112,27 @@ export default function RecuperarSenha() {
 
           {/* Form header */}
           <div className="space-y-2">
-            <h2 className="font-serif text-2xl font-bold text-foreground">Recuperar acesso</h2>
-            <p className="text-muted-foreground text-sm">Introduza o email associado à sua conta para receber as instruções.</p>
+            <h2 className="font-serif text-2xl font-bold text-foreground">{t("form.title")}</h2>
+            <p className="text-muted-foreground text-sm">{t("form.subtitle")}</p>
           </div>
 
           <form onSubmit={handleReset} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email institucional</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@iiv.gov.mz" required className="h-11" />
+              <Label htmlFor="email" className="text-sm font-medium">{t("form.emailLabel")}</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("form.emailPlaceholder")} required className="h-11" />
             </div>
             <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
               <Mail className="mr-2 h-4 w-4" />
-              {loading ? "A enviar..." : "Enviar Instruções"}
+              {loading ? t("form.submitLoading") : t("form.submitDefault")}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
-            Lembrou-se da palavra-passe?{" "}
-            <Link to="/login" className="font-medium text-primary hover:underline">Voltar ao login</Link>
+            {t("rememberedPassword")}{" "}
+            <Link to="/login" className="font-medium text-primary hover:underline">{t("backToLogin")}</Link>
           </p>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

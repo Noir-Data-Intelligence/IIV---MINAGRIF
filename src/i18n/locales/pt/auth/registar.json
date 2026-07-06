@@ -1,0 +1,30 @@
+{
+  "backToPortal": "Voltar ao portal",
+  "brand": {
+    "title": "Junte-se ao\nInstituto de\nInvestigação\nVeterinária",
+    "subtitle": "Crie a sua conta para aceder ao sistema integrado de gestão laboratorial.",
+    "securityNote": "A sua conta será verificada por email antes da activação."
+  },
+  "footer": {
+    "copyright": "© {{year}} IIV — Todos os direitos reservados"
+  },
+  "form": {
+    "title": "Criar Conta",
+    "subtitle": "Preencha os dados para solicitar acesso ao sistema.",
+    "nameLabel": "Nome Completo",
+    "namePlaceholder": "O seu nome completo",
+    "emailLabel": "Email institucional",
+    "emailPlaceholder": "nome@iiv.gov.ao",
+    "passwordLabel": "Palavra-passe",
+    "passwordPlaceholder": "Mínimo 6 caracteres",
+    "submitDefault": "Criar Conta",
+    "submitLoading": "A registar..."
+  },
+  "haveAccount": "Já tem conta?",
+  "loginLink": "Entrar",
+  "toast": {
+    "errorTitle": "Erro ao registar",
+    "successTitle": "Conta criada!",
+    "successDescription": "Verifique o seu email para confirmar a conta."
+  }
+}
