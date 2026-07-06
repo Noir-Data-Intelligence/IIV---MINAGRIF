@@ -1,0 +1,62 @@
+{
+  "page": {
+    "title": "Gestão de Notícias",
+    "description": "Crie, edite e publique notícias no portal público"
+  },
+  "actions": {
+    "new": "Nova Notícia",
+    "viewPublic": "Ver no portal",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "table": {
+    "image": "Capa",
+    "titulo": "Título",
+    "categoria": "Categoria",
+    "data": "Data",
+    "estado": "Estado",
+    "actions": "Acções",
+    "empty": "Nenhuma notícia registada.",
+    "searchPlaceholder": "Pesquisar notícias...",
+    "emptyCell": "—"
+  },
+  "badge": {
+    "published": "Publicada",
+    "draft": "Rascunho"
+  },
+  "form": {
+    "labels": {
+      "titulo": "Título",
+      "resumo": "Resumo",
+      "conteudo": "Conteúdo",
+      "categoria": "Categoria",
+      "publishedAt": "Data de publicação",
+      "image": "Imagem de capa",
+      "destaque": "Destaque",
+      "published": "Publicada"
+    },
+    "placeholders": {
+      "titulo": "Título da notícia",
+      "resumo": "Resumo curto exibido no portal",
+      "conteudo": "Texto completo da notícia (parágrafos separados por linha em branco)"
+    },
+    "imageKeepHint": "(deixar vazio para manter a imagem actual)",
+    "submitCreate": "Criar Notícia",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Nova Notícia",
+    "editTitle": "Editar Notícia"
+  },
+  "validation": {
+    "tituloShort": "Título demasiado curto"
+  },
+  "toast": {
+    "createSuccess": "Notícia criada com sucesso",
+    "updateSuccess": "Notícia actualizada",
+    "deleteSuccess": "Notícia eliminada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

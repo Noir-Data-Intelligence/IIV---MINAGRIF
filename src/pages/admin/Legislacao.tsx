@@ -1,240 +1,420 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { ExternalLink, FileText, Pencil, Plus, ScrollText, Trash2 } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, ScrollText, Pencil, Trash2, FileUp, ExternalLink } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  useCreateLegislacao,
+  useDeleteLegislacao,
+  useLegislacaoAdminList,
+  useUpdateLegislacao,
+} from "@/hooks/queries/useLegislacao";
+import { LEGISLACAO_TIPOS, type LegislacaoDto } from "@/types/dto/legislacao";
+import i18n from "@/i18n";
+import ptLegislacao from "@/i18n/locales/pt/admin/legislacao.json";
+import enLegislacao from "@/i18n/locales/en/admin/legislacao.json";
 
-interface Legislation {
-  id: string;
-  num: string;
-  slug: string;
-  titulo: string;
-  descricao: string | null;
-  tipo: string;
-  ano: string;
-  pdf_path: string | null;
-  published: boolean;
-}
+// Namespace "admin-legislacao" — distinto do namespace público "legislacao"
+// (src/pages/Legislacao.tsx / LegislacaoDetalhe.tsx), para que as chaves do
+// admin (rótulos de formulário, toasts, etc.) não colidam com as do portal
+// público. Não faz parte do bundle central (src/i18n/index.ts, que só
+// regista "common"/"nav"), por isso é registado aqui em runtime, tal como
+// "departamentos" em Departamentos.tsx.
+if (!i18n.hasResourceBundle("pt", "admin-legislacao"))
+  i18n.addResourceBundle("pt", "admin-legislacao", ptLegislacao, true, true);
+if (!i18n.hasResourceBundle("en", "admin-legislacao"))
+  i18n.addResourceBundle("en", "admin-legislacao", enLegislacao, true, true);
 
-const tipos = ["Lei", "Decreto", "Regulamento", "Norma", "Portaria"];
-
-function slugify(s: string) {
+/** Slug simples (sem acentos), usado ao criar um novo diploma. */
+function slugify(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\p{Diacritic}/gu, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 80);
 }
 
-export default function LegislacaoAdmin() {
-  const [items, setItems] = useState<Legislation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editItem, setEditItem] = useState<Legislation | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [form, setForm] = useState({ num: "", titulo: "", descricao: "", tipo: "Lei", ano: "", published: true });
+/**
+ * Schema zod construído com `t()` para que as mensagens de validação sigam o
+ * idioma activo, à semelhança de `buildDepartamentoSchema(t)` em Departamentos.tsx.
+ * Nota: o ficheiro PDF em si NÃO faz parte do schema — é mantido num estado
+ * `file` à parte (ver `handleFormOpenChange`/`file` mais abaixo), tal como a
+ * página Supabase original.
+ */
+function buildLegislacaoSchema(t: TFunction) {
+  return z.object({
+    num: z.string().trim().min(1, t("validation.numRequired")),
+    titulo: z.string().trim().min(2, t("validation.tituloShort")),
+    descricao: z.string().trim().optional(),
+    tipo: z.enum(LEGISLACAO_TIPOS, { required_error: t("validation.tipoRequired") }),
+    ano: z.string().trim().min(1, t("validation.anoRequired")),
+    published: z.boolean(),
+  });
+}
+
+type LegislacaoFormValues = z.infer<ReturnType<typeof buildLegislacaoSchema>>;
+
+export default function Legislacao() {
+  const { t } = useTranslation("admin-legislacao");
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("legislacao");
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
+  const [deleteSlug, setDeleteSlug] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<LegislacaoDto | null>(null);
+  // Ficheiro PDF seleccionado — fica FORA do schema/RHF; em mock, apenas o
+  // NOME do ficheiro é usado como `pdfUrl` (sem upload real).
+  // TODO Fase 4: upload real para Laravel Storage.
   const [file, setFile] = useState<File | null>(null);
-  const { toast } = useToast();
-  const pag = usePagination(20);
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data, count } = await supabase
-      .from("legislation")
-      .select("*", { count: "exact" })
-      .order("ano", { ascending: false })
-      .range(pag.from, pag.to);
-    setItems(data ?? []);
-    pag.setTotal(count ?? 0);
-    setLoading(false);
-  };
+  const { data, isLoading } = useLegislacaoAdminList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
+  const createLegislacao = useCreateLegislacao();
+  const updateLegislacao = useUpdateLegislacao();
+  const deleteLegislacao = useDeleteLegislacao();
 
-  const resetForm = () => {
-    setForm({ num: "", titulo: "", descricao: "", tipo: "Lei", ano: "", published: true });
-    setFile(null);
-    setEditItem(null);
-  };
+  const legislacaoSchema = useMemo(() => buildLegislacaoSchema(t), [t]);
 
-  const openCreate = () => { resetForm(); setOpen(true); };
-  const openEdit = (it: Legislation) => {
-    setEditItem(it);
-    setForm({
-      num: it.num, titulo: it.titulo, descricao: it.descricao || "",
-      tipo: it.tipo, ano: it.ano, published: it.published,
-    });
-    setFile(null);
-    setOpen(true);
-  };
+  const initialValues = useMemo<Partial<LegislacaoFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            num: editItem.num,
+            titulo: editItem.titulo,
+            descricao: editItem.descricao ?? "",
+            tipo: (editItem.tipo as LegislacaoFormValues["tipo"]) ?? "Lei",
+            ano: editItem.ano,
+            published: editItem.published,
+          }
+        : undefined,
+    [editItem],
+  );
 
-  const uploadPdf = async (slug: string): Promise<string | null> => {
-    if (!file) return null;
-    const ext = file.name.split(".").pop() || "pdf";
-    const path = `${slug}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("legislation").upload(path, file, {
-      contentType: file.type || "application/pdf",
-      upsert: true,
-    });
-    if (error) throw error;
-    return path;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUploading(true);
-    try {
-      const slug = editItem?.slug || slugify(form.titulo);
-      let pdf_path = editItem?.pdf_path ?? null;
-      if (file) pdf_path = await uploadPdf(slug);
-
+  const entityForm = useEntityForm({
+    schema: legislacaoSchema,
+    initialValues,
+    defaultValues: { num: "", titulo: "", descricao: "", tipo: "Lei", ano: "", published: true },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const pdfUrl = file ? file.name : (editItem?.pdfUrl ?? null);
+      const payload: Partial<LegislacaoDto> = {
+        num: values.num,
+        titulo: values.titulo,
+        descricao: values.descricao?.trim() ? values.descricao.trim() : null,
+        tipo: values.tipo,
+        ano: values.ano,
+        published: values.published,
+        pdfUrl,
+      };
       if (editItem) {
-        const { error } = await supabase.from("legislation").update({
-          num: form.num, titulo: form.titulo, descricao: form.descricao || null,
-          tipo: form.tipo, ano: form.ano, published: form.published, pdf_path,
-        }).eq("id", editItem.id);
-        if (error) throw error;
-        toast({ title: "Diploma actualizado" });
+        await updateLegislacao.mutateAsync({ slug: editItem.slug, payload });
       } else {
-        const { error } = await supabase.from("legislation").insert({
-          num: form.num, slug, titulo: form.titulo, descricao: form.descricao || null,
-          tipo: form.tipo, ano: form.ano, published: form.published, pdf_path,
-        });
-        if (error) throw error;
-        toast({ title: "Diploma criado" });
+        await createLegislacao.mutateAsync({ ...payload, slug: slugify(values.titulo) });
       }
-      setOpen(false); resetForm(); fetchData();
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
-      setUploading(false);
-    }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => {
+      setFormOpen(false);
+      setFile(null);
+    },
+  });
+
+  const handleFormOpenChange = (open: boolean) => {
+    setFormOpen(open);
+    if (!open) setFile(null);
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const item = items.find((i) => i.id === deleteId);
-    if (item?.pdf_path) {
-      await supabase.storage.from("legislation").remove([item.pdf_path]);
-    }
-    const { error } = await supabase.from("legislation").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Diploma eliminado" }); setDeleteId(null); fetchData();
+  const openCreate = () => {
+    setEditItem(null);
+    setFile(null);
+    setFormOpen(true);
   };
 
-  const publicUrl = (path: string) => supabase.storage.from("legislation").getPublicUrl(path).data.publicUrl;
+  const openEdit = (item: LegislacaoDto) => {
+    setEditItem(item);
+    setFile(null);
+    setFormOpen(true);
+  };
+
+  const togglePublished = (item: LegislacaoDto) => {
+    if (!canEdit) return;
+    updateLegislacao.mutate({ slug: item.slug, payload: { published: !item.published } });
+  };
+
+  const columns = useMemo<ColumnDef<LegislacaoDto>[]>(
+    () => [
+      {
+        accessorKey: "num",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.num")} />,
+        cell: ({ row }) => <span className="font-mono text-xs">{row.original.num}</span>,
+      },
+      {
+        accessorKey: "titulo",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.titulo")} />,
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium">{row.original.titulo}</p>
+            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+              <Badge variant="outline">{row.original.tipo}</Badge>
+              <span>{row.original.ano}</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "published",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.estado")} />,
+        cell: ({ row }) => {
+          const item = row.original;
+          const badge = (
+            <Badge variant={item.published ? "default" : "secondary"}>
+              {item.published ? t("status.published") : t("status.draft")}
+            </Badge>
+          );
+          if (!canEdit) return badge;
+          return (
+            <button type="button" onClick={() => togglePublished(item)} className="cursor-pointer">
+              {badge}
+            </button>
+          );
+        },
+      },
+      {
+        id: "pdf",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.pdf")} />,
+        cell: ({ row }) =>
+          row.original.pdfUrl ? (
+            <span className="inline-flex items-center gap-1 text-xs text-primary">
+              <FileText className="h-3.5 w-3.5" /> {t("table.pdfAvailable")}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">{t("table.pdfNone")}</span>
+          ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, canEdit],
+  );
+
+  const renderRowActions = (row: LegislacaoDto) => {
+    const actions: RowAction[] = [];
+    if (row.pdfUrl) {
+      actions.push({
+        label: t("actions.viewPdf"),
+        icon: ExternalLink,
+        onClick: () => window.open(row.pdfUrl as string, "_blank", "noopener,noreferrer"),
+      });
+    }
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteSlug(row.slug),
+      });
+    }
+    return <RowActions actions={actions} />;
+  };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={ScrollText} title="Gestão de Legislação" description="Diplomas e regulamentos do sector veterinário">
-        <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Novo Diploma</Button>
+      <AdminPageHeader icon={ScrollText} title={t("page.title")} description={t("page.description")}>
+        <WriteGuard module="legislacao">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="font-serif">{editItem ? "Editar Diploma" : "Novo Diploma"}</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <DataTable
+        columns={columns}
+        data={data?.data ?? []}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={handleFormOpenChange}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+        className="max-w-2xl"
+      >
+        {(form) => (
+          <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div><Label>Número</Label><Input value={form.num} onChange={(e) => setForm({ ...form, num: e.target.value })} placeholder="Ex: 01" required /></div>
-              <div>
-                <Label>Tipo</Label>
-                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-                  {tipos.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div><Label>Ano</Label><Input value={form.ano} onChange={(e) => setForm({ ...form, ano: e.target.value })} placeholder="2024" required /></div>
+              <FormField
+                control={form.control}
+                name="num"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.num")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.num")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tipo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.tipo")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {LEGISLACAO_TIPOS.map((tipo) => (
+                          <SelectItem key={tipo} value={tipo}>
+                            {tipo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ano"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.ano")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.ano")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <div><Label>Título</Label><Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} required /></div>
-            <div><Label>Descrição</Label><Textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} rows={3} /></div>
+            <FormField
+              control={form.control}
+              name="titulo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.titulo")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.titulo")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="descricao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.descricao")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t("form.placeholders.descricao")}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Upload de PDF fora do RHF/zod — mock usa apenas o NOME do ficheiro
+                como pdfUrl (sem upload real). TODO Fase 4: upload real para Laravel Storage. */}
             <div>
-              <Label>Ficheiro PDF {editItem?.pdf_path && <span className="text-xs text-muted-foreground">(deixar vazio para manter)</span>}</Label>
-              <Input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              {editItem?.pdf_path && !file && (
-                <a href={publicUrl(editItem.pdf_path)} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 mt-1">
-                  <ExternalLink className="h-3 w-3" /> Ver PDF actual
+              <Label>
+                {t("form.labels.pdf")}{" "}
+                {editItem?.pdfUrl && (
+                  <span className="text-xs text-muted-foreground">{t("form.pdfKeepHint")}</span>
+                )}
+              </Label>
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              {editItem?.pdfUrl && !file && (
+                <a
+                  href={editItem.pdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-primary inline-flex items-center gap-1 mt-1"
+                >
+                  <ExternalLink className="h-3 w-3" /> {t("form.pdfCurrentLink")}
                 </a>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
-              <Label>Publicado no portal público</Label>
-            </div>
-            <Button type="submit" className="w-full" disabled={uploading}>
-              {uploading ? "A guardar..." : editItem ? "Guardar Alterações" : "Criar Diploma"}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
+            <FormField
+              control={form.control}
+              name="published"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel className="!mt-0">{t("form.labels.published")}</FormLabel>
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </EntityFormDialog>
 
-      <AdminCard title="Diplomas" icon={ScrollText} loading={loading} isEmpty={items.length === 0} emptyMessage="Nenhum diploma registado.">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">Nº</TableHead>
-              <TableHead>Título</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Ano</TableHead>
-              <TableHead>PDF</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="w-24">Acções</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((it) => (
-              <TableRow key={it.id}>
-                <TableCell className="font-mono text-xs">{it.num}</TableCell>
-                <TableCell className="font-medium">{it.titulo}</TableCell>
-                <TableCell>{it.tipo}</TableCell>
-                <TableCell>{it.ano}</TableCell>
-                <TableCell>
-                  {it.pdf_path ? (
-                    <a href={publicUrl(it.pdf_path)} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 text-xs">
-                      <FileUp className="h-3 w-3" /> Ver
-                    </a>
-                  ) : <span className="text-xs text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell>
-                  <span className={`text-xs px-2 py-1 rounded-full ${it.published ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                    {it.published ? "Publicado" : "Rascunho"}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(it)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(it.id)}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
+      <DeleteConfirmDialog
+        open={!!deleteSlug}
+        onOpenChange={(o) => !o && setDeleteSlug(null)}
+        onConfirm={async () => {
+          if (!deleteSlug) return;
+          await deleteLegislacao.mutateAsync(deleteSlug);
+          setDeleteSlug(null);
+        }}
+      />
     </div>
   );
 }

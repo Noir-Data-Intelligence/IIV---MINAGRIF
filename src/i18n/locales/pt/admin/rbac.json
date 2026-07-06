@@ -1,0 +1,82 @@
+{
+  "page": {
+    "title": "Gestão de Permissões (RBAC)",
+    "description": "Matriz consolidada de acessos por papel e módulo"
+  },
+  "actions": {
+    "reload": "Recarregar"
+  },
+  "tabs": {
+    "matrix": "Matriz de Permissões",
+    "users": "Atribuição a Utilizadores"
+  },
+  "matrix": {
+    "cardTitle": "Matriz Papel × Módulo",
+    "filterPlaceholder": "Filtrar módulos...",
+    "view": "Ver",
+    "write": "Escrever",
+    "dirty_one": "{{count}} alteração por guardar",
+    "dirty_other": "{{count}} alterações por guardar",
+    "revert": "Reverter",
+    "save": "Guardar",
+    "saving": "A guardar...",
+    "resetDefault": "repor predefinição",
+    "resetTooltip": "Aplica as predefinições do papel (por guardar)",
+    "totals": "{{view}} ver · {{write}} esc.",
+    "thModule": "Módulo",
+    "thShortcuts": "Atalhos",
+    "allView": "Todos podem ver",
+    "allWrite": "Todos podem escrever",
+    "allNone": "Remover acesso a todos",
+    "noModules": "Nenhum módulo corresponde ao filtro.",
+    "canViewAria": "{{role}} pode ver {{module}}",
+    "canWriteAria": "{{role}} pode escrever {{module}}",
+    "note": "Nota: escrever implica ver. O papel “Administrador” mantém sempre acesso total e não é editável. Células com fundo âmbar indicam alterações por guardar."
+  },
+  "users": {
+    "cardTitle": "Papéis por Utilizador",
+    "empty": "Nenhum utilizador encontrado.",
+    "searchPlaceholder": "Procurar utilizador...",
+    "thUser": "Utilizador",
+    "thRoles": "Papéis atribuídos",
+    "thAssign": "Atribuir novo papel",
+    "noRoles": "Sem papéis",
+    "emptyName": "—",
+    "assign": "Atribuir",
+    "removeAria": "Remover {{role}}",
+    "removeTitle": "Remover papel?",
+    "removeDescription": "Esta acção remove o papel “{{role}}” deste utilizador."
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "remove": "Remover"
+  },
+  "toast": {
+    "resetApplied": {
+      "title": "Predefinições aplicadas",
+      "description": "Papel {{role}} reposto (por guardar)."
+    },
+    "saveError": {
+      "title": "Erro ao guardar"
+    },
+    "saveSuccess": {
+      "title": "Permissões actualizadas",
+      "description": "A matriz foi guardada com sucesso."
+    },
+    "alreadyAssigned": {
+      "title": "Já atribuído",
+      "description": "Este utilizador já tem o papel {{role}}."
+    },
+    "error": {
+      "title": "Erro",
+      "description": "Ocorreu um erro. Tente novamente."
+    },
+    "roleAssigned": {
+      "title": "Papel atribuído",
+      "description": "{{role}} adicionado ao utilizador."
+    },
+    "roleRemoved": {
+      "title": "Papel removido"
+    }
+  }
+}

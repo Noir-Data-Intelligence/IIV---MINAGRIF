@@ -1,0 +1,36 @@
+{
+  "page": {
+    "title": "Contact Messages",
+    "description": "{{total}} messages • {{unread}} unread on this page"
+  },
+  "status": {
+    "new": "New",
+    "read": "Read",
+    "responded": "Responded"
+  },
+  "table": {
+    "status": "Status",
+    "from": "From",
+    "subject": "Subject",
+    "date": "Date",
+    "actions": "Actions",
+    "empty": "No messages received yet.",
+    "searchPlaceholder": "Search messages..."
+  },
+  "actions": {
+    "view": "View",
+    "delete": "Delete"
+  },
+  "dialog": {
+    "from": "From",
+    "received": "Received",
+    "message": "Message",
+    "replyByEmail": "Reply by email",
+    "markResponded": "Mark as responded"
+  },
+  "toast": {
+    "respondedSuccess": "Marked as responded",
+    "deleteSuccess": "Message deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "page": {
+    "title": "Mensagens de Contacto",
+    "description": "{{total}} mensagens • {{unread}} por ler nesta página"
+  },
+  "status": {
+    "new": "Nova",
+    "read": "Lida",
+    "responded": "Respondida"
+  },
+  "table": {
+    "status": "Estado",
+    "from": "De",
+    "subject": "Assunto",
+    "date": "Data",
+    "actions": "Acções",
+    "empty": "Ainda não há mensagens recebidas.",
+    "searchPlaceholder": "Pesquisar mensagens..."
+  },
+  "actions": {
+    "view": "Ver",
+    "delete": "Eliminar"
+  },
+  "dialog": {
+    "from": "De",
+    "received": "Recebida",
+    "message": "Mensagem",
+    "replyByEmail": "Responder por email",
+    "markResponded": "Marcar como respondida"
+  },
+  "toast": {
+    "respondedSuccess": "Marcada como respondida",
+    "deleteSuccess": "Mensagem eliminada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

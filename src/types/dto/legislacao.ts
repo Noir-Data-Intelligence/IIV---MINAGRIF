@@ -32,3 +32,13 @@ export interface LegislacaoListParams {
   search?: string;
   published?: boolean;
 }
+
+/**
+ * Parâmetros de listagem PAGINADA (uso exclusivo do admin, via `<DataTable>`).
+ * Estende os filtros públicos com paginação server-side — ver nota em
+ * `services/api/legislacao.ts` sobre `listLegislacaoAdmin`.
+ */
+export interface LegislacaoAdminListParams extends LegislacaoListParams {
+  page?: number;
+  perPage?: number;
+}

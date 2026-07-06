@@ -1,0 +1,76 @@
+{
+  "page": {
+    "title": "Slideshow da Home",
+    "description": "Gerir as imagens e textos do destaque principal do portal público"
+  },
+  "actions": {
+    "new": "Novo Slide",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo"
+  },
+  "table": {
+    "image": "Imagem",
+    "content": "Kicker / Título",
+    "order": "Ordem",
+    "status": "Estado",
+    "actions": "Acções",
+    "empty": "Nenhum slide registado.",
+    "searchPlaceholder": "Pesquisar slides...",
+    "emptyCell": "—"
+  },
+  "badge": {
+    "published": "Publicado",
+    "draft": "Rascunho"
+  },
+  "form": {
+    "labels": {
+      "kicker": "Categoria (kicker)",
+      "title": "Título",
+      "subtitle": "Subtítulo",
+      "ctaLabel": "Texto do botão",
+      "ctaLink": "Link do botão",
+      "sortOrder": "Ordem",
+      "published": "Publicado",
+      "image": "Imagem"
+    },
+    "placeholders": {
+      "kicker": "Ex: Diagnóstico Laboratorial",
+      "title": "Título do slide",
+      "subtitle": "Subtítulo do slide",
+      "ctaLabel": "Ex: Saiba mais",
+      "ctaLink": "/servicos"
+    },
+    "ctaLinkHint": "Rota interna (ex.: /servicos) ou URL https de {{hosts}}.",
+    "imageHint": "Fase 4: upload real para Laravel Storage. Por agora, sem imagem seleccionada mantém-se o fallback local usado no portal público.",
+    "viewCurrentImage": "Ver imagem actual",
+    "submitCreate": "Criar Slide",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Novo Slide",
+    "editTitle": "Editar Slide"
+  },
+  "validation": {
+    "kickerShort": "Categoria demasiado curta",
+    "titleShort": "Título demasiado curto",
+    "subtitleShort": "Subtítulo demasiado curto",
+    "ctaLabelRequired": "O texto do botão é obrigatório",
+    "ctaLinkRequired": "O link do botão é obrigatório",
+    "ctaLinkProtocol": "Protocolo não permitido no link",
+    "ctaLinkRelative": "Use uma rota interna (ex.: /servicos) ou um domínio autorizado",
+    "ctaLinkHttpsOnly": "Apenas links https:// são permitidos",
+    "ctaLinkDomain": "Domínio não autorizado. Permitidos: {{hosts}}",
+    "ctaLinkFallback": "Link inválido. Use uma rota interna (ex.: /servicos) ou um URL https autorizado",
+    "sortOrderInvalid": "A ordem deve ser um número inteiro"
+  },
+  "toast": {
+    "createSuccess": "Slide criado com sucesso",
+    "updateSuccess": "Slide actualizado",
+    "deleteSuccess": "Slide eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

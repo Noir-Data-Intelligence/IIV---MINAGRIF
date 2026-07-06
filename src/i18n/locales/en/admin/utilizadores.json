@@ -1,0 +1,58 @@
+{
+  "page": {
+    "title": "User Management",
+    "description": "Registered users, with assigned roles and departments"
+  },
+  "actions": {
+    "permissionsMatrix": "Permissions matrix",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "table": {
+    "name": "Name",
+    "roles": "Roles",
+    "departments": "Departments",
+    "createdAt": "Registered on",
+    "actions": "Actions",
+    "empty": "No users found.",
+    "searchPlaceholder": "Search by name or phone...",
+    "emptyCell": "—",
+    "noRoles": "No roles"
+  },
+  "filters": {
+    "allRoles": "All roles",
+    "allDepartments": "All departments",
+    "rolePlaceholder": "Role",
+    "departmentPlaceholder": "Department"
+  },
+  "dialog": {
+    "editTitle": "Edit user",
+    "editDescription": "Update the name, phone, assigned roles and departments."
+  },
+  "form": {
+    "labels": {
+      "fullName": "Full name",
+      "phone": "Phone",
+      "roles": "Roles",
+      "departments": "Departments"
+    },
+    "placeholders": {
+      "phone": "+244 9XX XXX XXX"
+    },
+    "noDepartments": "No departments defined.",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "delete": {
+    "title": "Delete user?",
+    "description": "This action deletes the profile, roles and departments associated with it. The authentication account is not removed."
+  },
+  "toast": {
+    "updateSuccess": "User updated",
+    "updateSuccessDescription": "The changes have been saved.",
+    "deleteSuccess": "User deleted",
+    "deleteSuccessDescription": "The user record has been deleted.",
+    "error": "An error occurred. Please try again."
+  }
+}

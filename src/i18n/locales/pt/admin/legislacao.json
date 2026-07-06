@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Gestão de Legislação",
+    "description": "Diplomas e regulamentos do sector veterinário"
+  },
+  "actions": {
+    "new": "Novo Diploma",
+    "viewPdf": "Ver PDF",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "table": {
+    "num": "Nº",
+    "titulo": "Título",
+    "estado": "Estado",
+    "pdf": "PDF",
+    "pdfAvailable": "Disponível",
+    "pdfNone": "—",
+    "searchPlaceholder": "Pesquisar diplomas...",
+    "empty": "Nenhum diploma encontrado."
+  },
+  "status": {
+    "published": "Publicado",
+    "draft": "Rascunho"
+  },
+  "dialog": {
+    "createTitle": "Novo Diploma",
+    "editTitle": "Editar Diploma"
+  },
+  "form": {
+    "labels": {
+      "num": "Número",
+      "titulo": "Título",
+      "descricao": "Descrição",
+      "tipo": "Tipo",
+      "ano": "Ano",
+      "pdf": "Ficheiro PDF",
+      "published": "Publicado no portal público"
+    },
+    "placeholders": {
+      "num": "Ex: 01",
+      "titulo": "Título do diploma",
+      "descricao": "Descrição do diploma",
+      "ano": "2024"
+    },
+    "pdfKeepHint": "(deixar vazio para manter)",
+    "pdfCurrentLink": "Ver PDF actual",
+    "submitCreate": "Criar Diploma",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "validation": {
+    "numRequired": "Número obrigatório",
+    "tituloShort": "Título demasiado curto",
+    "tipoRequired": "Selecione o tipo",
+    "anoRequired": "Ano obrigatório"
+  },
+  "toast": {
+    "createSuccess": "Diploma criado com sucesso",
+    "updateSuccess": "Diploma actualizado",
+    "deleteSuccess": "Diploma eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

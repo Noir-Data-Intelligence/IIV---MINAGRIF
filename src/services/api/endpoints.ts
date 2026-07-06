@@ -27,14 +27,33 @@ export const endpoints = {
     list: "/departamentos",
     detail: (id: string) => `/departamentos/${id}`,
   },
+  users: {
+    list: "/users",
+    detail: (id: string) => `/users/${id}`,
+  },
+  rbac: {
+    permissions: "/rbac/permissions",
+    users: "/rbac/users",
+    userRole: (userId: string, role: string) => `/rbac/users/${userId}/roles/${role}`,
+  },
   heroSlides: {
     list: "/hero-slides",
+    /** Listagem admin (todos os slides, publicados ou não, paginada). */
+    admin: "/hero-slides/admin",
+    detail: (id: string) => `/hero-slides/${id}`,
   },
   publicStats: {
     summary: "/public/stats",
   },
   contactMessages: {
     create: "/contact-messages",
+    list: "/contact-messages",
+    detail: (id: string) => `/contact-messages/${id}`,
+  },
+  notifications: {
+    list: "/notifications",
+    detail: (id: string) => `/notifications/${id}`,
+    markAllRead: "/notifications/mark-all-read",
   },
 
   // --- Módulos futuros (contrato documentado, ainda sem implementação) -----
@@ -44,7 +63,6 @@ export const endpoints = {
   //   notificacoes:  "/notificacoes"          (+ detail /{id})
   //   utilizadores:  "/utilizadores"          (+ detail /{id})
   //   departamentos: "/departamentos"         (+ detail /{id})
-  //   rbac:          "/rbac/roles", "/rbac/permissions" (PUT matriz papel x módulo)
   //
   // LABORATÓRIO
   //   laboratorios:  "/laboratorios"

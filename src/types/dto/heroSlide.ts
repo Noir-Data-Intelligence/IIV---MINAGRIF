@@ -17,3 +17,14 @@ export interface HeroSlideDto {
   sortOrder: number;
   published: boolean;
 }
+
+/**
+ * Parâmetros de listagem paginada/filtrada de hero slides — usados apenas pela
+ * listagem admin (`listHeroSlidesAdmin`). A listagem pública (`listHeroSlides`)
+ * não é paginada e não aceita parâmetros.
+ */
+export interface HeroSlideListParams {
+  page?: number;
+  perPage?: number;
+  search?: string;
+}

@@ -1,0 +1,82 @@
+{
+  "page": {
+    "title": "Permissions Management (RBAC)",
+    "description": "Consolidated access matrix by role and module"
+  },
+  "actions": {
+    "reload": "Reload"
+  },
+  "tabs": {
+    "matrix": "Permissions Matrix",
+    "users": "User Assignment"
+  },
+  "matrix": {
+    "cardTitle": "Role × Module Matrix",
+    "filterPlaceholder": "Filter modules...",
+    "view": "View",
+    "write": "Write",
+    "dirty_one": "{{count}} unsaved change",
+    "dirty_other": "{{count}} unsaved changes",
+    "revert": "Revert",
+    "save": "Save",
+    "saving": "Saving...",
+    "resetDefault": "reset to default",
+    "resetTooltip": "Applies the role's defaults (unsaved)",
+    "totals": "{{view}} view · {{write}} write",
+    "thModule": "Module",
+    "thShortcuts": "Shortcuts",
+    "allView": "Everyone can view",
+    "allWrite": "Everyone can write",
+    "allNone": "Remove access for everyone",
+    "noModules": "No module matches the filter.",
+    "canViewAria": "{{role}} can view {{module}}",
+    "canWriteAria": "{{role}} can write {{module}}",
+    "note": "Note: write implies view. The “Administrator” role always keeps full access and is not editable. Cells with an amber background indicate unsaved changes."
+  },
+  "users": {
+    "cardTitle": "Roles per User",
+    "empty": "No user found.",
+    "searchPlaceholder": "Search user...",
+    "thUser": "User",
+    "thRoles": "Assigned roles",
+    "thAssign": "Assign new role",
+    "noRoles": "No roles",
+    "emptyName": "—",
+    "assign": "Assign",
+    "removeAria": "Remove {{role}}",
+    "removeTitle": "Remove role?",
+    "removeDescription": "This action removes the “{{role}}” role from this user."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "remove": "Remove"
+  },
+  "toast": {
+    "resetApplied": {
+      "title": "Defaults applied",
+      "description": "Role {{role}} reset (unsaved)."
+    },
+    "saveError": {
+      "title": "Error saving"
+    },
+    "saveSuccess": {
+      "title": "Permissions updated",
+      "description": "The matrix was saved successfully."
+    },
+    "alreadyAssigned": {
+      "title": "Already assigned",
+      "description": "This user already has the {{role}} role."
+    },
+    "error": {
+      "title": "Error",
+      "description": "An error occurred. Please try again."
+    },
+    "roleAssigned": {
+      "title": "Role assigned",
+      "description": "{{role}} added to the user."
+    },
+    "roleRemoved": {
+      "title": "Role removed"
+    }
+  }
+}

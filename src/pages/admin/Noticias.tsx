@@ -1,266 +1,466 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { Newspaper, Pencil, Plus, Star, Trash2, ExternalLink } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useEntityForm } from "@/hooks/useEntityForm";
 import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, Newspaper, Pencil, Trash2, ExternalLink, Star } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  useCreateNoticia,
+  useDeleteNoticia,
+  useNoticiasList,
+  useUpdateNoticia,
+} from "@/hooks/queries/useNoticias";
+import { NOTICIA_CATEGORIAS, type NoticiaDto } from "@/types/dto/noticia";
+import i18n from "@/i18n";
+import ptNoticiasAdmin from "@/i18n/locales/pt/admin/noticias.json";
+import enNoticiasAdmin from "@/i18n/locales/en/admin/noticias.json";
 
-interface Noticia {
-  id: string;
-  slug: string;
-  titulo: string;
-  resumo: string | null;
-  conteudo: string | null;
-  categoria: string;
-  image_path: string | null;
-  destaque: boolean;
-  published: boolean;
-  published_at: string | null;
-  created_at: string;
+// Namespace "admin-noticias" (distinto do namespace público "noticias" usado nas
+// páginas públicas de notícias, para não colidir com aquele bundle) registado em
+// runtime, tal como em Departamentos.tsx — este módulo não toca em src/i18n/index.ts.
+if (!i18n.hasResourceBundle("pt", "admin-noticias"))
+  i18n.addResourceBundle("pt", "admin-noticias", ptNoticiasAdmin, true, true);
+if (!i18n.hasResourceBundle("en", "admin-noticias"))
+  i18n.addResourceBundle("en", "admin-noticias", enNoticiasAdmin, true, true);
+
+// Regexp de marcas diacríticas (usada após normalize("NFD") para remover
+// acentos), construída via String.fromCharCode em vez de um literal \uXXXX
+// para evitar problemas de codificação de caracteres combinados no ficheiro.
+const COMBINING_MARKS_RE = new RegExp(`[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`, "g");
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(COMBINING_MARKS_RE, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 90);
 }
 
-const categorias = ["Geral", "Vacinação", "Infraestrutura", "Parcerias", "Vigilância", "Formação", "Investigação", "Eventos"];
-
-function slugify(s: string) {
-  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 90);
-}
-
-export default function NoticiasAdmin() {
-  const [items, setItems] = useState<Noticia[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editItem, setEditItem] = useState<Noticia | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    titulo: "", resumo: "", conteudo: "", categoria: "Geral",
-    destaque: false, published: true, published_at: "",
+/**
+ * Schema zod construído com `t()`, à semelhança de `buildDepartamentoSchema(t)`
+ * em Departamentos.tsx, para que as mensagens de validação sigam o idioma activo.
+ */
+function buildNoticiaSchema(t: TFunction) {
+  return z.object({
+    titulo: z.string().trim().min(2, t("validation.tituloShort")),
+    resumo: z.string().trim().optional(),
+    conteudo: z.string().trim().optional(),
+    categoria: z.enum(NOTICIA_CATEGORIAS),
+    destaque: z.boolean(),
+    published: z.boolean(),
+    published_at: z.string().optional(),
   });
-  const [file, setFile] = useState<File | null>(null);
+}
+
+type NoticiaFormValues = z.infer<ReturnType<typeof buildNoticiaSchema>>;
+
+export default function Noticias() {
+  const { t, i18n: i18nInstance } = useTranslation("admin-noticias");
   const { toast } = useToast();
-  const pag = usePagination(20);
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("noticias");
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data, count } = await supabase
-      .from("noticias")
-      .select("*", { count: "exact" })
-      .order("published_at", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false })
-      .range(pag.from, pag.to);
-    setItems(data ?? []);
-    pag.setTotal(count ?? 0);
-    setLoading(false);
-  };
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<NoticiaDto | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
+  const { data, isLoading } = useNoticiasList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
 
-  const resetForm = () => {
-    setForm({ titulo: "", resumo: "", conteudo: "", categoria: "Geral", destaque: false, published: true, published_at: new Date().toISOString().slice(0, 10) });
-    setFile(null);
-    setEditItem(null);
-  };
+  const createNoticia = useCreateNoticia();
+  const updateNoticia = useUpdateNoticia();
+  const deleteNoticia = useDeleteNoticia();
 
-  const openCreate = () => { resetForm(); setOpen(true); };
-  const openEdit = (it: Noticia) => {
-    setEditItem(it);
-    setForm({
-      titulo: it.titulo, resumo: it.resumo ?? "", conteudo: it.conteudo ?? "",
-      categoria: it.categoria, destaque: it.destaque, published: it.published,
-      published_at: (it.published_at ?? it.created_at).slice(0, 10),
-    });
-    setFile(null);
-    setOpen(true);
-  };
+  const noticiaSchema = useMemo(() => buildNoticiaSchema(t), [t]);
 
-  const uploadImage = async (slug: string): Promise<string | null> => {
-    if (!file) return null;
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `${slug}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("noticias").upload(path, file, { contentType: file.type, upsert: true });
-    if (error) throw error;
-    return path;
-  };
+  const initialValues = useMemo<Partial<NoticiaFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            titulo: editItem.titulo,
+            resumo: editItem.resumo ?? "",
+            conteudo: editItem.conteudo ?? "",
+            categoria: (editItem.categoria as NoticiaFormValues["categoria"]) ?? "Geral",
+            destaque: editItem.destaque,
+            published: editItem.published,
+            published_at: (editItem.published_at ?? editItem.created_at)?.slice(0, 10) ?? "",
+          }
+        : undefined,
+    [editItem],
+  );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const slug = editItem?.slug || `${slugify(form.titulo)}-${Math.random().toString(36).slice(2, 6)}`;
-      let image_path = editItem?.image_path ?? null;
-      if (file) image_path = await uploadImage(slug);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      const payload = {
-        titulo: form.titulo,
-        resumo: form.resumo || null,
-        conteudo: form.conteudo || null,
-        categoria: form.categoria,
-        destaque: form.destaque,
-        published: form.published,
-        published_at: form.published_at ? new Date(form.published_at).toISOString() : null,
+  const entityForm = useEntityForm({
+    schema: noticiaSchema,
+    initialValues,
+    defaultValues: {
+      titulo: "",
+      resumo: "",
+      conteudo: "",
+      categoria: "Geral",
+      destaque: false,
+      published: true,
+      published_at: new Date().toISOString().slice(0, 10),
+    },
+    open: formOpen,
+    onSubmit: async (values) => {
+      // TODO Fase 4: upload real para Laravel Storage — por agora guarda-se apenas
+      // o nome do ficheiro seleccionado, sem qualquer envio real de imagem.
+      const image_path = file ? file.name : (editItem?.image_path ?? null);
+      const payload: Partial<NoticiaDto> = {
+        titulo: values.titulo,
+        resumo: values.resumo?.trim() ? values.resumo.trim() : null,
+        conteudo: values.conteudo?.trim() ? values.conteudo.trim() : null,
+        categoria: values.categoria,
+        destaque: values.destaque,
+        published: values.published,
+        published_at: values.published_at ? new Date(values.published_at).toISOString() : null,
         image_path,
       };
 
       if (editItem) {
-        const { error } = await supabase.from("noticias").update(payload).eq("id", editItem.id);
-        if (error) throw error;
-        toast({ title: "Notícia actualizada" });
+        await updateNoticia.mutateAsync({ id: editItem.id, payload });
       } else {
-        const { error } = await supabase.from("noticias").insert({ ...payload, slug, author_id: user?.id });
-        if (error) throw error;
-        toast({ title: "Notícia criada" });
+        const slug = `${slugify(values.titulo)}-${Math.random().toString(36).slice(2, 6)}`;
+        await createNoticia.mutateAsync({ ...payload, slug });
       }
-      setOpen(false); resetForm(); fetchData();
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => {
+      setFormOpen(false);
+      setFile(null);
+    },
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFile(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (n: NoticiaDto) => {
+    setEditItem(n);
+    setFile(null);
+    setFormOpen(true);
+  };
+
+  const togglePublish = (n: NoticiaDto) => {
+    updateNoticia.mutate(
+      {
+        id: n.id,
+        payload: {
+          published: !n.published,
+          published_at: !n.published && !n.published_at ? new Date().toISOString() : n.published_at,
+        },
+      },
+      {
+        onError: (err: unknown) =>
+          toast({
+            title: t("toast.error"),
+            description: err instanceof Error ? err.message : undefined,
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  const columns = useMemo<ColumnDef<NoticiaDto>[]>(
+    () => [
+      {
+        id: "image",
+        header: t("table.image"),
+        enableSorting: false,
+        cell: ({ row }) =>
+          row.original.image_path ? (
+            <img src={row.original.image_path} alt="" className="h-10 w-14 rounded object-cover" />
+          ) : (
+            <div className="h-10 w-14 rounded bg-muted" />
+          ),
+      },
+      {
+        accessorKey: "titulo",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.titulo")} />,
+        cell: ({ row }) => (
+          <div className="max-w-sm">
+            <div className="font-medium flex items-center gap-2">
+              {row.original.destaque && <Star className="h-3.5 w-3.5 text-[hsl(var(--iiv-gold))] fill-current" />}
+              {row.original.titulo}
+            </div>
+            {row.original.resumo && (
+              <div className="text-xs text-muted-foreground line-clamp-1">{row.original.resumo}</div>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "categoria",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.categoria")} />,
+        cell: ({ row }) => <Badge variant="outline">{row.original.categoria}</Badge>,
+      },
+      {
+        id: "data",
+        accessorFn: (row) => row.published_at ?? row.created_at,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.data")} />,
+        cell: ({ row }) => {
+          const date = row.original.published_at ?? row.original.created_at;
+          return (
+            <span className="text-xs text-muted-foreground">
+              {new Date(date).toLocaleDateString(i18nInstance.language === "en" ? "en-GB" : "pt-AO")}
+            </span>
+          );
+        },
+      },
+      {
+        id: "estado",
+        header: t("table.estado"),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const n = row.original;
+          return (
+            <button onClick={() => canEdit && togglePublish(n)} className={canEdit ? "cursor-pointer" : "cursor-default"}>
+              <Badge variant={n.published ? "default" : "secondary"}>
+                {n.published ? t("badge.published") : t("badge.draft")}
+              </Badge>
+            </button>
+          );
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, i18nInstance.language, canEdit],
+  );
+
+  const renderRowActions = (row: NoticiaDto) => {
+    const actions: RowAction[] = [];
+    if (row.published) {
+      actions.push({
+        label: t("actions.viewPublic"),
+        icon: ExternalLink,
+        onClick: () => window.open(`/noticias/${row.slug}`, "_blank", "noopener,noreferrer"),
+      });
     }
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return <RowActions actions={actions} />;
   };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const item = items.find((i) => i.id === deleteId);
-    if (item?.image_path) await supabase.storage.from("noticias").remove([item.image_path]);
-    const { error } = await supabase.from("noticias").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Notícia eliminada" }); setDeleteId(null); fetchData();
-  };
-
-  const togglePublish = async (it: Noticia) => {
-    const { error } = await supabase.from("noticias").update({
-      published: !it.published,
-      published_at: !it.published && !it.published_at ? new Date().toISOString() : it.published_at,
-    }).eq("id", it.id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    fetchData();
-  };
-
-  const imageUrl = (path: string) => supabase.storage.from("noticias").getPublicUrl(path).data.publicUrl;
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={Newspaper} title="Gestão de Notícias" description="Crie, edite e publique notícias no portal público">
-        <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Nova Notícia</Button>
+      <AdminPageHeader icon={Newspaper} title={t("page.title")} description={t("page.description")}>
+        <WriteGuard module="noticias">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-serif">{editItem ? "Editar Notícia" : "Nova Notícia"}</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div><Label>Título *</Label><Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} required /></div>
+      <DataTable
+        columns={columns}
+        data={data?.data ?? []}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={(o) => {
+          setFormOpen(o);
+          if (!o) setFile(null);
+        }}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="titulo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.titulo")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.titulo")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label>Categoria</Label>
-                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
-                  {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div><Label>Data de publicação</Label><Input type="date" value={form.published_at} onChange={(e) => setForm({ ...form, published_at: e.target.value })} /></div>
+              <FormField
+                control={form.control}
+                name="categoria"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.categoria")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {NOTICIA_CATEGORIAS.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="published_at"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.publishedAt")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <div><Label>Resumo</Label><Textarea value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} rows={2} placeholder="Resumo curto exibido no portal" /></div>
-            <div><Label>Conteúdo</Label><Textarea value={form.conteudo} onChange={(e) => setForm({ ...form, conteudo: e.target.value })} rows={10} placeholder="Texto completo da notícia (parágrafos separados por linha em branco)" /></div>
+
+            <FormField
+              control={form.control}
+              name="resumo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.resumo")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t("form.placeholders.resumo")}
+                      rows={2}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="conteudo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.conteudo")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t("form.placeholders.conteudo")}
+                      rows={10}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div>
-              <Label>Imagem de capa {editItem?.image_path && <span className="text-xs text-muted-foreground">(deixar vazio para manter)</span>}</Label>
+              <Label>
+                {t("form.labels.image")}{" "}
+                {editItem?.image_path && (
+                  <span className="text-xs text-muted-foreground">{t("form.imageKeepHint")}</span>
+                )}
+              </Label>
               <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               {editItem?.image_path && !file && (
-                <img src={imageUrl(editItem.image_path)} alt="" className="mt-2 h-32 rounded-md object-cover" />
+                <img src={editItem.image_path} alt="" className="mt-2 h-32 rounded-md object-cover" />
               )}
             </div>
+
             <div className="flex flex-wrap gap-6">
-              <div className="flex items-center gap-2">
-                <Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
-                <Label>Publicada</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.destaque} onCheckedChange={(v) => setForm({ ...form, destaque: v })} />
-                <Label>Destaque</Label>
-              </div>
+              <FormField
+                control={form.control}
+                name="published"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="!mt-0">{t("form.labels.published")}</FormLabel>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="destaque"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="!mt-0">{t("form.labels.destaque")}</FormLabel>
+                  </FormItem>
+                )}
+              />
             </div>
-            <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? "A guardar..." : editItem ? "Guardar Alterações" : "Criar Notícia"}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      </EntityFormDialog>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
-
-      <AdminCard title="Notícias" icon={Newspaper} loading={loading} isEmpty={items.length === 0} emptyMessage="Nenhuma notícia registada.">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-16">Capa</TableHead>
-              <TableHead>Título</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="w-32">Acções</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((it) => (
-              <TableRow key={it.id}>
-                <TableCell>
-                  {it.image_path
-                    ? <img src={imageUrl(it.image_path)} alt="" className="h-10 w-14 rounded object-cover" />
-                    : <div className="h-10 w-14 rounded bg-muted" />}
-                </TableCell>
-                <TableCell className="max-w-sm">
-                  <div className="font-medium flex items-center gap-2">
-                    {it.destaque && <Star className="h-3.5 w-3.5 text-[hsl(var(--iiv-gold))] fill-current" />}
-                    {it.titulo}
-                  </div>
-                  <div className="text-xs text-muted-foreground line-clamp-1">{it.resumo}</div>
-                </TableCell>
-                <TableCell><Badge variant="outline">{it.categoria}</Badge></TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {it.published_at ? new Date(it.published_at).toLocaleDateString("pt-AO") : "—"}
-                </TableCell>
-                <TableCell>
-                  <button onClick={() => togglePublish(it)} className="cursor-pointer">
-                    <Badge variant={it.published ? "default" : "secondary"}>{it.published ? "Publicada" : "Rascunho"}</Badge>
-                  </button>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    {it.published && (
-                      <Button variant="ghost" size="icon" asChild>
-                        <a href={`/noticias/${it.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a>
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(it)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(it.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await deleteNoticia.mutateAsync(deleteId);
+          setDeleteId(null);
+        }}
+      />
     </div>
   );
 }

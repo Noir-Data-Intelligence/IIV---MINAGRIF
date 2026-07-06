@@ -1,0 +1,62 @@
+{
+  "page": {
+    "title": "News Management",
+    "description": "Create, edit and publish news articles on the public portal"
+  },
+  "actions": {
+    "new": "New Article",
+    "viewPublic": "View on portal",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "table": {
+    "image": "Cover",
+    "titulo": "Title",
+    "categoria": "Category",
+    "data": "Date",
+    "estado": "Status",
+    "actions": "Actions",
+    "empty": "No news articles found.",
+    "searchPlaceholder": "Search news...",
+    "emptyCell": "—"
+  },
+  "badge": {
+    "published": "Published",
+    "draft": "Draft"
+  },
+  "form": {
+    "labels": {
+      "titulo": "Title",
+      "resumo": "Summary",
+      "conteudo": "Content",
+      "categoria": "Category",
+      "publishedAt": "Publish date",
+      "image": "Cover image",
+      "destaque": "Featured",
+      "published": "Published"
+    },
+    "placeholders": {
+      "titulo": "Article title",
+      "resumo": "Short summary shown on the portal",
+      "conteudo": "Full article text (paragraphs separated by a blank line)"
+    },
+    "imageKeepHint": "(leave empty to keep the current image)",
+    "submitCreate": "Create Article",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "New Article",
+    "editTitle": "Edit Article"
+  },
+  "validation": {
+    "tituloShort": "Title too short"
+  },
+  "toast": {
+    "createSuccess": "Article created successfully",
+    "updateSuccess": "Article updated",
+    "deleteSuccess": "Article deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

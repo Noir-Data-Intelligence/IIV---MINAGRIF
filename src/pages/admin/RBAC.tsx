@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import {
@@ -29,12 +29,25 @@ import {
   ALL_MODULES, ALL_ROLES, MODULE_LABEL, ROLE_LABEL, ROLE_PERMISSIONS,
   type AppRole, type ModuleKey,
 } from "@/lib/permissions";
-import { refreshPermissionsMatrix } from "@/hooks/useUserRole";
+import {
+  usePermissionsMatrix, useSavePermissionsMatrix, useUserRoleAssignments,
+  useAddUserRole, useRemoveUserRole,
+} from "@/hooks/queries/useRbac";
+import type { PermissionEntryDto } from "@/types/dto/rbac";
 import { cn } from "@/lib/utils";
+import i18n from "@/i18n";
+import ptRbac from "@/i18n/locales/pt/admin/rbac.json";
+import enRbac from "@/i18n/locales/en/admin/rbac.json";
+
+// Namespace "rbac" registado em runtime (à semelhança de Departamentos.tsx), para
+// manter esta página autónoma sem tocar na configuração global (src/i18n/index.ts).
+// Os labels de papel/módulo continuam a vir de ROLE_LABEL/MODULE_LABEL.
+if (!i18n.hasResourceBundle("pt", "rbac"))
+  i18n.addResourceBundle("pt", "rbac", ptRbac, true, true);
+if (!i18n.hasResourceBundle("en", "rbac"))
+  i18n.addResourceBundle("en", "rbac", enRbac, true, true);
 
 type PermRow = { role: AppRole; module: ModuleKey; can_view: boolean; can_write: boolean };
-type Profile = { user_id: string; full_name: string };
-type UserRoleRow = { id: string; user_id: string; role: AppRole };
 
 const ROLE_TONE: Record<AppRole, string> = {
   admin: "bg-primary/10 text-primary border-primary/30",
@@ -44,18 +57,37 @@ const ROLE_TONE: Record<AppRole, string> = {
   colaborador: "bg-muted text-muted-foreground border-border",
 };
 
+// Conversões entre o DTO REST (camelCase) e a linha interna da matriz (snake_case,
+// preservada tal como a versão Supabase para não mexer na lógica de dirty-tracking).
+const toPermRow = (e: PermissionEntryDto): PermRow => ({
+  role: e.role, module: e.module, can_view: e.canView, can_write: e.canWrite,
+});
+const toEntry = (r: PermRow): PermissionEntryDto => ({
+  role: r.role, module: r.module, canView: r.can_view, canWrite: r.can_write,
+});
+
 export default function RBAC() {
+  const { t } = useTranslation("rbac");
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
+  // Origem dos dados: camada mock via react-query (substitui as 3 queries Supabase).
+  const permsQuery = usePermissionsMatrix();
+  const assignmentsQuery = useUserRoleAssignments();
+  const saveMutation = useSavePermissionsMatrix();
+  const addRoleMutation = useAddUserRole();
+  const removeRoleMutation = useRemoveUserRole();
+
+  const loading = permsQuery.isLoading || assignmentsQuery.isLoading;
+  const saving = saveMutation.isPending;
+
   const [matrix, setMatrix] = useState<Record<string, PermRow>>({});
   const [baseline, setBaseline] = useState<Record<string, PermRow>>({});
   const [moduleSearch, setModuleSearch] = useState("");
 
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [userRoles, setUserRoles] = useState<UserRoleRow[]>([]);
   const [search, setSearch] = useState("");
   const [newRoleByUser, setNewRoleByUser] = useState<Record<string, AppRole>>({});
+
+  const assignments = assignmentsQuery.data ?? [];
 
   const keyOf = (role: AppRole, m: ModuleKey) => `${role}:${m}`;
 
@@ -70,22 +102,20 @@ export default function RBAC() {
     return m;
   }
 
-  async function loadAll() {
-    setLoading(true);
-    const [{ data: perms }, { data: profs }, { data: roles }] = await Promise.all([
-      supabase.from("role_permissions").select("role, module, can_view, can_write"),
-      supabase.from("profiles").select("user_id, full_name").order("full_name"),
-      supabase.from("user_roles").select("id, user_id, role"),
-    ]);
-    const seeded = buildSeedMatrix((perms ?? []) as PermRow[]);
+  // Semeia matriz/baseline quando a matriz chega (ou é recarregada). A lógica de
+  // dirty-tracking permanece inalterada — só muda a fonte inicial dos dados.
+  useEffect(() => {
+    if (!permsQuery.data) return;
+    const seeded = buildSeedMatrix(permsQuery.data.map(toPermRow));
     setMatrix(seeded);
     setBaseline(JSON.parse(JSON.stringify(seeded)));
-    setProfiles((profs ?? []) as Profile[]);
-    setUserRoles((roles ?? []) as UserRoleRow[]);
-    setLoading(false);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permsQuery.data]);
 
-  useEffect(() => { loadAll(); }, []);
+  function reloadAll() {
+    permsQuery.refetch();
+    assignmentsQuery.refetch();
+  }
 
   function togglePerm(role: AppRole, mod: ModuleKey, field: "can_view" | "can_write", value: boolean) {
     if (role === "admin") return;
@@ -128,7 +158,10 @@ export default function RBAC() {
       }
       return next;
     });
-    toast({ title: "Predefinições aplicadas", description: `Papel ${ROLE_LABEL[role]} reposto (por guardar).` });
+    toast({
+      title: t("toast.resetApplied.title"),
+      description: t("toast.resetApplied.description", { role: ROLE_LABEL[role] }),
+    });
   }
 
   const dirtyCount = useMemo(() => {
@@ -141,72 +174,73 @@ export default function RBAC() {
   }, [matrix, baseline]);
 
   async function savePermissions() {
-    setSaving(true);
-    const rows = Object.values(matrix).filter((r) => r.role !== "admin");
-    const chunk = 200;
-    for (let i = 0; i < rows.length; i += chunk) {
-      const slice = rows.slice(i, i + chunk);
-      const { error } = await supabase
-        .from("role_permissions")
-        .upsert(slice, { onConflict: "role,module" });
-      if (error) {
-        toast({ title: "Erro ao guardar", description: error.message, variant: "destructive" });
-        setSaving(false);
-        return;
-      }
+    // Mantém o comportamento original: envia a matriz completa (todos os papéis
+    // excepto admin). O handler PUT substitui o conjunto pelo enviado.
+    const entries = Object.values(matrix).filter((r) => r.role !== "admin").map(toEntry);
+    try {
+      await saveMutation.mutateAsync(entries);
+      setBaseline(JSON.parse(JSON.stringify(matrix)));
+      toast({
+        title: t("toast.saveSuccess.title"),
+        description: t("toast.saveSuccess.description"),
+      });
+    } catch (err) {
+      toast({
+        title: t("toast.saveError.title"),
+        description: err instanceof Error ? err.message : t("toast.error.description"),
+        variant: "destructive",
+      });
     }
-    await refreshPermissionsMatrix();
-    setBaseline(JSON.parse(JSON.stringify(matrix)));
-    toast({ title: "Permissões actualizadas", description: "A matriz foi guardada com sucesso." });
-    setSaving(false);
   }
 
   async function assignRole(userId: string, role: AppRole) {
-    const exists = userRoles.find((r) => r.user_id === userId && r.role === role);
-    if (exists) {
-      toast({ title: "Já atribuído", description: `Este utilizador já tem o papel ${ROLE_LABEL[role]}.` });
+    const assignment = assignments.find((a) => a.userId === userId);
+    if (assignment?.roles.includes(role)) {
+      toast({
+        title: t("toast.alreadyAssigned.title"),
+        description: t("toast.alreadyAssigned.description", { role: ROLE_LABEL[role] }),
+      });
       return;
     }
-    const { data, error } = await supabase
-      .from("user_roles")
-      .insert({ user_id: userId, role })
-      .select("id, user_id, role")
-      .single();
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-      return;
+    try {
+      await addRoleMutation.mutateAsync({ userId, role });
+      toast({
+        title: t("toast.roleAssigned.title"),
+        description: t("toast.roleAssigned.description", { role: ROLE_LABEL[role] }),
+      });
+    } catch (err) {
+      toast({
+        title: t("toast.error.title"),
+        description: err instanceof Error ? err.message : t("toast.error.description"),
+        variant: "destructive",
+      });
     }
-    setUserRoles((prev) => [...prev, data as UserRoleRow]);
-    toast({ title: "Papel atribuído", description: `${ROLE_LABEL[role]} adicionado ao utilizador.` });
   }
 
-  async function removeRole(id: string) {
-    const { error } = await supabase.from("user_roles").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-      return;
+  async function removeRole(userId: string, role: AppRole) {
+    try {
+      await removeRoleMutation.mutateAsync({ userId, role });
+      toast({ title: t("toast.roleRemoved.title") });
+    } catch (err) {
+      toast({
+        title: t("toast.error.title"),
+        description: err instanceof Error ? err.message : t("toast.error.description"),
+        variant: "destructive",
+      });
     }
-    setUserRoles((prev) => prev.filter((r) => r.id !== id));
-    toast({ title: "Papel removido" });
   }
 
   const filteredProfiles = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return profiles;
-    return profiles.filter((p) => (p.full_name || "").toLowerCase().includes(q));
-  }, [profiles, search]);
+    if (!q) return assignments;
+    return assignments.filter((p) => (p.fullName || "").toLowerCase().includes(q));
+  }, [assignments, search]);
 
   const filteredModules = useMemo(() => {
     const q = moduleSearch.trim().toLowerCase();
     if (!q) return ALL_MODULES;
     return ALL_MODULES.filter((m) => MODULE_LABEL[m].toLowerCase().includes(q) || m.includes(q));
   }, [moduleSearch]);
-
-  const rolesByUser = useMemo(() => {
-    const map: Record<string, UserRoleRow[]> = {};
-    for (const r of userRoles) (map[r.user_id] ??= []).push(r);
-    return map;
-  }, [userRoles]);
 
   const totals = useMemo(() => {
     const out: Record<AppRole, { view: number; write: number }> = {
@@ -237,42 +271,42 @@ export default function RBAC() {
       <div className="space-y-6">
         <AdminPageHeader
           icon={Shield}
-          title="Gestão de Permissões (RBAC)"
-          description="Matriz consolidada de acessos por papel e módulo"
+          title={t("page.title")}
+          description={t("page.description")}
         >
-          <Button variant="outline" size="sm" onClick={loadAll} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={reloadAll} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Recarregar
+            {t("actions.reload")}
           </Button>
         </AdminPageHeader>
 
         <Tabs defaultValue="matrix" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="matrix">Matriz de Permissões</TabsTrigger>
-            <TabsTrigger value="users">Atribuição a Utilizadores</TabsTrigger>
+            <TabsTrigger value="matrix">{t("tabs.matrix")}</TabsTrigger>
+            <TabsTrigger value="users">{t("tabs.users")}</TabsTrigger>
           </TabsList>
 
           {/* MATRIX */}
           <TabsContent value="matrix" className="space-y-4">
-            <AdminCard title="Matriz Papel × Módulo" icon={Shield} loading={loading}>
+            <AdminCard title={t("matrix.cardTitle")} icon={Shield} loading={loading}>
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <div className="relative max-w-xs flex-1 min-w-[200px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     value={moduleSearch}
                     onChange={(e) => setModuleSearch(e.target.value)}
-                    placeholder="Filtrar módulos..."
+                    placeholder={t("matrix.filterPlaceholder")}
                     className="pl-9"
                   />
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> Ver</span>
-                  <span className="inline-flex items-center gap-1"><Pencil className="h-3.5 w-3.5" /> Escrever</span>
+                  <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {t("matrix.view")}</span>
+                  <span className="inline-flex items-center gap-1"><Pencil className="h-3.5 w-3.5" /> {t("matrix.write")}</span>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                   {dirtyCount > 0 && (
                     <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300">
-                      {dirtyCount} alteraç{dirtyCount > 1 ? "ões" : "ão"} por guardar
+                      {t("matrix.dirty", { count: dirtyCount })}
                     </Badge>
                   )}
                   <Button
@@ -282,11 +316,11 @@ export default function RBAC() {
                     disabled={dirtyCount === 0 || saving}
                   >
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Reverter
+                    {t("matrix.revert")}
                   </Button>
                   <Button onClick={savePermissions} disabled={saving || dirtyCount === 0}>
                     <Save className="h-4 w-4 mr-2" />
-                    {saving ? "A guardar..." : "Guardar"}
+                    {saving ? t("matrix.saving") : t("matrix.save")}
                   </Button>
                 </div>
               </div>
@@ -295,7 +329,7 @@ export default function RBAC() {
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
-                      <TableHead className="min-w-[180px] sticky left-0 bg-card z-20">Módulo</TableHead>
+                      <TableHead className="min-w-[180px] sticky left-0 bg-card z-20">{t("matrix.thModule")}</TableHead>
                       {ALL_ROLES.map((r) => (
                         <TableHead key={r} className="text-center min-w-[150px]">
                           <div className="flex flex-col items-center gap-1.5 py-1">
@@ -303,7 +337,7 @@ export default function RBAC() {
                               {ROLE_LABEL[r]}
                             </Badge>
                             <div className="text-[10px] font-normal text-muted-foreground">
-                              {totals[r].view} ver · {totals[r].write} esc.
+                              {t("matrix.totals", { view: totals[r].view, write: totals[r].write })}
                             </div>
                             {r !== "admin" && (
                               <Tooltip>
@@ -312,16 +346,16 @@ export default function RBAC() {
                                     onClick={() => resetRoleToDefault(r)}
                                     className="text-[10px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
                                   >
-                                    repor predefinição
+                                    {t("matrix.resetDefault")}
                                   </button>
                                 </TooltipTrigger>
-                                <TooltipContent>Aplica as predefinições do papel (por guardar)</TooltipContent>
+                                <TooltipContent>{t("matrix.resetTooltip")}</TooltipContent>
                               </Tooltip>
                             )}
                           </div>
                         </TableHead>
                       ))}
-                      <TableHead className="w-28 text-center">Atalhos</TableHead>
+                      <TableHead className="w-28 text-center">{t("matrix.thShortcuts")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -345,7 +379,7 @@ export default function RBAC() {
                                     checked={view}
                                     disabled={isAdmin}
                                     onCheckedChange={(v) => togglePerm(role, m, "can_view", !!v)}
-                                    aria-label={`${ROLE_LABEL[role]} pode ver ${MODULE_LABEL[m]}`}
+                                    aria-label={t("matrix.canViewAria", { role: ROLE_LABEL[role], module: MODULE_LABEL[m] })}
                                   />
                                   <Eye className={cn("h-3.5 w-3.5", view ? "text-primary" : "text-muted-foreground/40")} />
                                 </label>
@@ -354,7 +388,7 @@ export default function RBAC() {
                                     checked={write}
                                     disabled={isAdmin}
                                     onCheckedChange={(v) => togglePerm(role, m, "can_write", !!v)}
-                                    aria-label={`${ROLE_LABEL[role]} pode escrever ${MODULE_LABEL[m]}`}
+                                    aria-label={t("matrix.canWriteAria", { role: ROLE_LABEL[role], module: MODULE_LABEL[m] })}
                                   />
                                   <Pencil className={cn("h-3.5 w-3.5", write ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/40")} />
                                 </label>
@@ -370,7 +404,7 @@ export default function RBAC() {
                                   <Eye className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Todos podem ver</TooltipContent>
+                              <TooltipContent>{t("matrix.allView")}</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -378,7 +412,7 @@ export default function RBAC() {
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Todos podem escrever</TooltipContent>
+                              <TooltipContent>{t("matrix.allWrite")}</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -386,7 +420,7 @@ export default function RBAC() {
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Remover acesso a todos</TooltipContent>
+                              <TooltipContent>{t("matrix.allNone")}</TooltipContent>
                             </Tooltip>
                           </div>
                         </TableCell>
@@ -395,7 +429,7 @@ export default function RBAC() {
                     {filteredModules.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={ALL_ROLES.length + 2} className="text-center text-sm text-muted-foreground py-8">
-                          Nenhum módulo corresponde ao filtro.
+                          {t("matrix.noModules")}
                         </TableCell>
                       </TableRow>
                     )}
@@ -403,8 +437,7 @@ export default function RBAC() {
                 </Table>
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Nota: escrever implica ver. O papel “Administrador” mantém sempre acesso total e não é editável.
-                Células com fundo âmbar indicam alterações por guardar.
+                {t("matrix.note")}
               </p>
             </AdminCard>
           </TabsContent>
@@ -412,18 +445,18 @@ export default function RBAC() {
           {/* USERS */}
           <TabsContent value="users" className="space-y-4">
             <AdminCard
-              title="Papéis por Utilizador"
+              title={t("users.cardTitle")}
               icon={UserPlus}
               loading={loading}
               isEmpty={!loading && filteredProfiles.length === 0}
-              emptyMessage="Nenhum utilizador encontrado."
+              emptyMessage={t("users.empty")}
             >
               <div className="relative mb-4 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Procurar utilizador..."
+                  placeholder={t("users.searchPlaceholder")}
                   className="pl-9"
                 />
               </div>
@@ -432,46 +465,46 @@ export default function RBAC() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Utilizador</TableHead>
-                      <TableHead>Papéis atribuídos</TableHead>
-                      <TableHead className="w-72 text-right">Atribuir novo papel</TableHead>
+                      <TableHead>{t("users.thUser")}</TableHead>
+                      <TableHead>{t("users.thRoles")}</TableHead>
+                      <TableHead className="w-72 text-right">{t("users.thAssign")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredProfiles.map((p) => {
-                      const roles = rolesByUser[p.user_id] ?? [];
-                      const selected = newRoleByUser[p.user_id] ?? "colaborador";
+                      const roles = p.roles ?? [];
+                      const selected = newRoleByUser[p.userId] ?? "colaborador";
                       return (
-                        <TableRow key={p.user_id}>
-                          <TableCell className="font-medium">{p.full_name || "—"}</TableCell>
+                        <TableRow key={p.userId}>
+                          <TableCell className="font-medium">{p.fullName || t("users.emptyName")}</TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1.5">
                               {roles.length === 0 && (
-                                <span className="text-xs text-muted-foreground">Sem papéis</span>
+                                <span className="text-xs text-muted-foreground">{t("users.noRoles")}</span>
                               )}
                               {roles.map((r) => (
-                                <Badge key={r.id} variant="outline" className={cn("gap-1.5 pr-1 border", ROLE_TONE[r.role])}>
-                                  {ROLE_LABEL[r.role]}
+                                <Badge key={r} variant="outline" className={cn("gap-1.5 pr-1 border", ROLE_TONE[r])}>
+                                  {ROLE_LABEL[r]}
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <button
                                         className="h-4 w-4 rounded hover:bg-destructive/20 inline-flex items-center justify-center"
-                                        aria-label={`Remover ${ROLE_LABEL[r.role]}`}
+                                        aria-label={t("users.removeAria", { role: ROLE_LABEL[r] })}
                                       >
                                         <Trash2 className="h-3 w-3 text-destructive" />
                                       </button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
-                                        <AlertDialogTitle>Remover papel?</AlertDialogTitle>
+                                        <AlertDialogTitle>{t("users.removeTitle")}</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                          Esta acção remove o papel “{ROLE_LABEL[r.role]}” deste utilizador.
+                                          {t("users.removeDescription", { role: ROLE_LABEL[r] })}
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => removeRole(r.id)}>
-                                          Remover
+                                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => removeRole(p.userId, r)}>
+                                          {t("common.remove")}
                                         </AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
@@ -484,7 +517,7 @@ export default function RBAC() {
                             <div className="flex items-center justify-end gap-2">
                               <Select
                                 value={selected}
-                                onValueChange={(v) => setNewRoleByUser((s) => ({ ...s, [p.user_id]: v as AppRole }))}
+                                onValueChange={(v) => setNewRoleByUser((s) => ({ ...s, [p.userId]: v as AppRole }))}
                               >
                                 <SelectTrigger className="w-44">
                                   <SelectValue />
@@ -495,9 +528,9 @@ export default function RBAC() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <Button size="sm" onClick={() => assignRole(p.user_id, selected)}>
+                              <Button size="sm" onClick={() => assignRole(p.userId, selected)}>
                                 <UserPlus className="h-4 w-4 mr-1.5" />
-                                Atribuir
+                                {t("users.assign")}
                               </Button>
                             </div>
                           </TableCell>

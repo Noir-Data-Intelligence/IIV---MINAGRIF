@@ -1,0 +1,58 @@
+{
+  "page": {
+    "title": "Gestão de Utilizadores",
+    "description": "Utilizadores registados, com papéis e departamentos atribuídos"
+  },
+  "actions": {
+    "permissionsMatrix": "Matriz de permissões",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "table": {
+    "name": "Nome",
+    "roles": "Papéis",
+    "departments": "Departamentos",
+    "createdAt": "Registado em",
+    "actions": "Acções",
+    "empty": "Nenhum utilizador encontrado.",
+    "searchPlaceholder": "Pesquisar por nome ou telefone...",
+    "emptyCell": "—",
+    "noRoles": "Sem papéis"
+  },
+  "filters": {
+    "allRoles": "Todos os papéis",
+    "allDepartments": "Todos os departamentos",
+    "rolePlaceholder": "Papel",
+    "departmentPlaceholder": "Departamento"
+  },
+  "dialog": {
+    "editTitle": "Editar utilizador",
+    "editDescription": "Actualize o nome, telefone, papéis e departamentos atribuídos."
+  },
+  "form": {
+    "labels": {
+      "fullName": "Nome completo",
+      "phone": "Telefone",
+      "roles": "Papéis",
+      "departments": "Departamentos"
+    },
+    "placeholders": {
+      "phone": "+244 9XX XXX XXX"
+    },
+    "noDepartments": "Sem departamentos definidos.",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "delete": {
+    "title": "Eliminar utilizador?",
+    "description": "Esta acção apaga o perfil, papéis e departamentos associados. A conta de autenticação não é removida."
+  },
+  "toast": {
+    "updateSuccess": "Utilizador actualizado",
+    "updateSuccessDescription": "As alterações foram guardadas.",
+    "deleteSuccess": "Utilizador eliminado",
+    "deleteSuccessDescription": "O registo do utilizador foi apagado.",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

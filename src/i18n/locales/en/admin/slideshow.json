@@ -1,0 +1,76 @@
+{
+  "page": {
+    "title": "Home Slideshow",
+    "description": "Manage the images and copy for the public portal's main hero"
+  },
+  "actions": {
+    "new": "New Slide",
+    "edit": "Edit",
+    "delete": "Delete",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
+  },
+  "table": {
+    "image": "Image",
+    "content": "Kicker / Title",
+    "order": "Order",
+    "status": "Status",
+    "actions": "Actions",
+    "empty": "No slides found.",
+    "searchPlaceholder": "Search slides...",
+    "emptyCell": "—"
+  },
+  "badge": {
+    "published": "Published",
+    "draft": "Draft"
+  },
+  "form": {
+    "labels": {
+      "kicker": "Category (kicker)",
+      "title": "Title",
+      "subtitle": "Subtitle",
+      "ctaLabel": "Button text",
+      "ctaLink": "Button link",
+      "sortOrder": "Order",
+      "published": "Published",
+      "image": "Image"
+    },
+    "placeholders": {
+      "kicker": "e.g. Laboratory Diagnostics",
+      "title": "Slide title",
+      "subtitle": "Slide subtitle",
+      "ctaLabel": "e.g. Learn more",
+      "ctaLink": "/services"
+    },
+    "ctaLinkHint": "Internal route (e.g. /services) or an https URL for {{hosts}}.",
+    "imageHint": "Phase 4: real upload to Laravel Storage. For now, with no file selected the local fallback used by the public site is kept.",
+    "viewCurrentImage": "View current image",
+    "submitCreate": "Create Slide",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "New Slide",
+    "editTitle": "Edit Slide"
+  },
+  "validation": {
+    "kickerShort": "Category too short",
+    "titleShort": "Title too short",
+    "subtitleShort": "Subtitle too short",
+    "ctaLabelRequired": "Button text is required",
+    "ctaLinkRequired": "Button link is required",
+    "ctaLinkProtocol": "Protocol not allowed in the link",
+    "ctaLinkRelative": "Use an internal route (e.g. /services) or an authorized domain",
+    "ctaLinkHttpsOnly": "Only https:// links are allowed",
+    "ctaLinkDomain": "Domain not authorized. Allowed: {{hosts}}",
+    "ctaLinkFallback": "Invalid link. Use an internal route (e.g. /services) or an authorized https URL",
+    "sortOrderInvalid": "Order must be an integer"
+  },
+  "toast": {
+    "createSuccess": "Slide created successfully",
+    "updateSuccess": "Slide updated",
+    "deleteSuccess": "Slide deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

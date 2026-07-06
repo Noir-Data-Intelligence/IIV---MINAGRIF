@@ -1,116 +1,215 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { Check, Eye, Mail, MessageSquare, Trash2 } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { MessageSquare, Trash2, Eye, Check, Mail } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  useContactMessagesList,
+  useDeleteContactMessage,
+  useMarkContactMessageRead,
+  useMarkContactMessageResponded,
+} from "@/hooks/queries/useContactMessages";
+import type { ContactMessageDto } from "@/types/dto/contactMessage";
+import i18n from "@/i18n";
+import ptMensagens from "@/i18n/locales/pt/admin/mensagens.json";
+import enMensagens from "@/i18n/locales/en/admin/mensagens.json";
 
-interface Message {
-  id: string;
-  nome: string;
-  email: string;
-  assunto: string;
-  mensagem: string;
-  lida: boolean;
-  respondida: boolean;
-  created_at: string;
-}
+// Namespace "mensagens" não faz parte do bundle central (src/i18n/index.ts) —
+// registamo-lo aqui em runtime, replicando o padrão de Departamentos.tsx
+// (primeiro módulo admin com i18n), para manter esta página autónoma sem
+// tocar na configuração global do i18next.
+if (!i18n.hasResourceBundle("pt", "mensagens"))
+  i18n.addResourceBundle("pt", "mensagens", ptMensagens, true, true);
+if (!i18n.hasResourceBundle("en", "mensagens"))
+  i18n.addResourceBundle("en", "mensagens", enMensagens, true, true);
 
 export default function MensagensAdmin() {
-  const [items, setItems] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<Message | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { t, i18n: i18nInstance } = useTranslation("mensagens");
+  const { canWrite } = useUserRole();
+  const canDelete = canWrite("mensagens");
   const { toast } = useToast();
-  const pag = usePagination(20);
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data, count } = await supabase
-      .from("contact_messages")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(pag.from, pag.to);
-    setItems((data as Message[]) ?? []);
-    pag.setTotal(count ?? 0);
-    setLoading(false);
-  };
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [viewItem, setViewItem] = useState<ContactMessageDto | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
+  const { data, isLoading } = useContactMessagesList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+  });
 
-  const openView = async (m: Message) => {
-    setView(m);
+  const markRead = useMarkContactMessageRead();
+  const markResponded = useMarkContactMessageResponded();
+  const deleteMessage = useDeleteContactMessage();
+
+  const rows = data?.data ?? [];
+  const unread = rows.filter((m) => !m.lida).length;
+
+  const openView = (m: ContactMessageDto) => {
+    setViewItem(m);
     if (!m.lida) {
-      await supabase.from("contact_messages").update({ lida: true }).eq("id", m.id);
-      fetchData();
+      markRead.mutate(m.id, {
+        onSuccess: (updated) => setViewItem(updated),
+        onError: () => toast({ title: t("toast.error"), variant: "destructive" }),
+      });
     }
   };
 
-  const markResponded = async (id: string) => {
-    await supabase.from("contact_messages").update({ respondida: true }).eq("id", id);
-    toast({ title: "Marcada como respondida" });
-    fetchData();
-    setView(null);
+  const handleMarkResponded = async () => {
+    if (!viewItem) return;
+    try {
+      const updated = await markResponded.mutateAsync(viewItem.id);
+      toast({ title: t("toast.respondedSuccess") });
+      setViewItem(updated);
+    } catch {
+      toast({ title: t("toast.error"), variant: "destructive" });
+    }
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    await supabase.from("contact_messages").delete().eq("id", deleteId);
-    toast({ title: "Mensagem eliminada" });
-    setDeleteId(null);
-    fetchData();
+    try {
+      await deleteMessage.mutateAsync(deleteId);
+      toast({ title: t("toast.deleteSuccess") });
+    } catch {
+      toast({ title: t("toast.error"), variant: "destructive" });
+    } finally {
+      setDeleteId(null);
+    }
   };
 
-  const unread = items.filter((i) => !i.lida).length;
+  const columns = useMemo<ColumnDef<ContactMessageDto>[]>(
+    () => [
+      {
+        id: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const m = row.original;
+          if (m.respondida)
+            return (
+              <Badge variant="outline" className="border-primary/30 text-primary">
+                {t("status.responded")}
+              </Badge>
+            );
+          if (m.lida) return <Badge variant="outline">{t("status.read")}</Badge>;
+          return <Badge className="bg-[hsl(var(--iiv-gold))] text-primary">{t("status.new")}</Badge>;
+        },
+      },
+      {
+        accessorKey: "nome",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.from")} />,
+        cell: ({ row }) => (
+          <div className={!row.original.lida ? "font-medium" : ""}>
+            <div>{row.original.nome}</div>
+            <div className="text-xs text-muted-foreground">{row.original.email}</div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "assunto",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.subject")} />,
+        cell: ({ row }) => <span className="block max-w-md truncate">{row.original.assunto}</span>,
+      },
+      {
+        accessorKey: "createdAt",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.date")} />,
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {new Date(row.original.createdAt).toLocaleDateString(
+              i18nInstance.language === "en" ? "en-GB" : "pt-AO",
+            )}
+          </span>
+        ),
+      },
+    ],
+    [t, i18nInstance.language],
+  );
+
+  const renderRowActions = (row: ContactMessageDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => openView(row) }];
+    if (canDelete) {
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return <RowActions actions={actions} />;
+  };
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         icon={MessageSquare}
-        title="Mensagens de Contacto"
-        description={`${pag.total} mensagens • ${unread} por ler nesta página`}
+        title={t("page.title")}
+        description={t("page.description", { total: data?.meta.total ?? 0, unread })}
+      />
+
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
       />
 
       <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
 
-      <Dialog open={!!view} onOpenChange={(o) => !o && setView(null)}>
+      <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="font-serif">{view?.assunto}</DialogTitle></DialogHeader>
-          {view && (
+          <DialogHeader>
+            <DialogTitle className="font-serif">{viewItem?.assunto}</DialogTitle>
+          </DialogHeader>
+          {viewItem && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground text-xs uppercase tracking-wider">De</p>
-                  <p className="font-medium">{view.nome}</p>
-                  <a href={`mailto:${view.email}`} className="text-primary hover:underline text-xs">{view.email}</a>
+                  <p className="text-muted-foreground text-xs uppercase tracking-wider">{t("dialog.from")}</p>
+                  <p className="font-medium">{viewItem.nome}</p>
+                  <a href={`mailto:${viewItem.email}`} className="text-primary hover:underline text-xs">
+                    {viewItem.email}
+                  </a>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs uppercase tracking-wider">Recebida</p>
-                  <p className="font-medium">{new Date(view.created_at).toLocaleString("pt-AO")}</p>
+                  <p className="text-muted-foreground text-xs uppercase tracking-wider">{t("dialog.received")}</p>
+                  <p className="font-medium">
+                    {new Date(viewItem.createdAt).toLocaleString(
+                      i18nInstance.language === "en" ? "en-GB" : "pt-AO",
+                    )}
+                  </p>
                 </div>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">Mensagem</p>
+                <p className="text-muted-foreground text-xs uppercase tracking-wider mb-2">{t("dialog.message")}</p>
                 <div className="rounded-xl border border-border/60 bg-accent/20 p-4 text-sm whitespace-pre-wrap leading-relaxed">
-                  {view.mensagem}
+                  {viewItem.mensagem}
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
                 <Button asChild variant="outline">
-                  <a href={`mailto:${view.email}?subject=Re: ${encodeURIComponent(view.assunto)}`}>
-                    <Mail className="mr-2 h-4 w-4" /> Responder por email
+                  <a href={`mailto:${viewItem.email}?subject=Re: ${encodeURIComponent(viewItem.assunto)}`}>
+                    <Mail className="mr-2 h-4 w-4" /> {t("dialog.replyByEmail")}
                   </a>
                 </Button>
-                {!view.respondida && (
-                  <Button onClick={() => markResponded(view.id)}>
-                    <Check className="mr-2 h-4 w-4" /> Marcar como respondida
+                {!viewItem.respondida && (
+                  <Button onClick={handleMarkResponded} disabled={markResponded.isPending}>
+                    <Check className="mr-2 h-4 w-4" /> {t("dialog.markResponded")}
                   </Button>
                 )}
               </div>
@@ -118,65 +217,6 @@ export default function MensagensAdmin() {
           )}
         </DialogContent>
       </Dialog>
-
-      <AdminCard
-        title="Caixa de entrada"
-        icon={MessageSquare}
-        loading={loading}
-        isEmpty={items.length === 0 && pag.total === 0}
-        emptyMessage="Ainda não há mensagens recebidas."
-      >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Estado</TableHead>
-              <TableHead>De</TableHead>
-              <TableHead>Assunto</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="w-24">Acções</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((m) => (
-              <TableRow key={m.id} className={!m.lida ? "font-medium" : ""}>
-                <TableCell>
-                  {m.respondida ? (
-                    <Badge variant="outline" className="border-primary/30 text-primary">Respondida</Badge>
-                  ) : m.lida ? (
-                    <Badge variant="outline">Lida</Badge>
-                  ) : (
-                    <Badge className="bg-[hsl(var(--iiv-gold))] text-primary">Nova</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div>{m.nome}</div>
-                  <div className="text-xs text-muted-foreground">{m.email}</div>
-                </TableCell>
-                <TableCell className="max-w-md truncate">{m.assunto}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {new Date(m.created_at).toLocaleDateString("pt-AO")}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => openView(m)}><Eye className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(m.id)}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
     </div>
   );
 }

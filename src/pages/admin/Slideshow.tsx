@@ -1,281 +1,486 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ExternalLink, Images, Pencil, Plus, Trash2 } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { useClientPagination } from "@/hooks/useClientPagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Images, Pencil, Trash2, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  useCreateHeroSlide,
+  useDeleteHeroSlide,
+  useHeroSlidesAdminList,
+  useUpdateHeroSlide,
+} from "@/hooks/queries/useHeroSlides";
+import type { HeroSlideDto } from "@/types/dto/heroSlide";
+import i18n from "@/i18n";
+import ptSlideshow from "@/i18n/locales/pt/admin/slideshow.json";
+import enSlideshow from "@/i18n/locales/en/admin/slideshow.json";
+
+// Namespace "slideshow" não faz parte do bundle central (src/i18n/index.ts) —
+// registamo-lo aqui em runtime, seguindo exactamente o padrão adoptado em
+// Departamentos.tsx (primeiro módulo admin com i18n).
+if (!i18n.hasResourceBundle("pt", "slideshow"))
+  i18n.addResourceBundle("pt", "slideshow", ptSlideshow, true, true);
+if (!i18n.hasResourceBundle("en", "slideshow"))
+  i18n.addResourceBundle("en", "slideshow", enSlideshow, true, true);
 
 const ALLOWED_HOSTS = ["iiv.gov.ao", "www.iiv.gov.ao"];
 
 /**
- * Normaliza e valida o link do CTA.
- * - Aceita rotas internas relativas (devem começar por "/", "#" ou "?")
- * - Aceita URLs absolutas https:// apenas para domínios autorizados
- * - Rejeita javascript:, data:, file:, protocolos perigosos e domínios externos
+ * Normaliza e valida o link do CTA — réplica exacta da lógica de segurança que
+ * já existia na versão Supabase desta página (mesmas regras, agora com
+ * mensagens traduzidas via `t()`):
+ * - Aceita rotas internas relativas (devem começar por "/", "#" ou "?").
+ * - Aceita URLs absolutas https:// apenas para domínios autorizados.
+ * - Rejeita javascript:, data:, file:, protocolos perigosos e domínios externos.
  * Devolve a string normalizada ou lança Error com mensagem amigável.
  */
-function normalizeCtaLink(raw: string): string {
+function normalizeCtaLink(raw: string, t: TFunction): string {
   const v = (raw ?? "").trim();
-  if (!v) throw new Error("O link do botão é obrigatório.");
+  if (!v) throw new Error(t("validation.ctaLinkRequired"));
 
-  // Rejeitar pseudo-protocolos perigosos explicitamente
   if (/^\s*(javascript|data|vbscript|file):/i.test(v)) {
-    throw new Error("Protocolo não permitido no link.");
+    throw new Error(t("validation.ctaLinkProtocol"));
   }
 
-  // Âncoras e query-only são internas
   if (v.startsWith("#") || v.startsWith("?")) return v;
 
-  // Caminhos relativos internos
   if (v.startsWith("/")) {
-    // bloquear protocol-relative //evil.com
-    if (v.startsWith("//")) throw new Error("Use uma rota interna (ex.: /servicos) ou um domínio autorizado.");
+    if (v.startsWith("//")) throw new Error(t("validation.ctaLinkRelative"));
     return v;
   }
 
-  // URLs absolutas — só https e domínios autorizados
   try {
     const url = new URL(v);
-    if (url.protocol !== "https:") throw new Error("Apenas links https:// são permitidos.");
+    if (url.protocol !== "https:") throw new Error(t("validation.ctaLinkHttpsOnly"));
     const host = url.hostname.toLowerCase();
     const ok = ALLOWED_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
     if (!ok) {
-      throw new Error(`Domínio não autorizado. Permitidos: ${ALLOWED_HOSTS.join(", ")}`);
+      throw new Error(t("validation.ctaLinkDomain", { hosts: ALLOWED_HOSTS.join(", ") }));
     }
     return url.toString();
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof Error && e.message) throw e;
-    throw new Error("Link inválido. Use uma rota interna (ex.: /servicos) ou um URL https autorizado.");
+    throw new Error(t("validation.ctaLinkFallback"));
   }
 }
 
-interface Slide {
-  id: string;
-  kicker: string;
-  title: string;
-  subtitle: string;
-  cta_label: string;
-  cta_link: string;
-  image_path: string | null;
-  image_url: string | null;
-  sort_order: number;
-  published: boolean;
+function buildSlideSchema(t: TFunction) {
+  return z.object({
+    kicker: z.string().trim().min(2, t("validation.kickerShort")),
+    title: z.string().trim().min(2, t("validation.titleShort")),
+    subtitle: z.string().trim().min(2, t("validation.subtitleShort")),
+    ctaLabel: z.string().trim().min(1, t("validation.ctaLabelRequired")),
+    ctaLink: z
+      .string()
+      .trim()
+      .min(1, t("validation.ctaLinkRequired"))
+      .superRefine((val, ctx) => {
+        try {
+          normalizeCtaLink(val, t);
+        } catch (err) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: err instanceof Error ? err.message : t("validation.ctaLinkFallback"),
+          });
+        }
+      }),
+    sortOrder: z.coerce.number({ invalid_type_error: t("validation.sortOrderInvalid") }).int(
+      t("validation.sortOrderInvalid"),
+    ),
+    published: z.boolean(),
+  });
 }
 
-const empty = {
-  kicker: "", title: "", subtitle: "",
-  cta_label: "Saiba mais", cta_link: "/sobre",
-  published: true,
-};
+type SlideFormValues = z.infer<ReturnType<typeof buildSlideSchema>>;
 
-export default function SlideshowAdmin() {
-  const [items, setItems] = useState<Slide[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editItem, setEditItem] = useState<Slide | null>(null);
+export default function Slideshow() {
+  const { t } = useTranslation("slideshow");
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("slideshow");
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState(empty);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<HeroSlideDto | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const { toast } = useToast();
-  const pag = useClientPagination(items);
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data } = await supabase.from("hero_slides").select("*").order("sort_order");
-    setItems((data ?? []) as Slide[]);
-    setLoading(false);
-  };
+  const { data, isLoading } = useHeroSlidesAdminList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
 
-  useEffect(() => { fetchData(); }, []);
+  const rows = data?.data ?? [];
 
-  const resetForm = () => { setForm(empty); setFile(null); setEditItem(null); };
-  const openCreate = () => { resetForm(); setOpen(true); };
-  const openEdit = (it: Slide) => {
-    setEditItem(it);
-    setForm({
-      kicker: it.kicker, title: it.title, subtitle: it.subtitle,
-      cta_label: it.cta_label, cta_link: it.cta_link, published: it.published,
-    });
-    setFile(null);
-    setOpen(true);
-  };
+  const createHeroSlide = useCreateHeroSlide();
+  const updateHeroSlide = useUpdateHeroSlide();
+  const deleteHeroSlide = useDeleteHeroSlide();
 
-  const uploadImage = async (): Promise<{ path: string; url: string } | null> => {
-    if (!file) return null;
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `slide-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("slideshow").upload(path, file, {
-      contentType: file.type || "image/jpeg", upsert: true,
-    });
-    if (error) throw error;
-    const url = supabase.storage.from("slideshow").getPublicUrl(path).data.publicUrl;
-    return { path, url };
-  };
+  const slideSchema = useMemo(() => buildSlideSchema(t), [t]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const cta_link = normalizeCtaLink(form.cta_link);
-      const payload = { ...form, cta_link };
+  const initialValues = useMemo<Partial<SlideFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            kicker: editItem.kicker,
+            title: editItem.title,
+            subtitle: editItem.subtitle,
+            ctaLabel: editItem.ctaLabel,
+            ctaLink: editItem.ctaLink,
+            sortOrder: editItem.sortOrder,
+            published: editItem.published,
+          }
+        : undefined,
+    [editItem],
+  );
 
-      let image_path = editItem?.image_path ?? null;
-      let image_url = editItem?.image_url ?? null;
-      const uploaded = await uploadImage();
-      if (uploaded) { image_path = uploaded.path; image_url = uploaded.url; }
+  // Sugestão de ordem para um slide novo: a seguir à maior `sortOrder` já
+  // carregada na página actual (réplica do `max + 1` que a versão Supabase
+  // calculava no servidor).
+  const suggestedNextOrder = useMemo(
+    () => (rows.length ? Math.max(...rows.map((s) => s.sortOrder)) + 1 : 1),
+    [rows],
+  );
 
+  const entityForm = useEntityForm({
+    schema: slideSchema,
+    initialValues,
+    defaultValues: {
+      kicker: "",
+      title: "",
+      subtitle: "",
+      ctaLabel: "Saiba mais",
+      ctaLink: "/sobre",
+      sortOrder: suggestedNextOrder,
+      published: true,
+    },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const ctaLink = normalizeCtaLink(values.ctaLink, t);
+      // TODO Fase 4: upload real para Laravel Storage. Em mock não há storage
+      // real: sem ficheiro seleccionado mantém-se a `imageUrl` actual (ou
+      // `null` na criação); com ficheiro seleccionado assume-se `null` para
+      // cair no fallback de imagens locais que `HeroSlideshow.tsx` já usa.
+      const imageUrl = file ? null : (editItem?.imageUrl ?? null);
+      const payload: Partial<HeroSlideDto> = {
+        kicker: values.kicker,
+        title: values.title,
+        subtitle: values.subtitle,
+        ctaLabel: values.ctaLabel,
+        ctaLink,
+        sortOrder: values.sortOrder,
+        published: values.published,
+        imageUrl,
+      };
       if (editItem) {
-        const { error } = await supabase.from("hero_slides").update({
-          ...payload, image_path, image_url,
-        }).eq("id", editItem.id);
-        if (error) throw error;
-        toast({ title: "Slide actualizado" });
+        await updateHeroSlide.mutateAsync({ id: editItem.id, payload });
       } else {
-        const max = items.reduce((m, i) => Math.max(m, i.sort_order), 0);
-        const { error } = await supabase.from("hero_slides").insert({
-          ...payload, image_path, image_url, sort_order: max + 1,
-        });
-        if (error) throw error;
-        toast({ title: "Slide criado" });
+        await createHeroSlide.mutateAsync(payload);
       }
-      setOpen(false); resetForm(); fetchData();
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally { setSaving(false); }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => {
+      setFormOpen(false);
+      setFile(null);
+    },
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFile(null);
+    setFormOpen(true);
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const item = items.find((i) => i.id === deleteId);
-    if (item?.image_path) await supabase.storage.from("slideshow").remove([item.image_path]);
-    const { error } = await supabase.from("hero_slides").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Slide eliminado" }); setDeleteId(null); fetchData();
+  const openEdit = (row: HeroSlideDto) => {
+    setEditItem(row);
+    setFile(null);
+    setFormOpen(true);
   };
 
-  const togglePublished = async (it: Slide) => {
-    await supabase.from("hero_slides").update({ published: !it.published }).eq("id", it.id);
-    fetchData();
-  };
-
-  const move = async (it: Slide, dir: -1 | 1) => {
-    const idx = items.findIndex((i) => i.id === it.id);
-    const swap = items[idx + dir];
-    if (!swap) return;
+  // Troca a `sortOrder` entre dois slides ADJACENTES na página actual (a
+  // versão Supabase original fazia a mesma troca a dois, sobre a lista
+  // completa carregada no cliente). Com paginação server-side, isto só move
+  // dentro da página visível — comportamento aceitável para um conjunto
+  // tipicamente pequeno de slides (uma página cobre o total habitual).
+  const moveSlide = async (slide: HeroSlideDto, direction: -1 | 1) => {
+    const idx = rows.findIndex((s) => s.id === slide.id);
+    const swap = rows[idx + direction];
+    if (idx === -1 || !swap) return;
     await Promise.all([
-      supabase.from("hero_slides").update({ sort_order: swap.sort_order }).eq("id", it.id),
-      supabase.from("hero_slides").update({ sort_order: it.sort_order }).eq("id", swap.id),
+      updateHeroSlide.mutateAsync({ id: slide.id, payload: { sortOrder: swap.sortOrder } }),
+      updateHeroSlide.mutateAsync({ id: swap.id, payload: { sortOrder: slide.sortOrder } }),
     ]);
-    fetchData();
+  };
+
+  const columns = useMemo<ColumnDef<HeroSlideDto>[]>(
+    () => [
+      {
+        accessorKey: "imageUrl",
+        header: t("table.image"),
+        enableSorting: false,
+        cell: ({ row }) =>
+          row.original.imageUrl ? (
+            <img src={row.original.imageUrl} alt="" className="h-10 w-16 rounded object-cover" />
+          ) : (
+            <div className="h-10 w-16 rounded bg-muted" />
+          ),
+      },
+      {
+        accessorKey: "title",
+        header: t("table.content"),
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div>
+            <div className="text-xs text-muted-foreground">{row.original.kicker}</div>
+            <div className="font-medium">{row.original.title}</div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "sortOrder",
+        header: t("table.order"),
+        enableSorting: false,
+        cell: ({ row }) => <span className="font-mono text-xs">{row.original.sortOrder}</span>,
+      },
+      {
+        id: "status",
+        header: t("table.status"),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const slide = row.original;
+          const badge = (
+            <Badge variant={slide.published ? "default" : "secondary"}>
+              {slide.published ? t("badge.published") : t("badge.draft")}
+            </Badge>
+          );
+          if (!canEdit) return badge;
+          return (
+            <button
+              type="button"
+              className="cursor-pointer"
+              onClick={() =>
+                updateHeroSlide.mutate({ id: slide.id, payload: { published: !slide.published } })
+              }
+            >
+              {badge}
+            </button>
+          );
+        },
+      },
+    ],
+    [t, canEdit, updateHeroSlide],
+  );
+
+  const renderRowActions = (row: HeroSlideDto) => {
+    const actions: RowAction[] = [];
+    if (canEdit) {
+      const idx = rows.findIndex((s) => s.id === row.id);
+      actions.push({
+        label: t("actions.moveUp"),
+        icon: ArrowUp,
+        disabled: idx <= 0,
+        onClick: () => moveSlide(row, -1),
+      });
+      actions.push({
+        label: t("actions.moveDown"),
+        icon: ArrowDown,
+        disabled: idx === -1 || idx >= rows.length - 1,
+        onClick: () => moveSlide(row, 1),
+      });
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return <RowActions actions={actions} />;
   };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={Images} title="Slideshow da Home" description="Gerir as imagens e textos do destaque principal do portal público">
-        <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Novo Slide</Button>
+      <AdminPageHeader icon={Images} title={t("page.title")} description={t("page.description")}>
+        <WriteGuard module="slideshow">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="font-serif">{editItem ? "Editar Slide" : "Novo Slide"}</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div><Label>Categoria (kicker)</Label><Input value={form.kicker} onChange={(e) => setForm({ ...form, kicker: e.target.value })} required /></div>
-            <div><Label>Título</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
-            <div><Label>Subtítulo</Label><Textarea value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} rows={2} required /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Texto do botão</Label><Input value={form.cta_label} onChange={(e) => setForm({ ...form, cta_label: e.target.value })} required /></div>
-              <div>
-                <Label>Link do botão</Label>
-                <Input value={form.cta_link} onChange={(e) => setForm({ ...form, cta_link: e.target.value })} placeholder="/servicos" required />
-                <p className="text-xs text-muted-foreground mt-1">Rota interna (ex.: <code>/servicos</code>) ou URL https de {ALLOWED_HOSTS.join(", ")}.</p>
-              </div>
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="kicker"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.kicker")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.kicker")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.title")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.title")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="subtitle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.subtitle")}</FormLabel>
+                  <FormControl>
+                    <Textarea rows={2} placeholder={t("form.placeholders.subtitle")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="ctaLabel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.ctaLabel")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.ctaLabel")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ctaLink"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.ctaLink")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.ctaLink")} {...field} />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      {t("form.ctaLinkHint", { hosts: ALLOWED_HOSTS.join(", ") })}
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <div>
-              <Label>Imagem {editItem?.image_url && <span className="text-xs text-muted-foreground">(deixar vazio para manter)</span>}</Label>
+            <FormField
+              control={form.control}
+              name="sortOrder"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.sortOrder")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      value={field.value ?? 0}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="published"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel className="!mt-0">{t("form.labels.published")}</FormLabel>
+                </FormItem>
+              )}
+            />
+            <div className="space-y-2">
+              <Label>{t("form.labels.image")}</Label>
+              {/* TODO Fase 4: upload real para Laravel Storage — por agora o
+                  ficheiro escolhido não é enviado a lado nenhum (ver onSubmit). */}
               <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              {editItem?.image_url && !file && (
-                <a href={editItem.image_url} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 mt-1">
-                  <ExternalLink className="h-3 w-3" /> Ver imagem actual
+              <p className="text-xs text-muted-foreground">{t("form.imageHint")}</p>
+              {editItem?.imageUrl && !file && (
+                <a
+                  href={editItem.imageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-primary inline-flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" /> {t("form.viewCurrentImage")}
                 </a>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
-              <Label>Publicado</Label>
-            </div>
-            <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? "A guardar..." : editItem ? "Guardar Alterações" : "Criar Slide"}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </>
+        )}
+      </EntityFormDialog>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
-
-      <AdminCard title="Slides" icon={Images} loading={loading} isEmpty={items.length === 0} emptyMessage="Sem slides registados.">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-16">Ordem</TableHead>
-              <TableHead className="w-20">Imagem</TableHead>
-              <TableHead>Título</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="w-40">Acções</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pag.pageItems.map((it, i) => {
-              const idx = pag.from + i;
-              return (
-              <TableRow key={it.id}>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <span className="font-mono text-xs w-5">{it.sort_order}</span>
-                    <Button size="icon" variant="ghost" className="h-6 w-6" disabled={idx === 0} onClick={() => move(it, -1)}><ArrowUp className="h-3 w-3" /></Button>
-                    <Button size="icon" variant="ghost" className="h-6 w-6" disabled={idx === items.length - 1} onClick={() => move(it, 1)}><ArrowDown className="h-3 w-3" /></Button>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {it.image_url ? (
-                    <img src={it.image_url} alt="" className="h-10 w-16 object-cover rounded" />
-                  ) : <span className="text-xs text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell className="font-medium">{it.title}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{it.kicker}</TableCell>
-                <TableCell>
-                  <button onClick={() => togglePublished(it)} className={`text-xs px-2 py-1 rounded-full ${it.published ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                    {it.published ? "Publicado" : "Rascunho"}
-                  </button>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(it)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(it.id)}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        <TablePagination
-          page={pag.page} pageSize={pag.pageSize} total={pag.total} totalPages={pag.totalPages}
-          canPrev={pag.canPrev} canNext={pag.canNext}
-          onPageChange={pag.setPage} onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await deleteHeroSlide.mutateAsync(deleteId);
+          setDeleteId(null);
+        }}
+      />
     </div>
   );
 }

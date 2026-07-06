@@ -1,0 +1,30 @@
+{
+  "page": {
+    "title": "Notifications",
+    "loading": "Loading...",
+    "summary": "{{unread}} unread · {{total}} total"
+  },
+  "actions": {
+    "markAll": "Mark all",
+    "clearAll": "Clear",
+    "markRead": "Mark as read",
+    "remove": "Remove"
+  },
+  "tabs": {
+    "all": "All ({{count}})",
+    "unread": "Unread ({{count}})"
+  },
+  "types": {
+    "info": "Information",
+    "sucesso": "Success",
+    "aviso": "Warning",
+    "erro": "Error"
+  },
+  "badge": {
+    "new": "New"
+  },
+  "empty": {
+    "title": "No notifications",
+    "description": "New notifications will appear here."
+  }
+}

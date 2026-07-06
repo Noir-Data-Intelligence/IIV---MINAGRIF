@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Legislation Management",
+    "description": "Statutes and regulations of the veterinary sector"
+  },
+  "actions": {
+    "new": "New Statute",
+    "viewPdf": "View PDF",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "table": {
+    "num": "No.",
+    "titulo": "Title",
+    "estado": "Status",
+    "pdf": "PDF",
+    "pdfAvailable": "Available",
+    "pdfNone": "—",
+    "searchPlaceholder": "Search statutes...",
+    "empty": "No statutes found."
+  },
+  "status": {
+    "published": "Published",
+    "draft": "Draft"
+  },
+  "dialog": {
+    "createTitle": "New Statute",
+    "editTitle": "Edit Statute"
+  },
+  "form": {
+    "labels": {
+      "num": "Number",
+      "titulo": "Title",
+      "descricao": "Description",
+      "tipo": "Type",
+      "ano": "Year",
+      "pdf": "PDF File",
+      "published": "Published on the public portal"
+    },
+    "placeholders": {
+      "num": "e.g. 01",
+      "titulo": "Statute title",
+      "descricao": "Statute description",
+      "ano": "2024"
+    },
+    "pdfKeepHint": "(leave empty to keep current)",
+    "pdfCurrentLink": "View current PDF",
+    "submitCreate": "Create Statute",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "validation": {
+    "numRequired": "Number is required",
+    "tituloShort": "Title too short",
+    "tipoRequired": "Select a type",
+    "anoRequired": "Year is required"
+  },
+  "toast": {
+    "createSuccess": "Statute created successfully",
+    "updateSuccess": "Statute updated",
+    "deleteSuccess": "Statute deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

@@ -1,9 +1,12 @@
 import { noticiasHandlers } from "@/mocks/handlers/noticias";
 import { legislacaoHandlers } from "@/mocks/handlers/legislacao";
 import { departamentosHandlers } from "@/mocks/handlers/departamentos";
+import { usersHandlers } from "@/mocks/handlers/users";
 import { heroSlidesHandlers } from "@/mocks/handlers/heroSlides";
 import { publicStatsHandlers } from "@/mocks/handlers/publicStats";
 import { contactMessagesHandlers } from "@/mocks/handlers/contactMessages";
+import { notificationsHandlers } from "@/mocks/handlers/notifications";
+import { rbacHandlers } from "@/mocks/handlers/rbac";
 
 /**
  * Agregador de todos os handlers MSW.
@@ -15,9 +18,12 @@ export const handlers = [
   ...noticiasHandlers,
   ...legislacaoHandlers,
   ...departamentosHandlers,
+  ...usersHandlers,
   ...heroSlidesHandlers,
   ...publicStatsHandlers,
   ...contactMessagesHandlers,
+  ...notificationsHandlers,
+  ...rbacHandlers,
 ];
 
 export default handlers;

@@ -8,8 +8,13 @@ import type { HeroSlideDto } from "@/types/dto/heroSlide";
  * `imageUrl` fica sempre `null`: o componente já tem lógica de fallback para
  * as imagens locais (`hero-lab.jpg`, `hero-vacinas.jpg`, ...) quando não há
  * `image_url` vindo do backend, e mantemos esse comportamento.
+ *
+ * NOTA: exportado como `let` para ser MUTÁVEL — os handlers create/update/delete
+ * (ver `mocks/handlers/heroSlides.ts`) operam sobre este array em memória,
+ * persistindo alterações durante a sessão do browser (perde-se no refresh,
+ * que é o comportamento esperado de um mock).
  */
-export const heroSlidesFixtures: HeroSlideDto[] = [
+export let heroSlidesFixtures: HeroSlideDto[] = [
   {
     id: "hs-01",
     kicker: "Diagnóstico Laboratorial",

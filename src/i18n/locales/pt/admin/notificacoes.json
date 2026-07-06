@@ -1,0 +1,30 @@
+{
+  "page": {
+    "title": "Notificações",
+    "loading": "A carregar...",
+    "summary": "{{unread}} por ler · {{total}} no total"
+  },
+  "actions": {
+    "markAll": "Marcar todas",
+    "clearAll": "Limpar",
+    "markRead": "Marcar como lida",
+    "remove": "Remover"
+  },
+  "tabs": {
+    "all": "Todas ({{count}})",
+    "unread": "Não lidas ({{count}})"
+  },
+  "types": {
+    "info": "Informação",
+    "sucesso": "Sucesso",
+    "aviso": "Aviso",
+    "erro": "Erro"
+  },
+  "badge": {
+    "new": "Nova"
+  },
+  "empty": {
+    "title": "Sem notificações",
+    "description": "As novas notificações aparecerão aqui."
+  }
+}
