@@ -1,0 +1,19 @@
+{
+  "save": "Save",
+  "cancel": "Cancel",
+  "edit": "Edit",
+  "delete": "Delete",
+  "search": "Search",
+  "loading": "Loading...",
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "switch": "Switch language",
+    "pt": "Portuguese",
+    "en": "English"
+  }
+}

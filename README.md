@@ -1,73 +1,56 @@
-# Welcome to your Lovable project
+# Portal IIV/MINAGRIF
 
-## Project info
+Portal público e área administrativa do Instituto de Investigação Veterinária (IIV) do MINAGRIF (Ministério da Agricultura, Angola).
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Stack Técnico
 
-## How can I edit this code?
+- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui
+- **Routing**: react-router-dom
+- **Backend**: Supabase (migração em curso para API Laravel)
+- **Ferramentas**: ESLint, Vitest, PostCSS, Autoprefixer
 
-There are several ways of editing your application.
+## Como Correr Localmente
 
-**Use Lovable**
+### Requisitos
+- Node.js (v18+) e npm instalados
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Passos
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Instalar dependências
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Correr servidor de desenvolvimento (porta 8080)
 npm run dev
+
+# Build para produção
+npm run build
+
+# Executar testes
+npm run test
+
+# Executar testes em watch mode
+npm run test:watch
+
+# Lint e verificação de código
+npm run lint
 ```
 
-**Edit a file directly in GitHub**
+## Estrutura do Projecto
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **src/pages** - Páginas da aplicação (público e administrativo)
+- **src/components** - Componentes reutilizáveis (UI, layouts, admin)
+- **src/hooks** - Hooks customizados (autenticação, mobile, etc.)
+- **src/integrations** - Integrações com serviços externos
+- **src/assets** - Imagens e recursos estáticos
+- **supabase/** - Configurações e migrações Supabase
 
-**Use GitHub Codespaces**
+## Estrutura de Permissões
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+A aplicação implementa um sistema de roles (Utilizador, Técnico, Administrador) com guards de rota para controlar acesso a áreas administrativas.
 
-## What technologies are used for this project?
+## Próximas Etapas
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- Migração do backend de Supabase para API Laravel
+- Otimizações de performance e SEO
+- Melhorias na área administrativa

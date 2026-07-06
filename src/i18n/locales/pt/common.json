@@ -1,0 +1,19 @@
+{
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "edit": "Editar",
+  "delete": "Eliminar",
+  "search": "Pesquisar",
+  "loading": "A carregar...",
+  "theme": {
+    "toggle": "Alternar tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema"
+  },
+  "language": {
+    "switch": "Mudar idioma",
+    "pt": "Português",
+    "en": "Inglês"
+  }
+}

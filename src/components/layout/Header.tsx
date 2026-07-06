@@ -1,20 +1,24 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const navItems = [
-  { label: "Início", path: "/" },
-  { label: "Sobre o IIV", path: "/sobre" },
-  { label: "Serviços", path: "/servicos" },
-  { label: "Notícias", path: "/noticias" },
-  { label: "Legislação", path: "/legislacao" },
-  { label: "Contactos", path: "/contactos" },
+  { key: "home", path: "/" },
+  { key: "about", path: "/sobre" },
+  { key: "services", path: "/servicos" },
+  { key: "news", path: "/noticias" },
+  { key: "legislation", path: "/legislacao" },
+  { key: "contacts", path: "/contactos" },
 ];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { t } = useTranslation("nav");
 
   return (
     <header className="sticky top-0 z-50">
@@ -23,7 +27,7 @@ export function Header() {
         <div className="container flex h-9 items-center justify-between text-xs font-medium tracking-wide">
           <span className="opacity-80">Instituto de Investigação Veterinária — República de Angola</span>
           <Link to="/login" className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
-            Área Restrita <ChevronRight className="h-3 w-3" />
+            {t("restrictedArea")} <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
       </div>
@@ -53,7 +57,7 @@ export function Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 }`}
               >
-                {item.label}
+                {t(item.key)}
                 {location.pathname === item.path && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-primary" />
                 )}
@@ -61,15 +65,23 @@ export function Header() {
             ))}
           </nav>
 
+          <div className="hidden lg:flex items-center gap-1">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
+
           {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-1 lg:hidden">
+            <LanguageSwitcher />
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -88,7 +100,7 @@ export function Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 }`}
               >
-                {item.label}
+                {t(item.key)}
               </Link>
             ))}
           </div>
