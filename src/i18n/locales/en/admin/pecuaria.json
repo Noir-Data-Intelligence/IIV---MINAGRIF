@@ -1,0 +1,90 @@
+{
+  "page": {
+    "title": "Livestock Production",
+    "description": "Records of milk, eggs, meat, honey and other production by station."
+  },
+  "kpis": {
+    "total": "Total Records",
+    "totalCaption": "Total production records",
+    "month": "Production This Month",
+    "monthCaption": "Records in the current month",
+    "milk": "Total Milk",
+    "milkCaption": "Accumulated litres of milk",
+    "eggs": "Total Eggs",
+    "eggsCaption": "Accumulated egg units"
+  },
+  "type": {
+    "Leite": "Milk",
+    "Ovos": "Eggs",
+    "Carne": "Meat",
+    "Mel": "Honey",
+    "Outro": "Other"
+  },
+  "actions": {
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "new": "New Record"
+  },
+  "form": {
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel",
+    "station": "Station",
+    "productType": "Product type",
+    "date": "Date",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "recordedBy": "Recorded by",
+    "notes": "Notes",
+    "recordedByPlaceholder": "Name of the responsible"
+  },
+  "common": {
+    "emptyCell": "—",
+    "selectPlaceholder": "Select"
+  },
+  "filters": {
+    "allTypes": "All types",
+    "typePlaceholder": "Type"
+  },
+  "table": {
+    "date": "Date",
+    "station": "Station",
+    "product": "Product",
+    "quantity": "Quantity",
+    "recordedBy": "Recorded by",
+    "notes": "Notes",
+    "searchPlaceholder": "Search production...",
+    "empty": "No production recorded."
+  },
+  "dialog": {
+    "createTitle": "New Production Record",
+    "editTitle": "Edit Record",
+    "detailsTitle": "Record Details"
+  },
+  "details": {
+    "station": "Station",
+    "product": "Product",
+    "date": "Date",
+    "quantity": "Quantity",
+    "recordedBy": "Recorded by",
+    "notes": "Notes",
+    "createdAt": "Created at"
+  },
+  "validation": {
+    "station": "Select a station",
+    "quantity": "Quantity must be greater than zero",
+    "date": "Date is required"
+  },
+  "delete": {
+    "title": "Delete record?",
+    "description": "This action is permanent and cannot be undone."
+  },
+  "toast": {
+    "createSuccess": "Record created",
+    "updateSuccess": "Record updated",
+    "deleteSuccess": "Record deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

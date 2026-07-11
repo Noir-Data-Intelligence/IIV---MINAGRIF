@@ -1,0 +1,198 @@
+{
+  "page": {
+    "title": "Stock Integrado",
+    "description": "Inventário unificado: laboratório, vacinas, agrícola, pecuária, sémen, administrativo e combustível."
+  },
+  "kpis": {
+    "totalItems": "Total de Itens",
+    "totalItemsCaption": "Referências em inventário",
+    "totalValue": "Valor Total do Stock",
+    "totalValueCaption": "Quantidade × custo unitário",
+    "belowMin": "Itens Abaixo do Mínimo",
+    "belowMinCaption": "Stock crítico a repor",
+    "expiring": "A Expirar em Breve",
+    "expiringCaption": "Validade nos próximos 30 dias"
+  },
+  "tabs": {
+    "items": "Itens",
+    "locations": "Localizações",
+    "movements": "Movimentos"
+  },
+  "category": {
+    "laboratorio": "Laboratório",
+    "vacinas": "Vacinas",
+    "agricola": "Agrícola",
+    "pecuaria": "Pecuária",
+    "administrativo": "Administrativo",
+    "semen": "Sémen",
+    "combustivel": "Combustível"
+  },
+  "movementType": {
+    "entrada": "Entrada",
+    "saida": "Saída",
+    "transferencia": "Transferência",
+    "ajuste": "Ajuste"
+  },
+  "actions": {
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "common": {
+    "emptyCell": "—",
+    "none": "— Nenhuma —",
+    "selectPlaceholder": "Seleccionar"
+  },
+  "filters": {
+    "allCategories": "Todas as categorias",
+    "categoryPlaceholder": "Categoria",
+    "allTypes": "Todos os tipos",
+    "typePlaceholder": "Tipo"
+  },
+  "delete": {
+    "title": "Eliminar registo?",
+    "description": "Esta acção é permanente e não pode ser revertida."
+  },
+  "toast": {
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "badges": {
+    "critical": "Crítico",
+    "active": "Activa",
+    "inactive": "Inactiva"
+  },
+  "items": {
+    "new": "Novo Item",
+    "table": {
+      "name": "Nome",
+      "category": "Categoria",
+      "quantity": "Quantidade",
+      "minStock": "Mínimo",
+      "location": "Localização",
+      "expiry": "Validade",
+      "unitCost": "Custo Unit.",
+      "searchPlaceholder": "Pesquisar por nome, SKU ou fornecedor...",
+      "empty": "Sem itens registados."
+    },
+    "dialog": {
+      "createTitle": "Novo Item",
+      "editTitle": "Editar Item",
+      "detailsTitle": "Detalhes do Item"
+    },
+    "form": {
+      "name": "Nome",
+      "category": "Categoria",
+      "sku": "SKU",
+      "unit": "Unidade",
+      "quantity": "Quantidade",
+      "minStock": "Stock Mínimo",
+      "location": "Localização",
+      "expiry": "Validade",
+      "supplier": "Fornecedor",
+      "unitCost": "Custo Unitário (Kz)",
+      "notes": "Notas",
+      "unitPlaceholder": "Ex.: unidade, litro, caixa 100un"
+    },
+    "details": {
+      "name": "Nome",
+      "category": "Categoria",
+      "sku": "SKU",
+      "unit": "Unidade",
+      "quantity": "Quantidade",
+      "minStock": "Stock Mínimo",
+      "location": "Localização",
+      "expiry": "Validade",
+      "supplier": "Fornecedor",
+      "unitCost": "Custo Unitário",
+      "stockValue": "Valor em Stock",
+      "notes": "Notas",
+      "createdAt": "Registado em"
+    },
+    "validation": {
+      "name": "Nome demasiado curto",
+      "unit": "Unidade obrigatória",
+      "quantity": "Quantidade inválida",
+      "minStock": "Mínimo inválido"
+    },
+    "toast": {
+      "createSuccess": "Item criado",
+      "updateSuccess": "Item actualizado",
+      "deleteSuccess": "Item eliminado"
+    }
+  },
+  "locations": {
+    "new": "Nova Localização",
+    "table": {
+      "name": "Nome",
+      "description": "Descrição",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar localizações...",
+      "empty": "Sem localizações registadas."
+    },
+    "dialog": {
+      "createTitle": "Nova Localização",
+      "editTitle": "Editar Localização",
+      "detailsTitle": "Detalhes da Localização"
+    },
+    "form": {
+      "name": "Nome",
+      "description": "Descrição",
+      "status": "Estado",
+      "activeOption": "Activa",
+      "inactiveOption": "Inactiva"
+    },
+    "details": {
+      "name": "Nome",
+      "description": "Descrição",
+      "status": "Estado",
+      "createdAt": "Registada em"
+    },
+    "validation": {
+      "name": "Nome demasiado curto"
+    },
+    "toast": {
+      "createSuccess": "Localização criada",
+      "updateSuccess": "Localização actualizada",
+      "deleteSuccess": "Localização eliminada"
+    }
+  },
+  "movements": {
+    "new": "Novo Movimento",
+    "table": {
+      "date": "Data",
+      "item": "Item",
+      "type": "Tipo",
+      "quantity": "Quantidade",
+      "route": "De → Para",
+      "reason": "Motivo",
+      "searchPlaceholder": "Pesquisar por motivo...",
+      "empty": "Sem movimentos registados."
+    },
+    "dialog": {
+      "createTitle": "Novo Movimento"
+    },
+    "form": {
+      "item": "Item",
+      "type": "Tipo",
+      "quantity": "Quantidade",
+      "fromLocation": "Origem",
+      "toLocation": "Destino",
+      "date": "Data",
+      "reason": "Motivo"
+    },
+    "validation": {
+      "item": "Seleccione um item",
+      "quantity": "Quantidade deve ser maior que zero"
+    },
+    "toast": {
+      "createSuccess": "Movimento registado",
+      "deleteSuccess": "Movimento eliminado"
+    }
+  }
+}

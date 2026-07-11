@@ -1,362 +1,837 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import {
+  Sprout, MapPin, Wheat, Tractor, Ruler,
+  Plus, Eye, Pencil, Trash2,
+} from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Sprout, Pencil, Trash2, Wheat, MapPin, Tractor } from "lucide-react";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import { formatDate, formatNumber } from "@/lib/format";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { useEstacoesList } from "@/hooks/queries/useEstacoes";
+import {
+  useCropsList, useCreateCrop, useUpdateCrop, useDeleteCrop,
+  useFieldsList, useCreateField, useUpdateField, useDeleteField,
+  useHarvestsList, useCreateHarvest, useUpdateHarvest, useDeleteHarvest,
+} from "@/hooks/queries/useAgricultura";
+import type {
+  CropDto, FieldDto, FieldStatus, HarvestDto,
+} from "@/types/dto/agricultura";
+import i18n from "@/i18n";
+import ptAgricultura from "@/i18n/locales/pt/admin/agricultura.json";
+import enAgricultura from "@/i18n/locales/en/admin/agricultura.json";
 
-type FieldStatus = "planeado" | "plantado" | "em_crescimento" | "colhido" | "abandonado";
+// Namespace autónomo registado em runtime, seguindo o padrão de Financeiro.tsx.
+if (!i18n.hasResourceBundle("pt", "agricultura"))
+  i18n.addResourceBundle("pt", "agricultura", ptAgricultura, true, true);
+if (!i18n.hasResourceBundle("en", "agricultura"))
+  i18n.addResourceBundle("en", "agricultura", enAgricultura, true, true);
 
-interface Crop { id: string; name: string; scientific_name: string | null; cycle_days: number | null; notes: string | null }
-interface Field {
-  id: string; station_id: string; crop_id: string; field_code: string | null;
-  area_ha: number; planting_date: string | null; expected_harvest: string | null;
-  status: FieldStatus; notes: string | null;
-}
-interface Harvest {
-  id: string; field_id: string; harvest_date: string; quantity: number; unit: string;
-  quality_grade: string | null; notes: string | null;
-}
-interface Station { id: string; name: string }
-
-const STATUS: { value: FieldStatus; label: string }[] = [
-  { value: "planeado", label: "Planeado" },
-  { value: "plantado", label: "Plantado" },
-  { value: "em_crescimento", label: "Em crescimento" },
-  { value: "colhido", label: "Colhido" },
-  { value: "abandonado", label: "Abandonado" },
+const FIELD_STATUSES: FieldStatus[] = [
+  "planeado", "plantado", "em_crescimento", "colhido", "abandonado",
 ];
 
+const statusVariant: Record<FieldStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  planeado: "outline",
+  plantado: "secondary",
+  em_crescimento: "default",
+  colhido: "default",
+  abandonado: "destructive",
+};
+
+const BIG_PAGE = { page: 1, perPage: 1000 } as const;
+
+// --- Schemas (mensagens i18n reconstruídas via useMemo dependente de t) ------
+
+function buildCropSchema(t: TFunction) {
+  return z.object({
+    name: z.string().trim().min(2, t("crops.validation.name")),
+    scientificName: z.string().trim().optional(),
+    cycleDays: z
+      .string()
+      .trim()
+      .optional()
+      .refine((v) => !v || (Number.isFinite(Number(v)) && Number(v) > 0), t("crops.validation.cycleDays")),
+    notes: z.string().trim().optional(),
+  });
+}
+type CropFormValues = z.infer<ReturnType<typeof buildCropSchema>>;
+
+function buildFieldSchema(t: TFunction) {
+  return z.object({
+    stationId: z.string().min(1, t("fields.validation.station")),
+    cropId: z.string().min(1, t("fields.validation.crop")),
+    fieldCode: z.string().trim().optional(),
+    areaHa: z
+      .string()
+      .trim()
+      .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, t("fields.validation.area")),
+    plantingDate: z.string().optional(),
+    expectedHarvest: z.string().optional(),
+    status: z.enum(["planeado", "plantado", "em_crescimento", "colhido", "abandonado"]),
+    notes: z.string().trim().optional(),
+  });
+}
+type FieldFormValues = z.infer<ReturnType<typeof buildFieldSchema>>;
+
+function buildHarvestSchema(t: TFunction) {
+  return z.object({
+    fieldId: z.string().min(1, t("harvests.validation.field")),
+    harvestDate: z.string().min(1, t("harvests.validation.date")),
+    quantity: z
+      .string()
+      .trim()
+      .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, t("harvests.validation.quantity")),
+    unit: z.string().trim().min(1),
+    qualityGrade: z.string().trim().optional(),
+    notes: z.string().trim().optional(),
+  });
+}
+type HarvestFormValues = z.infer<ReturnType<typeof buildHarvestSchema>>;
+
 export default function Agricultura() {
-  const { user } = useAuth();
+  const { t } = useTranslation("agricultura");
   const { canWrite } = useUserRole();
-  const { toast } = useToast();
   const canEdit = canWrite("agricultura");
+  const prefersReduced = useReducedMotion();
+  const currentYear = new Date().getFullYear();
 
-  const [loading, setLoading] = useState(true);
-  const [crops, setCrops] = useState<Crop[]>([]);
-  const [fields, setFields] = useState<Field[]>([]);
-  const [harvests, setHarvests] = useState<Harvest[]>([]);
-  const [stations, setStations] = useState<Station[]>([]);
+  // --- Pagination / search por separador ---
+  const [fieldPage, setFieldPage] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [fieldSearch, setFieldSearch] = useState("");
+  const [cropPage, setCropPage] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [cropSearch, setCropSearch] = useState("");
+  const [harvestPage, setHarvestPage] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [harvestSearch, setHarvestSearch] = useState("");
 
-  const [cropOpen, setCropOpen] = useState(false);
-  const [cropEdit, setCropEdit] = useState<Crop | null>(null);
-  const [fieldOpen, setFieldOpen] = useState(false);
-  const [fieldEdit, setFieldEdit] = useState<Field | null>(null);
-  const [harvestOpen, setHarvestOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<{ table: string; id: string } | null>(null);
+  // --- Dialog state por entidade ---
+  const [cropForm, setCropForm] = useState(false);
+  const [cropEdit, setCropEdit] = useState<CropDto | null>(null);
+  const [cropView, setCropView] = useState<CropDto | null>(null);
+  const [fieldForm, setFieldForm] = useState(false);
+  const [fieldEdit, setFieldEdit] = useState<FieldDto | null>(null);
+  const [fieldView, setFieldView] = useState<FieldDto | null>(null);
+  const [harvestForm, setHarvestForm] = useState(false);
+  const [harvestEdit, setHarvestEdit] = useState<HarvestDto | null>(null);
+  const [harvestView, setHarvestView] = useState<HarvestDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ kind: "crop" | "field" | "harvest"; id: string } | null>(null);
 
-  const loadAll = async () => {
-    setLoading(true);
-    const [c, f, h, s] = await Promise.all([
-      supabase.from("crops").select("*").order("name"),
-      supabase.from("crop_fields").select("*").order("planting_date", { ascending: false }),
-      supabase.from("harvests").select("*").order("harvest_date", { ascending: false }).limit(200),
-      supabase.from("stations").select("id,name").order("name"),
-    ]);
-    if (c.data) setCrops(c.data as Crop[]);
-    if (f.data) setFields(f.data as Field[]);
-    if (h.data) setHarvests(h.data as Harvest[]);
-    if (s.data) setStations(s.data as Station[]);
-    setLoading(false);
-  };
+  // --- Queries: tabela paginada + dataset completo p/ lookups, KPIs ---
+  const cropsQuery = useCropsList({
+    page: cropPage.pageIndex + 1, perPage: cropPage.pageSize, search: cropSearch || undefined,
+  });
+  const cropsAll = useCropsList(BIG_PAGE);
 
-  useEffect(() => { loadAll(); }, []);
+  const fieldsQuery = useFieldsList({
+    page: fieldPage.pageIndex + 1, perPage: fieldPage.pageSize, search: fieldSearch || undefined,
+  });
+  const fieldsAll = useFieldsList(BIG_PAGE);
 
-  const kpis = useMemo(() => {
-    const totalArea = fields.reduce((sum, f) => sum + (Number(f.area_ha) || 0), 0);
-    const active = fields.filter((f) => f.status === "plantado" || f.status === "em_crescimento").length;
-    const totalHarvest = harvests.reduce((sum, h) => sum + (Number(h.quantity) || 0), 0);
-    const productivity = totalArea > 0 ? Math.round(totalHarvest / totalArea) : 0;
-    return { totalArea, active, totalHarvest, productivity };
-  }, [fields, harvests]);
+  const harvestsQuery = useHarvestsList({
+    page: harvestPage.pageIndex + 1, perPage: harvestPage.pageSize, search: harvestSearch || undefined,
+  });
+  const harvestsAll = useHarvestsList(BIG_PAGE);
 
-  const cropName = (id: string) => crops.find((c) => c.id === id)?.name ?? "—";
-  const stationName = (id: string) => stations.find((s) => s.id === id)?.name ?? "—";
+  const estacoesQuery = useEstacoesList(BIG_PAGE);
+
+  const createCrop = useCreateCrop();
+  const updateCrop = useUpdateCrop();
+  const deleteCrop = useDeleteCrop();
+  const createField = useCreateField();
+  const updateField = useUpdateField();
+  const deleteField = useDeleteField();
+  const createHarvest = useCreateHarvest();
+  const updateHarvest = useUpdateHarvest();
+  const deleteHarvest = useDeleteHarvest();
+
+  // --- Lookups ---
+  const crops = useMemo(() => cropsAll.data?.data ?? [], [cropsAll.data]);
+  const allFields = useMemo(() => fieldsAll.data?.data ?? [], [fieldsAll.data]);
+  const allHarvests = useMemo(() => harvestsAll.data?.data ?? [], [harvestsAll.data]);
+  const estacoes = useMemo(() => estacoesQuery.data?.data ?? [], [estacoesQuery.data]);
+
+  const cropMap = useMemo(() => new Map(crops.map((c) => [c.id, c])), [crops]);
+  const stationMap = useMemo(() => new Map(estacoes.map((s) => [s.id, s])), [estacoes]);
+  const fieldMap = useMemo(() => new Map(allFields.map((f) => [f.id, f])), [allFields]);
+
+  const cropName = (id: string) => cropMap.get(id)?.name ?? t("common.emptyCell");
+  const stationName = (id: string) => stationMap.get(id)?.name ?? t("common.emptyCell");
   const fieldLabel = (id: string) => {
-    const f = fields.find((x) => x.id === id);
-    if (!f) return "—";
-    return `${f.field_code || ""} ${cropName(f.crop_id)} (${stationName(f.station_id)})`.trim();
+    const f = fieldMap.get(id);
+    if (!f) return t("common.emptyCell");
+    return `${f.fieldCode ? `${f.fieldCode} · ` : ""}${cropName(f.cropId)} (${stationName(f.stationId)})`;
   };
 
-  // Save handlers
-  const saveCrop = async (form: Partial<Crop>) => {
-    if (!form.name) return toast({ title: "Nome obrigatório", variant: "destructive" });
-    const payload = { name: form.name, scientific_name: form.scientific_name || null, cycle_days: form.cycle_days ?? null, notes: form.notes || null };
-    const { error } = cropEdit
-      ? await supabase.from("crops").update(payload).eq("id", cropEdit.id)
-      : await supabase.from("crops").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: cropEdit ? "Cultura actualizada" : "Cultura criada" });
-    setCropOpen(false); setCropEdit(null); loadAll();
-  };
+  // --- KPIs (dataset completo) ---
+  const kpis = useMemo(() => {
+    const totalFields = allFields.length;
+    const totalArea = allFields.reduce((s, f) => s + (Number(f.areaHa) || 0), 0);
+    const growingFields = allFields.filter((f) => f.status === "em_crescimento").length;
+    const yearHarvest = allHarvests
+      .filter((h) => new Date(h.harvestDate).getFullYear() === currentYear)
+      .reduce((s, h) => s + (Number(h.quantity) || 0), 0);
+    return { totalFields, totalArea, growingFields, yearHarvest };
+  }, [allFields, allHarvests, currentYear]);
 
-  const saveField = async (form: Partial<Field>) => {
-    if (!form.station_id || !form.crop_id) return toast({ title: "Estação e cultura obrigatórias", variant: "destructive" });
-    const payload = {
-      station_id: form.station_id, crop_id: form.crop_id, field_code: form.field_code || null,
-      area_ha: Number(form.area_ha) || 0, planting_date: form.planting_date || null,
-      expected_harvest: form.expected_harvest || null, status: form.status || "planeado", notes: form.notes || null,
-    };
-    const { error } = fieldEdit
-      ? await supabase.from("crop_fields").update(payload).eq("id", fieldEdit.id)
-      : await supabase.from("crop_fields").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: fieldEdit ? "Talhão actualizado" : "Talhão criado" });
-    setFieldOpen(false); setFieldEdit(null); loadAll();
-  };
+  // --- Forms ---
+  const cropSchema = useMemo(() => buildCropSchema(t), [t]);
+  const cropInitial = useMemo<Partial<CropFormValues> | undefined>(
+    () =>
+      cropEdit
+        ? {
+            name: cropEdit.name,
+            scientificName: cropEdit.scientificName ?? "",
+            cycleDays: cropEdit.cycleDays != null ? String(cropEdit.cycleDays) : "",
+            notes: cropEdit.notes ?? "",
+          }
+        : undefined,
+    [cropEdit],
+  );
+  const cropEntityForm = useEntityForm({
+    schema: cropSchema,
+    initialValues: cropInitial,
+    defaultValues: { name: "", scientificName: "", cycleDays: "", notes: "" },
+    open: cropForm,
+    onSubmit: async (values) => {
+      const payload = {
+        name: values.name,
+        scientificName: values.scientificName?.trim() ? values.scientificName.trim() : null,
+        cycleDays: values.cycleDays?.trim() ? Number(values.cycleDays) : null,
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      };
+      if (cropEdit) await updateCrop.mutateAsync({ id: cropEdit.id, payload });
+      else await createCrop.mutateAsync(payload);
+    },
+    successMessage: cropEdit ? t("crops.toast.updateSuccess") : t("crops.toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setCropForm(false),
+  });
 
-  const saveHarvest = async (form: Partial<Harvest>) => {
-    if (!form.field_id || !form.quantity) return toast({ title: "Talhão e quantidade obrigatórios", variant: "destructive" });
-    const payload = {
-      field_id: form.field_id, harvest_date: form.harvest_date || new Date().toISOString().slice(0, 10),
-      quantity: Number(form.quantity) || 0, unit: form.unit || "kg",
-      quality_grade: form.quality_grade || null, recorded_by: user?.id || null, notes: form.notes || null,
-    };
-    const { error } = await supabase.from("harvests").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: "Colheita registada" });
-    setHarvestOpen(false); loadAll();
-  };
+  const fieldSchema = useMemo(() => buildFieldSchema(t), [t]);
+  const fieldInitial = useMemo<Partial<FieldFormValues> | undefined>(
+    () =>
+      fieldEdit
+        ? {
+            stationId: fieldEdit.stationId,
+            cropId: fieldEdit.cropId,
+            fieldCode: fieldEdit.fieldCode ?? "",
+            areaHa: String(fieldEdit.areaHa),
+            plantingDate: fieldEdit.plantingDate ?? "",
+            expectedHarvest: fieldEdit.expectedHarvest ?? "",
+            status: fieldEdit.status,
+            notes: fieldEdit.notes ?? "",
+          }
+        : undefined,
+    [fieldEdit],
+  );
+  const fieldEntityForm = useEntityForm({
+    schema: fieldSchema,
+    initialValues: fieldInitial,
+    defaultValues: {
+      stationId: "", cropId: "", fieldCode: "", areaHa: "",
+      plantingDate: "", expectedHarvest: "", status: "planeado", notes: "",
+    },
+    open: fieldForm,
+    onSubmit: async (values) => {
+      const payload = {
+        stationId: values.stationId,
+        cropId: values.cropId,
+        fieldCode: values.fieldCode?.trim() ? values.fieldCode.trim() : null,
+        areaHa: Number(values.areaHa),
+        plantingDate: values.plantingDate || null,
+        expectedHarvest: values.expectedHarvest || null,
+        status: values.status,
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      };
+      if (fieldEdit) await updateField.mutateAsync({ id: fieldEdit.id, payload });
+      else await createField.mutateAsync(payload);
+    },
+    successMessage: fieldEdit ? t("fields.toast.updateSuccess") : t("fields.toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFieldForm(false),
+  });
+
+  const harvestSchema = useMemo(() => buildHarvestSchema(t), [t]);
+  const harvestInitial = useMemo<Partial<HarvestFormValues> | undefined>(
+    () =>
+      harvestEdit
+        ? {
+            fieldId: harvestEdit.fieldId,
+            harvestDate: harvestEdit.harvestDate,
+            quantity: String(harvestEdit.quantity),
+            unit: harvestEdit.unit,
+            qualityGrade: harvestEdit.qualityGrade ?? "",
+            notes: harvestEdit.notes ?? "",
+          }
+        : undefined,
+    [harvestEdit],
+  );
+  const harvestEntityForm = useEntityForm({
+    schema: harvestSchema,
+    initialValues: harvestInitial,
+    defaultValues: {
+      fieldId: "", harvestDate: new Date().toISOString().slice(0, 10),
+      quantity: "", unit: "kg", qualityGrade: "", notes: "",
+    },
+    open: harvestForm,
+    onSubmit: async (values) => {
+      const payload = {
+        fieldId: values.fieldId,
+        harvestDate: values.harvestDate,
+        quantity: Number(values.quantity),
+        unit: values.unit,
+        qualityGrade: values.qualityGrade?.trim() ? values.qualityGrade.trim() : null,
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      };
+      if (harvestEdit) await updateHarvest.mutateAsync({ id: harvestEdit.id, payload });
+      else await createHarvest.mutateAsync(payload);
+    },
+    successMessage: harvestEdit ? t("harvests.toast.updateSuccess") : t("harvests.toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setHarvestForm(false),
+  });
+
+  // --- Open helpers ---
+  const openCropCreate = () => { setCropEdit(null); setCropForm(true); };
+  const openCropEdit = (c: CropDto) => { setCropEdit(c); setCropForm(true); };
+  const openFieldCreate = () => { setFieldEdit(null); setFieldForm(true); };
+  const openFieldEdit = (f: FieldDto) => { setFieldEdit(f); setFieldForm(true); };
+  const openHarvestCreate = () => { setHarvestEdit(null); setHarvestForm(true); };
+  const openHarvestEdit = (h: HarvestDto) => { setHarvestEdit(h); setHarvestForm(true); };
 
   const confirmDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from(deleteId.table as any).delete().eq("id", deleteId.id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else toast({ title: "Registo apagado" });
-    setDeleteId(null); loadAll();
+    if (!deleteTarget) return;
+    if (deleteTarget.kind === "crop") await deleteCrop.mutateAsync(deleteTarget.id);
+    else if (deleteTarget.kind === "field") await deleteField.mutateAsync(deleteTarget.id);
+    else await deleteHarvest.mutateAsync(deleteTarget.id);
+    setDeleteTarget(null);
   };
+
+  // --- Columns ---
+  const cropColumns = useMemo<ColumnDef<CropDto>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("crops.table.name")} />,
+        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      },
+      {
+        accessorKey: "scientificName",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("crops.table.scientificName")} />,
+        cell: ({ row }) => <span className="italic text-muted-foreground">{row.original.scientificName ?? t("common.emptyCell")}</span>,
+      },
+      {
+        accessorKey: "cycleDays",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("crops.table.cycleDays")} />,
+        cell: ({ row }) => row.original.cycleDays ?? t("common.emptyCell"),
+      },
+    ],
+    [t],
+  );
+
+  const fieldColumns = useMemo<ColumnDef<FieldDto>[]>(
+    () => [
+      {
+        accessorKey: "fieldCode",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("fields.table.code")} />,
+        cell: ({ row }) => <span className="font-medium">{row.original.fieldCode ?? t("common.emptyCell")}</span>,
+      },
+      {
+        id: "station",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("fields.table.station")} />,
+        cell: ({ row }) => <span className="text-sm">{stationName(row.original.stationId)}</span>,
+      },
+      {
+        id: "crop",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("fields.table.crop")} />,
+        cell: ({ row }) => <span className="text-sm">{cropName(row.original.cropId)}</span>,
+      },
+      {
+        accessorKey: "areaHa",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("fields.table.area")} />,
+        cell: ({ row }) => formatNumber(row.original.areaHa),
+      },
+      {
+        accessorKey: "plantingDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("fields.table.planting")} />,
+        cell: ({ row }) => (row.original.plantingDate ? formatDate(row.original.plantingDate) : t("common.emptyCell")),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("fields.table.status")} />,
+        cell: ({ row }) => <Badge variant={statusVariant[row.original.status]}>{t(`status.${row.original.status}`)}</Badge>,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, cropMap, stationMap],
+  );
+
+  const harvestColumns = useMemo<ColumnDef<HarvestDto>[]>(
+    () => [
+      {
+        accessorKey: "harvestDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("harvests.table.date")} />,
+        cell: ({ row }) => <span className="text-sm">{formatDate(row.original.harvestDate)}</span>,
+      },
+      {
+        id: "field",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("harvests.table.field")} />,
+        cell: ({ row }) => <span className="text-xs text-muted-foreground">{fieldLabel(row.original.fieldId)}</span>,
+      },
+      {
+        accessorKey: "quantity",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("harvests.table.quantity")} />,
+        cell: ({ row }) => <span className="font-medium">{formatNumber(row.original.quantity)} {row.original.unit}</span>,
+      },
+      {
+        accessorKey: "qualityGrade",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("harvests.table.quality")} />,
+        cell: ({ row }) => row.original.qualityGrade ?? t("common.emptyCell"),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, fieldMap, cropMap, stationMap],
+  );
+
+  // --- Row actions ---
+  const cropActions = (row: CropDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setCropView(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openCropEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteTarget({ kind: "crop", id: row.id }) });
+    }
+    return <RowActions actions={actions} />;
+  };
+  const fieldActions = (row: FieldDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setFieldView(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openFieldEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteTarget({ kind: "field", id: row.id }) });
+    }
+    return <RowActions actions={actions} />;
+  };
+  const harvestActions = (row: HarvestDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setHarvestView(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openHarvestEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteTarget({ kind: "harvest", id: row.id }) });
+    }
+    return <RowActions actions={actions} />;
+  };
+
+  const kpiCards = [
+    { key: "fields", icon: MapPin, label: t("kpis.totalFields"), value: formatNumber(kpis.totalFields), caption: t("kpis.totalFieldsCaption"), variant: "gradient-green-gold" as const },
+    { key: "area", icon: Ruler, label: t("kpis.totalArea"), value: `${formatNumber(kpis.totalArea)} ha`, caption: t("kpis.totalAreaCaption"), variant: "gradient-green" as const },
+    { key: "harvest", icon: Wheat, label: t("kpis.yearHarvest"), value: `${formatNumber(kpis.yearHarvest)} kg`, caption: t("kpis.yearHarvestCaption"), variant: "gradient-gold" as const },
+    { key: "growing", icon: Sprout, label: t("kpis.growingFields"), value: formatNumber(kpis.growingFields), caption: t("kpis.growingFieldsCaption"), variant: "gradient-teal" as const },
+  ];
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={Sprout} title="Agricultura" description="Culturas, talhões e colheitas das estações zootécnicas." />
+      <AdminPageHeader icon={Sprout} title={t("page.title")} description={t("page.description")} />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <AdminCard variant="gradient-green-gold" icon={MapPin} title="Área total" metric={`${kpis.totalArea} ha`} stagger={1} />
-        <AdminCard variant="glass" icon={Sprout} title="Talhões activos" metric={kpis.active} stagger={2} />
-        <AdminCard variant="glass" icon={Wheat} title="Colheita acumulada" metric={`${kpis.totalHarvest}`} stagger={3} />
-        <AdminCard variant="glass" icon={Tractor} title="Produtividade média" metric={`${kpis.productivity}/ha`} stagger={4} />
-      </div>
+      {/* KPIs */}
+      <motion.div
+        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        {kpiCards.map((c, i) => (
+          <motion.div key={c.key} variants={prefersReduced ? undefined : fadeInUp}>
+            <AdminCard
+              title={c.label}
+              icon={c.icon}
+              metric={c.value}
+              caption={c.caption}
+              variant={c.variant}
+              stagger={(i + 1) as 1 | 2 | 3 | 4}
+            />
+          </motion.div>
+        ))}
+      </motion.div>
 
-      <Tabs defaultValue="talhoes" className="space-y-4">
+      {/* Separadores */}
+      <Tabs defaultValue="fields" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="talhoes"><MapPin className="h-4 w-4 mr-1" /> Talhões</TabsTrigger>
-          <TabsTrigger value="culturas"><Sprout className="h-4 w-4 mr-1" /> Culturas</TabsTrigger>
-          <TabsTrigger value="colheitas"><Wheat className="h-4 w-4 mr-1" /> Colheitas</TabsTrigger>
+          <TabsTrigger value="fields"><MapPin className="h-4 w-4 mr-1" /> {t("tabs.fields")}</TabsTrigger>
+          <TabsTrigger value="crops"><Sprout className="h-4 w-4 mr-1" /> {t("tabs.crops")}</TabsTrigger>
+          <TabsTrigger value="harvests"><Wheat className="h-4 w-4 mr-1" /> {t("tabs.harvests")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="talhoes">
-          <AdminCard title="Talhões" loading={loading} isEmpty={!loading && fields.length === 0} emptyMessage="Sem talhões registados.">
-            <div className="flex justify-end mb-3">
-              {canEdit && (
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setHarvestOpen(true)} disabled={fields.length === 0}><Wheat className="h-4 w-4 mr-1" /> Nova Colheita</Button>
-                  <Button size="sm" onClick={() => { setFieldEdit(null); setFieldOpen(true); }} disabled={crops.length === 0 || stations.length === 0}>
-                    <Plus className="h-4 w-4 mr-1" /> Novo Talhão
-                  </Button>
-                </div>
-              )}
-            </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Código</TableHead><TableHead>Estação</TableHead><TableHead>Cultura</TableHead>
-                <TableHead>Área (ha)</TableHead><TableHead>Plantação</TableHead><TableHead>Colheita</TableHead><TableHead>Estado</TableHead>
-                {canEdit && <TableHead className="w-24">Acções</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {fields.map((f) => (
-                  <TableRow key={f.id}>
-                    <TableCell className="font-medium">{f.field_code ?? "—"}</TableCell>
-                    <TableCell>{stationName(f.station_id)}</TableCell>
-                    <TableCell>{cropName(f.crop_id)}</TableCell>
-                    <TableCell>{f.area_ha}</TableCell>
-                    <TableCell>{f.planting_date ?? "—"}</TableCell>
-                    <TableCell>{f.expected_harvest ?? "—"}</TableCell>
-                    <TableCell><Badge variant="outline">{STATUS.find((s) => s.value === f.status)?.label}</Badge></TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setFieldEdit(f); setFieldOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteId({ table: "crop_fields", id: f.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </AdminCard>
+        {/* --- Talhões --- */}
+        <TabsContent value="fields" className="space-y-4">
+          <div className="flex justify-end">
+            <WriteGuard module="agricultura">
+              <Button onClick={openFieldCreate} disabled={crops.length === 0 || estacoes.length === 0}>
+                <Plus className="mr-2 h-4 w-4" /> {t("fields.new")}
+              </Button>
+            </WriteGuard>
+          </div>
+          <DataTable
+            columns={fieldColumns}
+            data={fieldsQuery.data?.data ?? []}
+            loading={fieldsQuery.isLoading}
+            pageCount={fieldsQuery.data?.meta.lastPage ?? 0}
+            pagination={fieldPage}
+            onPaginationChange={setFieldPage}
+            rowCount={fieldsQuery.data?.meta.total}
+            globalFilter={fieldSearch}
+            onGlobalFilterChange={setFieldSearch}
+            searchPlaceholder={t("fields.table.searchPlaceholder")}
+            emptyMessage={t("fields.table.empty")}
+            renderRowActions={fieldActions}
+          />
         </TabsContent>
 
-        <TabsContent value="culturas">
-          <AdminCard title="Culturas" loading={loading} isEmpty={!loading && crops.length === 0} emptyMessage="Sem culturas registadas.">
-            <div className="flex justify-end mb-3">
-              {canEdit && <Button size="sm" onClick={() => { setCropEdit(null); setCropOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Nova Cultura</Button>}
-            </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Nome</TableHead><TableHead>Nome científico</TableHead><TableHead>Ciclo (dias)</TableHead>
-                {canEdit && <TableHead className="w-24">Acções</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {crops.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell className="italic">{c.scientific_name ?? "—"}</TableCell>
-                    <TableCell>{c.cycle_days ?? "—"}</TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setCropEdit(c); setCropOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteId({ table: "crops", id: c.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </AdminCard>
+        {/* --- Culturas --- */}
+        <TabsContent value="crops" className="space-y-4">
+          <div className="flex justify-end">
+            <WriteGuard module="agricultura">
+              <Button onClick={openCropCreate}>
+                <Plus className="mr-2 h-4 w-4" /> {t("crops.new")}
+              </Button>
+            </WriteGuard>
+          </div>
+          <DataTable
+            columns={cropColumns}
+            data={cropsQuery.data?.data ?? []}
+            loading={cropsQuery.isLoading}
+            pageCount={cropsQuery.data?.meta.lastPage ?? 0}
+            pagination={cropPage}
+            onPaginationChange={setCropPage}
+            rowCount={cropsQuery.data?.meta.total}
+            globalFilter={cropSearch}
+            onGlobalFilterChange={setCropSearch}
+            searchPlaceholder={t("crops.table.searchPlaceholder")}
+            emptyMessage={t("crops.table.empty")}
+            renderRowActions={cropActions}
+          />
         </TabsContent>
 
-        <TabsContent value="colheitas">
-          <AdminCard title="Histórico de Colheitas" loading={loading} isEmpty={!loading && harvests.length === 0} emptyMessage="Sem colheitas registadas.">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Data</TableHead><TableHead>Talhão</TableHead><TableHead>Quantidade</TableHead><TableHead>Qualidade</TableHead><TableHead>Notas</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {harvests.map((h) => (
-                  <TableRow key={h.id}>
-                    <TableCell>{h.harvest_date}</TableCell>
-                    <TableCell>{fieldLabel(h.field_id)}</TableCell>
-                    <TableCell>{h.quantity} {h.unit}</TableCell>
-                    <TableCell>{h.quality_grade ?? "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{h.notes ?? "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </AdminCard>
+        {/* --- Colheitas --- */}
+        <TabsContent value="harvests" className="space-y-4">
+          <div className="flex justify-end">
+            <WriteGuard module="agricultura">
+              <Button onClick={openHarvestCreate} disabled={allFields.length === 0}>
+                <Plus className="mr-2 h-4 w-4" /> {t("harvests.new")}
+              </Button>
+            </WriteGuard>
+          </div>
+          <DataTable
+            columns={harvestColumns}
+            data={harvestsQuery.data?.data ?? []}
+            loading={harvestsQuery.isLoading}
+            pageCount={harvestsQuery.data?.meta.lastPage ?? 0}
+            pagination={harvestPage}
+            onPaginationChange={setHarvestPage}
+            rowCount={harvestsQuery.data?.meta.total}
+            globalFilter={harvestSearch}
+            onGlobalFilterChange={setHarvestSearch}
+            searchPlaceholder={t("harvests.table.searchPlaceholder")}
+            emptyMessage={t("harvests.table.empty")}
+            renderRowActions={harvestActions}
+          />
         </TabsContent>
       </Tabs>
 
-      {/* Crop dialog */}
-      <CropDialog open={cropOpen} onOpenChange={(v) => { setCropOpen(v); if (!v) setCropEdit(null); }} crop={cropEdit} onSave={saveCrop} />
-      {/* Field dialog */}
-      <FieldDialog open={fieldOpen} onOpenChange={(v) => { setFieldOpen(v); if (!v) setFieldEdit(null); }} field={fieldEdit} crops={crops} stations={stations} onSave={saveField} />
-      {/* Harvest dialog */}
-      <HarvestDialog open={harvestOpen} onOpenChange={setHarvestOpen} fields={fields} fieldLabel={fieldLabel} onSave={saveHarvest} />
+      {/* ===================== Dialog de cultura ===================== */}
+      <EntityFormDialog
+        open={cropForm}
+        onOpenChange={setCropForm}
+        title={cropEdit ? t("crops.dialog.editTitle") : t("crops.dialog.createTitle")}
+        form={cropEntityForm}
+        submitLabel={cropEdit ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("crops.form.name")}</FormLabel>
+                  <FormControl><Input placeholder={t("crops.form.namePlaceholder")} {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="cycleDays" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("crops.form.cycleDays")}</FormLabel>
+                  <FormControl><Input type="number" min="0" {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="scientificName" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("crops.form.scientificName")}</FormLabel>
+                <FormControl><Input placeholder={t("crops.form.scientificNamePlaceholder")} {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("crops.form.notes")}</FormLabel>
+                <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}
-        title="Apagar registo?" description="Esta acção é permanente." onConfirm={confirmDelete} />
+      {/* ===================== Dialog de talhão ===================== */}
+      <EntityFormDialog
+        open={fieldForm}
+        onOpenChange={setFieldForm}
+        title={fieldEdit ? t("fields.dialog.editTitle") : t("fields.dialog.createTitle")}
+        form={fieldEntityForm}
+        submitLabel={fieldEdit ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="stationId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fields.form.station")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue placeholder={t("common.selectPlaceholder")} /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {estacoes.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="cropId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fields.form.crop")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue placeholder={t("common.selectPlaceholder")} /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {crops.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="fieldCode" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fields.form.code")}</FormLabel>
+                  <FormControl><Input placeholder={t("fields.form.codePlaceholder")} {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="areaHa" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fields.form.area")}</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="plantingDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fields.form.planting")}</FormLabel>
+                  <FormControl><Input type="date" {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="expectedHarvest" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fields.form.harvest")}</FormLabel>
+                  <FormControl><Input type="date" {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="status" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fields.form.status")}</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {FIELD_STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fields.form.notes")}</FormLabel>
+                <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* ===================== Dialog de colheita ===================== */}
+      <EntityFormDialog
+        open={harvestForm}
+        onOpenChange={setHarvestForm}
+        title={harvestEdit ? t("harvests.dialog.editTitle") : t("harvests.dialog.createTitle")}
+        form={harvestEntityForm}
+        submitLabel={harvestEdit ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField control={form.control} name="fieldId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("harvests.form.field")}</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl><SelectTrigger><SelectValue placeholder={t("common.selectPlaceholder")} /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {allFields.map((f) => <SelectItem key={f.id} value={f.id}>{fieldLabel(f.id)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <FormField control={form.control} name="harvestDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("harvests.form.date")}</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="quantity" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("harvests.form.quantity")}</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="unit" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("harvests.form.unit")}</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="qualityGrade" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("harvests.form.quality")}</FormLabel>
+                <FormControl><Input placeholder={t("harvests.form.qualityPlaceholder")} {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("harvests.form.notes")}</FormLabel>
+                <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* ===================== Delete ===================== */}
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title={t("delete.title")}
+        description={t("delete.description")}
+      />
+
+      {/* ===================== Detalhes: cultura ===================== */}
+      <Dialog open={!!cropView} onOpenChange={(o) => !o && setCropView(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">{t("crops.dialog.detailsTitle")}</DialogTitle></DialogHeader>
+          {cropView && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">{t("crops.details.name")}:</span><p className="font-medium">{cropView.name}</p></div>
+                <div><span className="text-muted-foreground">{t("crops.details.scientificName")}:</span><p className="font-medium italic">{cropView.scientificName ?? t("common.emptyCell")}</p></div>
+                <div><span className="text-muted-foreground">{t("crops.details.cycleDays")}:</span><p className="font-medium">{cropView.cycleDays ?? t("common.emptyCell")}</p></div>
+                <div><span className="text-muted-foreground">{t("crops.details.createdAt")}:</span><p className="font-medium">{formatDate(cropView.createdAt)}</p></div>
+              </div>
+              {cropView.notes && (
+                <div><span className="text-muted-foreground">{t("crops.details.notes")}:</span><p className="font-medium mt-1">{cropView.notes}</p></div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===================== Detalhes: talhão ===================== */}
+      <Dialog open={!!fieldView} onOpenChange={(o) => !o && setFieldView(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="font-serif">{t("fields.dialog.detailsTitle")}</DialogTitle></DialogHeader>
+          {fieldView && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">{t("fields.details.code")}:</span><p className="font-medium">{fieldView.fieldCode ?? t("common.emptyCell")}</p></div>
+                <div><span className="text-muted-foreground">{t("fields.details.status")}:</span><p><Badge variant={statusVariant[fieldView.status]}>{t(`status.${fieldView.status}`)}</Badge></p></div>
+                <div><span className="text-muted-foreground">{t("fields.details.station")}:</span><p className="font-medium">{stationName(fieldView.stationId)}</p></div>
+                <div><span className="text-muted-foreground">{t("fields.details.crop")}:</span><p className="font-medium">{cropName(fieldView.cropId)}</p></div>
+                <div><span className="text-muted-foreground">{t("fields.details.area")}:</span><p className="font-medium">{formatNumber(fieldView.areaHa)} ha</p></div>
+                <div><span className="text-muted-foreground">{t("fields.details.planting")}:</span><p className="font-medium">{fieldView.plantingDate ? formatDate(fieldView.plantingDate) : t("common.emptyCell")}</p></div>
+                <div><span className="text-muted-foreground">{t("fields.details.harvest")}:</span><p className="font-medium">{fieldView.expectedHarvest ? formatDate(fieldView.expectedHarvest) : t("common.emptyCell")}</p></div>
+                <div><span className="text-muted-foreground">{t("fields.details.createdAt")}:</span><p className="font-medium">{formatDate(fieldView.createdAt)}</p></div>
+              </div>
+              {fieldView.notes && (
+                <div><span className="text-muted-foreground">{t("fields.details.notes")}:</span><p className="font-medium mt-1">{fieldView.notes}</p></div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===================== Detalhes: colheita ===================== */}
+      <Dialog open={!!harvestView} onOpenChange={(o) => !o && setHarvestView(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">{t("harvests.dialog.detailsTitle")}</DialogTitle></DialogHeader>
+          {harvestView && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2"><span className="text-muted-foreground">{t("harvests.details.field")}:</span><p className="font-medium">{fieldLabel(harvestView.fieldId)}</p></div>
+                <div><span className="text-muted-foreground">{t("harvests.details.date")}:</span><p className="font-medium">{formatDate(harvestView.harvestDate)}</p></div>
+                <div><span className="text-muted-foreground">{t("harvests.details.quantity")}:</span><p className="font-medium">{formatNumber(harvestView.quantity)} {harvestView.unit}</p></div>
+                <div><span className="text-muted-foreground">{t("harvests.details.quality")}:</span><p className="font-medium">{harvestView.qualityGrade ?? t("common.emptyCell")}</p></div>
+                <div><span className="text-muted-foreground">{t("harvests.details.createdAt")}:</span><p className="font-medium">{formatDate(harvestView.createdAt)}</p></div>
+              </div>
+              {harvestView.notes && (
+                <div><span className="text-muted-foreground">{t("harvests.details.notes")}:</span><p className="font-medium mt-1">{harvestView.notes}</p></div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
-  );
-}
-
-function CropDialog({ open, onOpenChange, crop, onSave }: { open: boolean; onOpenChange: (v: boolean) => void; crop: Crop | null; onSave: (f: Partial<Crop>) => void }) {
-  const [form, setForm] = useState<Partial<Crop>>({});
-  useEffect(() => { setForm(crop ?? {}); }, [crop, open]);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>{crop ? "Editar Cultura" : "Nova Cultura"}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div><Label>Nome *</Label><Input value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div><Label>Nome científico</Label><Input value={form.scientific_name || ""} onChange={(e) => setForm({ ...form, scientific_name: e.target.value })} /></div>
-          <div><Label>Ciclo (dias)</Label><Input type="number" value={form.cycle_days ?? ""} onChange={(e) => setForm({ ...form, cycle_days: e.target.value === "" ? null : Number(e.target.value) })} /></div>
-          <div><Label>Notas</Label><Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Guardar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function FieldDialog({ open, onOpenChange, field, crops, stations, onSave }: {
-  open: boolean; onOpenChange: (v: boolean) => void; field: Field | null;
-  crops: Crop[]; stations: Station[]; onSave: (f: Partial<Field>) => void;
-}) {
-  const [form, setForm] = useState<Partial<Field>>({});
-  useEffect(() => { setForm(field ?? { status: "planeado", area_ha: 0 }); }, [field, open]);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader><DialogTitle>{field ? "Editar Talhão" : "Novo Talhão"}</DialogTitle></DialogHeader>
-        <div className="grid grid-cols-2 gap-3">
-          <div><Label>Estação *</Label>
-            <Select value={form.station_id} onValueChange={(v) => setForm({ ...form, station_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
-              <SelectContent>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div><Label>Cultura *</Label>
-            <Select value={form.crop_id} onValueChange={(v) => setForm({ ...form, crop_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
-              <SelectContent>{crops.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div><Label>Código</Label><Input value={form.field_code || ""} onChange={(e) => setForm({ ...form, field_code: e.target.value })} /></div>
-          <div><Label>Área (ha)</Label><Input type="number" step="0.01" value={form.area_ha ?? 0} onChange={(e) => setForm({ ...form, area_ha: Number(e.target.value) })} /></div>
-          <div><Label>Data de plantação</Label><Input type="date" value={form.planting_date || ""} onChange={(e) => setForm({ ...form, planting_date: e.target.value })} /></div>
-          <div><Label>Colheita prevista</Label><Input type="date" value={form.expected_harvest || ""} onChange={(e) => setForm({ ...form, expected_harvest: e.target.value })} /></div>
-          <div className="col-span-2"><Label>Estado</Label>
-            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as FieldStatus })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{STATUS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-2"><Label>Notas</Label><Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Guardar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function HarvestDialog({ open, onOpenChange, fields, fieldLabel, onSave }: {
-  open: boolean; onOpenChange: (v: boolean) => void; fields: Field[]; fieldLabel: (id: string) => string; onSave: (f: Partial<Harvest>) => void;
-}) {
-  const [form, setForm] = useState<Partial<Harvest>>({ unit: "kg", harvest_date: new Date().toISOString().slice(0, 10) });
-  useEffect(() => { if (open) setForm({ unit: "kg", harvest_date: new Date().toISOString().slice(0, 10) }); }, [open]);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Registar Colheita</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div><Label>Talhão *</Label>
-            <Select value={form.field_id} onValueChange={(v) => setForm({ ...form, field_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
-              <SelectContent>{fields.map((f) => <SelectItem key={f.id} value={f.id}>{fieldLabel(f.id)}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div><Label>Data</Label><Input type="date" value={form.harvest_date || ""} onChange={(e) => setForm({ ...form, harvest_date: e.target.value })} /></div>
-            <div><Label>Quantidade *</Label><Input type="number" value={form.quantity ?? ""} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
-            <div><Label>Unidade</Label><Input value={form.unit || ""} onChange={(e) => setForm({ ...form, unit: e.target.value })} /></div>
-          </div>
-          <div><Label>Qualidade</Label><Input value={form.quality_grade || ""} onChange={(e) => setForm({ ...form, quality_grade: e.target.value })} placeholder="Ex.: A, B, C" /></div>
-          <div><Label>Notas</Label><Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Registar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }

@@ -1,177 +1,371 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { Beef, Milk, Egg, CalendarClock, Plus, Eye, Pencil, Trash2 } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Beef, Pencil, Trash2, Milk, Egg } from "lucide-react";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import { formatDate, formatNumber } from "@/lib/format";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { useEstacoesList } from "@/hooks/queries/useEstacoes";
+import {
+  useProducaoList, useCreateProducao, useUpdateProducao, useDeleteProducao,
+} from "@/hooks/queries/usePecuaria";
+import { PRODUCT_TYPES, type ProdDto, type ProductType } from "@/types/dto/pecuaria";
+import i18n from "@/i18n";
+import ptPecuaria from "@/i18n/locales/pt/admin/pecuaria.json";
+import enPecuaria from "@/i18n/locales/en/admin/pecuaria.json";
 
-interface Prod {
-  id: string; station_id: string; product_type: string;
-  production_date: string; quantity: number; unit: string;
-  recorded_by: string | null; notes: string | null;
+// Namespace autónomo registado em runtime, seguindo o padrão de Financeiro.tsx.
+if (!i18n.hasResourceBundle("pt", "pecuaria"))
+  i18n.addResourceBundle("pt", "pecuaria", ptPecuaria, true, true);
+if (!i18n.hasResourceBundle("en", "pecuaria"))
+  i18n.addResourceBundle("en", "pecuaria", enPecuaria, true, true);
+
+const BIG_PAGE = { page: 1, perPage: 1000 } as const;
+
+function buildProdSchema(t: TFunction) {
+  return z.object({
+    stationId: z.string().min(1, t("validation.station")),
+    productType: z.enum(["Leite", "Ovos", "Carne", "Mel", "Outro"]),
+    productionDate: z.string().min(1, t("validation.date")),
+    quantity: z
+      .string()
+      .trim()
+      .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, t("validation.quantity")),
+    unit: z.string().trim().min(1),
+    recordedBy: z.string().trim().optional(),
+    notes: z.string().trim().optional(),
+  });
 }
-interface Station { id: string; name: string }
-
-const PRODUCT_TYPES = ["Leite", "Ovos", "Carne", "Mel", "Outro"];
+type ProdFormValues = z.infer<ReturnType<typeof buildProdSchema>>;
 
 export default function ProducaoPecuaria() {
-  const { user } = useAuth();
+  const { t } = useTranslation("pecuaria");
   const { canWrite } = useUserRole();
-  const { toast } = useToast();
   const canEdit = canWrite("pecuaria");
+  const prefersReduced = useReducedMotion();
 
-  const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<Prod[]>([]);
-  const [stations, setStations] = useState<Station[]>([]);
-  const [open, setOpen] = useState(false);
-  const [edit, setEdit] = useState<Prod | null>(null);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("todos");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<ProdDto | null>(null);
+  const [viewItem, setViewItem] = useState<ProdDto | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const loadAll = async () => {
-    setLoading(true);
-    const [p, s] = await Promise.all([
-      supabase.from("livestock_production").select("*").order("production_date", { ascending: false }).limit(300),
-      supabase.from("stations").select("id,name").order("name"),
-    ]);
-    if (p.data) setRows(p.data as Prod[]);
-    if (s.data) setStations(s.data as Station[]);
-    setLoading(false);
-  };
+  const producaoQuery = useProducaoList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+    productType: typeFilter !== "todos" ? (typeFilter as ProductType) : undefined,
+  });
+  const producaoAll = useProducaoList(BIG_PAGE);
+  const estacoesQuery = useEstacoesList(BIG_PAGE);
 
-  useEffect(() => { loadAll(); }, []);
+  const createProducao = useCreateProducao();
+  const updateProducao = useUpdateProducao();
+  const deleteProducao = useDeleteProducao();
 
+  const estacoes = useMemo(() => estacoesQuery.data?.data ?? [], [estacoesQuery.data]);
+  const stationMap = useMemo(() => new Map(estacoes.map((s) => [s.id, s])), [estacoes]);
+  const stationName = (id: string) => stationMap.get(id)?.name ?? t("common.emptyCell");
+
+  // --- KPIs (dataset completo) ---
   const kpis = useMemo(() => {
-    const now = new Date(); const monthAgo = new Date(now); monthAgo.setMonth(monthAgo.getMonth() - 1);
-    const inMonth = rows.filter((r) => new Date(r.production_date) >= monthAgo);
-    const milk = rows.filter((r) => r.product_type.toLowerCase().includes("leite")).reduce((s, r) => s + Number(r.quantity || 0), 0);
-    const eggs = rows.filter((r) => r.product_type.toLowerCase().includes("ovo")).reduce((s, r) => s + Number(r.quantity || 0), 0);
+    const rows = producaoAll.data?.data ?? [];
+    const now = new Date();
+    const inMonth = rows.filter((r) => {
+      const d = new Date(r.productionDate);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+    const milk = rows.filter((r) => r.productType === "Leite").reduce((s, r) => s + Number(r.quantity || 0), 0);
+    const eggs = rows.filter((r) => r.productType === "Ovos").reduce((s, r) => s + Number(r.quantity || 0), 0);
     return { total: rows.length, monthCount: inMonth.length, milk, eggs };
-  }, [rows]);
+  }, [producaoAll.data]);
 
-  const stationName = (id: string) => stations.find((s) => s.id === id)?.name ?? "—";
+  // --- Form ---
+  const prodSchema = useMemo(() => buildProdSchema(t), [t]);
+  const initialValues = useMemo<Partial<ProdFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            stationId: editItem.stationId,
+            productType: editItem.productType,
+            productionDate: editItem.productionDate,
+            quantity: String(editItem.quantity),
+            unit: editItem.unit,
+            recordedBy: editItem.recordedBy ?? "",
+            notes: editItem.notes ?? "",
+          }
+        : undefined,
+    [editItem],
+  );
+  const entityForm = useEntityForm({
+    schema: prodSchema,
+    initialValues,
+    defaultValues: {
+      stationId: "", productType: "Leite",
+      productionDate: new Date().toISOString().slice(0, 10),
+      quantity: "", unit: "kg", recordedBy: "", notes: "",
+    },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const payload = {
+        stationId: values.stationId,
+        productType: values.productType,
+        productionDate: values.productionDate,
+        quantity: Number(values.quantity),
+        unit: values.unit,
+        recordedBy: values.recordedBy?.trim() ? values.recordedBy.trim() : null,
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      };
+      if (editItem) await updateProducao.mutateAsync({ id: editItem.id, payload });
+      else await createProducao.mutateAsync(payload);
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
 
-  const save = async (form: Partial<Prod>) => {
-    if (!form.station_id || !form.product_type || !form.quantity) return toast({ title: "Preencha estação, tipo e quantidade", variant: "destructive" });
-    const payload = {
-      station_id: form.station_id, product_type: form.product_type,
-      production_date: form.production_date || new Date().toISOString().slice(0, 10),
-      quantity: Number(form.quantity) || 0, unit: form.unit || "kg",
-      recorded_by: user?.id || null, notes: form.notes || null,
-    };
-    const { error } = edit
-      ? await supabase.from("livestock_production").update(payload).eq("id", edit.id)
-      : await supabase.from("livestock_production").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: edit ? "Registo actualizado" : "Registo criado" });
-    setOpen(false); setEdit(null); loadAll();
+  const openCreate = () => { setEditItem(null); setFormOpen(true); };
+  const openEdit = (p: ProdDto) => { setEditItem(p); setFormOpen(true); };
+
+  const columns = useMemo<ColumnDef<ProdDto>[]>(
+    () => [
+      {
+        accessorKey: "productionDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.date")} />,
+        cell: ({ row }) => <span className="text-sm">{formatDate(row.original.productionDate)}</span>,
+      },
+      {
+        id: "station",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.station")} />,
+        cell: ({ row }) => <span className="text-sm">{stationName(row.original.stationId)}</span>,
+      },
+      {
+        accessorKey: "productType",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.product")} />,
+        cell: ({ row }) => <Badge variant="outline">{t(`type.${row.original.productType}`)}</Badge>,
+      },
+      {
+        accessorKey: "quantity",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.quantity")} />,
+        cell: ({ row }) => <span className="font-medium">{formatNumber(row.original.quantity)} {row.original.unit}</span>,
+      },
+      {
+        accessorKey: "recordedBy",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.recordedBy")} />,
+        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.recordedBy ?? t("common.emptyCell")}</span>,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, stationMap],
+  );
+
+  const renderRowActions = (row: ProdDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteId(row.id) });
+    }
+    return <RowActions actions={actions} />;
   };
 
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("livestock_production").delete().eq("id", deleteId);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else toast({ title: "Registo apagado" });
-    setDeleteId(null); loadAll();
-  };
+  const kpiCards = [
+    { key: "total", icon: Beef, label: t("kpis.total"), value: formatNumber(kpis.total), caption: t("kpis.totalCaption"), variant: "gradient-green-gold" as const },
+    { key: "month", icon: CalendarClock, label: t("kpis.month"), value: formatNumber(kpis.monthCount), caption: t("kpis.monthCaption"), variant: "gradient-green" as const },
+    { key: "milk", icon: Milk, label: t("kpis.milk"), value: `${formatNumber(kpis.milk)} L`, caption: t("kpis.milkCaption"), variant: "gradient-teal" as const },
+    { key: "eggs", icon: Egg, label: t("kpis.eggs"), value: formatNumber(kpis.eggs), caption: t("kpis.eggsCaption"), variant: "gradient-gold" as const },
+  ];
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={Beef} title="Produção Pecuária" description="Registo de leite, ovos, carne e outras produções por estação.">
-        {canEdit && <Button size="sm" onClick={() => { setEdit(null); setOpen(true); }} disabled={stations.length === 0}>
-          <Plus className="h-4 w-4 mr-1" /> Novo Registo
-        </Button>}
+      <AdminPageHeader icon={Beef} title={t("page.title")} description={t("page.description")}>
+        <WriteGuard module="pecuaria">
+          <Button onClick={openCreate} disabled={estacoes.length === 0}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <AdminCard variant="gradient-green-gold" icon={Beef} title="Registos totais" metric={kpis.total} stagger={1} />
-        <AdminCard variant="glass" icon={Beef} title="Último mês" metric={kpis.monthCount} stagger={2} />
-        <AdminCard variant="glass" icon={Milk} title="Leite total" metric={`${kpis.milk}`} stagger={3} />
-        <AdminCard variant="glass" icon={Egg} title="Ovos totais" metric={`${kpis.eggs}`} stagger={4} />
+      {/* KPIs */}
+      <motion.div
+        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        {kpiCards.map((c, i) => (
+          <motion.div key={c.key} variants={prefersReduced ? undefined : fadeInUp}>
+            <AdminCard
+              title={c.label}
+              icon={c.icon}
+              metric={c.value}
+              caption={c.caption}
+              variant={c.variant}
+              stagger={(i + 1) as 1 | 2 | 3 | 4}
+            />
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Filtro + tabela */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPagination((p) => ({ ...p, pageIndex: 0 })); }}>
+          <SelectTrigger className="sm:w-[200px]"><SelectValue placeholder={t("filters.typePlaceholder")} /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">{t("filters.allTypes")}</SelectItem>
+            {PRODUCT_TYPES.map((ty) => <SelectItem key={ty} value={ty}>{t(`type.${ty}`)}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
-      <AdminCard title="Produção registada" loading={loading} isEmpty={!loading && rows.length === 0} emptyMessage="Sem produção registada.">
-        <Table>
-          <TableHeader><TableRow>
-            <TableHead>Data</TableHead><TableHead>Estação</TableHead><TableHead>Produto</TableHead>
-            <TableHead>Quantidade</TableHead><TableHead>Notas</TableHead>
-            {canEdit && <TableHead className="w-24">Acções</TableHead>}
-          </TableRow></TableHeader>
-          <TableBody>
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>{r.production_date}</TableCell>
-                <TableCell>{stationName(r.station_id)}</TableCell>
-                <TableCell><Badge variant="outline">{r.product_type}</Badge></TableCell>
-                <TableCell>{r.quantity} {r.unit}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{r.notes ?? "—"}</TableCell>
-                {canEdit && (
-                  <TableCell>
-                    <Button size="icon" variant="ghost" onClick={() => { setEdit(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setDeleteId(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </AdminCard>
+      <DataTable
+        columns={columns}
+        data={producaoQuery.data?.data ?? []}
+        loading={producaoQuery.isLoading}
+        pageCount={producaoQuery.data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={producaoQuery.data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
 
-      <ProdDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEdit(null); }} row={edit} stations={stations} onSave={save} />
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}
-        title="Apagar registo?" description="Esta acção é permanente." onConfirm={confirmDelete} />
-    </div>
-  );
-}
-
-function ProdDialog({ open, onOpenChange, row, stations, onSave }: {
-  open: boolean; onOpenChange: (v: boolean) => void; row: Prod | null; stations: Station[]; onSave: (f: Partial<Prod>) => void;
-}) {
-  const [form, setForm] = useState<Partial<Prod>>({});
-  useEffect(() => {
-    setForm(row ?? { production_date: new Date().toISOString().slice(0, 10), unit: "kg", product_type: "Leite" });
-  }, [row, open]);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>{row ? "Editar Registo" : "Novo Registo de Produção"}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div><Label>Estação *</Label>
-            <Select value={form.station_id} onValueChange={(v) => setForm({ ...form, station_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
-              <SelectContent>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>Tipo de produto *</Label>
-              <Select value={form.product_type} onValueChange={(v) => setForm({ ...form, product_type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{PRODUCT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-              </Select>
+      {/* Dialog criar/editar */}
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField control={form.control} name="stationId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("form.station")}</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl><SelectTrigger><SelectValue placeholder={t("common.selectPlaceholder")} /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {estacoes.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="productType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.productType")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {PRODUCT_TYPES.map((ty) => <SelectItem key={ty} value={ty}>{t(`type.${ty}`)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="productionDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.date")}</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </div>
-            <div><Label>Data</Label><Input type="date" value={form.production_date || ""} onChange={(e) => setForm({ ...form, production_date: e.target.value })} /></div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>Quantidade *</Label><Input type="number" step="0.01" value={form.quantity ?? ""} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
-            <div><Label>Unidade</Label><Input value={form.unit || ""} onChange={(e) => setForm({ ...form, unit: e.target.value })} /></div>
-          </div>
-          <div><Label>Notas</Label><Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Guardar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="quantity" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.quantity")}</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="unit" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.unit")}</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="recordedBy" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("form.recordedBy")}</FormLabel>
+                <FormControl><Input placeholder={t("form.recordedByPlaceholder")} {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("form.notes")}</FormLabel>
+                <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* Delete */}
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await deleteProducao.mutateAsync(deleteId);
+          setDeleteId(null);
+        }}
+        title={t("delete.title")}
+        description={t("delete.description")}
+      />
+
+      {/* Detalhes */}
+      <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">{t("dialog.detailsTitle")}</DialogTitle></DialogHeader>
+          {viewItem && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">{t("details.station")}:</span><p className="font-medium">{stationName(viewItem.stationId)}</p></div>
+                <div><span className="text-muted-foreground">{t("details.product")}:</span><p><Badge variant="outline">{t(`type.${viewItem.productType}`)}</Badge></p></div>
+                <div><span className="text-muted-foreground">{t("details.date")}:</span><p className="font-medium">{formatDate(viewItem.productionDate)}</p></div>
+                <div><span className="text-muted-foreground">{t("details.quantity")}:</span><p className="font-medium">{formatNumber(viewItem.quantity)} {viewItem.unit}</p></div>
+                <div><span className="text-muted-foreground">{t("details.recordedBy")}:</span><p className="font-medium">{viewItem.recordedBy ?? t("common.emptyCell")}</p></div>
+                <div><span className="text-muted-foreground">{t("details.createdAt")}:</span><p className="font-medium">{formatDate(viewItem.createdAt)}</p></div>
+              </div>
+              {viewItem.notes && (
+                <div><span className="text-muted-foreground">{t("details.notes")}:</span><p className="font-medium mt-1">{viewItem.notes}</p></div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

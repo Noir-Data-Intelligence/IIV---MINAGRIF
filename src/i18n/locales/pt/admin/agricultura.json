@@ -1,0 +1,186 @@
+{
+  "page": {
+    "title": "Agricultura",
+    "description": "Culturas, talhões e colheitas das estações zootécnicas e experimentais."
+  },
+  "kpis": {
+    "totalFields": "Talhões",
+    "totalFieldsCaption": "Total de talhões registados",
+    "totalArea": "Área Total",
+    "totalAreaCaption": "Soma das áreas em hectares",
+    "yearHarvest": "Colheita no Ano",
+    "yearHarvestCaption": "Quantidade colhida no ano corrente",
+    "growingFields": "Em Crescimento",
+    "growingFieldsCaption": "Talhões actualmente em crescimento"
+  },
+  "tabs": {
+    "fields": "Talhões",
+    "crops": "Culturas",
+    "harvests": "Colheitas"
+  },
+  "status": {
+    "planeado": "Planeado",
+    "plantado": "Plantado",
+    "em_crescimento": "Em crescimento",
+    "colhido": "Colhido",
+    "abandonado": "Abandonado"
+  },
+  "actions": {
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "common": {
+    "emptyCell": "—",
+    "selectPlaceholder": "Seleccionar"
+  },
+  "delete": {
+    "title": "Eliminar registo?",
+    "description": "Esta acção é permanente e não pode ser revertida."
+  },
+  "toast": {
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "crops": {
+    "new": "Nova Cultura",
+    "table": {
+      "name": "Nome",
+      "scientificName": "Nome científico",
+      "cycleDays": "Ciclo (dias)",
+      "searchPlaceholder": "Pesquisar culturas...",
+      "empty": "Sem culturas registadas."
+    },
+    "dialog": {
+      "createTitle": "Nova Cultura",
+      "editTitle": "Editar Cultura",
+      "detailsTitle": "Detalhes da Cultura"
+    },
+    "form": {
+      "name": "Nome",
+      "scientificName": "Nome científico",
+      "cycleDays": "Ciclo (dias)",
+      "notes": "Notas",
+      "namePlaceholder": "Ex.: Milho",
+      "scientificNamePlaceholder": "Ex.: Zea mays"
+    },
+    "details": {
+      "name": "Nome",
+      "scientificName": "Nome científico",
+      "cycleDays": "Ciclo (dias)",
+      "notes": "Notas",
+      "createdAt": "Criada em"
+    },
+    "validation": {
+      "name": "Nome demasiado curto",
+      "cycleDays": "Ciclo inválido"
+    },
+    "toast": {
+      "createSuccess": "Cultura criada",
+      "updateSuccess": "Cultura actualizada",
+      "deleteSuccess": "Cultura eliminada"
+    }
+  },
+  "fields": {
+    "new": "Novo Talhão",
+    "emptyDepsHint": "Crie primeiro uma cultura para poder registar talhões.",
+    "table": {
+      "code": "Código",
+      "station": "Estação",
+      "crop": "Cultura",
+      "area": "Área (ha)",
+      "planting": "Plantação",
+      "harvest": "Colheita prevista",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar talhões...",
+      "empty": "Sem talhões registados."
+    },
+    "dialog": {
+      "createTitle": "Novo Talhão",
+      "editTitle": "Editar Talhão",
+      "detailsTitle": "Detalhes do Talhão"
+    },
+    "form": {
+      "station": "Estação",
+      "crop": "Cultura",
+      "code": "Código",
+      "area": "Área (ha)",
+      "planting": "Data de plantação",
+      "harvest": "Colheita prevista",
+      "status": "Estado",
+      "notes": "Notas",
+      "codePlaceholder": "Ex.: CHI-A3"
+    },
+    "details": {
+      "station": "Estação",
+      "crop": "Cultura",
+      "code": "Código",
+      "area": "Área (ha)",
+      "planting": "Data de plantação",
+      "harvest": "Colheita prevista",
+      "status": "Estado",
+      "notes": "Notas",
+      "createdAt": "Criado em"
+    },
+    "validation": {
+      "station": "Seleccione uma estação",
+      "crop": "Seleccione uma cultura",
+      "area": "Área deve ser positiva"
+    },
+    "toast": {
+      "createSuccess": "Talhão criado",
+      "updateSuccess": "Talhão actualizado",
+      "deleteSuccess": "Talhão eliminado"
+    }
+  },
+  "harvests": {
+    "new": "Nova Colheita",
+    "emptyDepsHint": "Crie primeiro um talhão para poder registar colheitas.",
+    "table": {
+      "date": "Data",
+      "field": "Talhão",
+      "quantity": "Quantidade",
+      "quality": "Qualidade",
+      "notes": "Notas",
+      "searchPlaceholder": "Pesquisar colheitas...",
+      "empty": "Sem colheitas registadas."
+    },
+    "dialog": {
+      "createTitle": "Registar Colheita",
+      "editTitle": "Editar Colheita",
+      "detailsTitle": "Detalhes da Colheita"
+    },
+    "form": {
+      "field": "Talhão",
+      "date": "Data",
+      "quantity": "Quantidade",
+      "unit": "Unidade",
+      "quality": "Qualidade",
+      "notes": "Notas",
+      "qualityPlaceholder": "Ex.: A, B, C"
+    },
+    "details": {
+      "field": "Talhão",
+      "date": "Data",
+      "quantity": "Quantidade",
+      "quality": "Qualidade",
+      "notes": "Notas",
+      "createdAt": "Registada em"
+    },
+    "validation": {
+      "field": "Seleccione um talhão",
+      "quantity": "Quantidade deve ser maior que zero",
+      "date": "Data obrigatória"
+    },
+    "toast": {
+      "createSuccess": "Colheita registada",
+      "updateSuccess": "Colheita actualizada",
+      "deleteSuccess": "Colheita eliminada"
+    }
+  }
+}

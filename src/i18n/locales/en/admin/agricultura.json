@@ -1,0 +1,186 @@
+{
+  "page": {
+    "title": "Agriculture",
+    "description": "Crops, fields and harvests across the zootechnical and experimental stations."
+  },
+  "kpis": {
+    "totalFields": "Fields",
+    "totalFieldsCaption": "Total registered fields",
+    "totalArea": "Total Area",
+    "totalAreaCaption": "Sum of areas in hectares",
+    "yearHarvest": "Harvest This Year",
+    "yearHarvestCaption": "Quantity harvested in the current year",
+    "growingFields": "Growing",
+    "growingFieldsCaption": "Fields currently growing"
+  },
+  "tabs": {
+    "fields": "Fields",
+    "crops": "Crops",
+    "harvests": "Harvests"
+  },
+  "status": {
+    "planeado": "Planned",
+    "plantado": "Planted",
+    "em_crescimento": "Growing",
+    "colhido": "Harvested",
+    "abandonado": "Abandoned"
+  },
+  "actions": {
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "common": {
+    "emptyCell": "—",
+    "selectPlaceholder": "Select"
+  },
+  "delete": {
+    "title": "Delete record?",
+    "description": "This action is permanent and cannot be undone."
+  },
+  "toast": {
+    "error": "An error occurred. Please try again."
+  },
+  "crops": {
+    "new": "New Crop",
+    "table": {
+      "name": "Name",
+      "scientificName": "Scientific name",
+      "cycleDays": "Cycle (days)",
+      "searchPlaceholder": "Search crops...",
+      "empty": "No crops registered."
+    },
+    "dialog": {
+      "createTitle": "New Crop",
+      "editTitle": "Edit Crop",
+      "detailsTitle": "Crop Details"
+    },
+    "form": {
+      "name": "Name",
+      "scientificName": "Scientific name",
+      "cycleDays": "Cycle (days)",
+      "notes": "Notes",
+      "namePlaceholder": "e.g. Maize",
+      "scientificNamePlaceholder": "e.g. Zea mays"
+    },
+    "details": {
+      "name": "Name",
+      "scientificName": "Scientific name",
+      "cycleDays": "Cycle (days)",
+      "notes": "Notes",
+      "createdAt": "Created at"
+    },
+    "validation": {
+      "name": "Name too short",
+      "cycleDays": "Invalid cycle"
+    },
+    "toast": {
+      "createSuccess": "Crop created",
+      "updateSuccess": "Crop updated",
+      "deleteSuccess": "Crop deleted"
+    }
+  },
+  "fields": {
+    "new": "New Field",
+    "emptyDepsHint": "Create a crop first to be able to register fields.",
+    "table": {
+      "code": "Code",
+      "station": "Station",
+      "crop": "Crop",
+      "area": "Area (ha)",
+      "planting": "Planting",
+      "harvest": "Expected harvest",
+      "status": "Status",
+      "searchPlaceholder": "Search fields...",
+      "empty": "No fields registered."
+    },
+    "dialog": {
+      "createTitle": "New Field",
+      "editTitle": "Edit Field",
+      "detailsTitle": "Field Details"
+    },
+    "form": {
+      "station": "Station",
+      "crop": "Crop",
+      "code": "Code",
+      "area": "Area (ha)",
+      "planting": "Planting date",
+      "harvest": "Expected harvest",
+      "status": "Status",
+      "notes": "Notes",
+      "codePlaceholder": "e.g. CHI-A3"
+    },
+    "details": {
+      "station": "Station",
+      "crop": "Crop",
+      "code": "Code",
+      "area": "Area (ha)",
+      "planting": "Planting date",
+      "harvest": "Expected harvest",
+      "status": "Status",
+      "notes": "Notes",
+      "createdAt": "Created at"
+    },
+    "validation": {
+      "station": "Select a station",
+      "crop": "Select a crop",
+      "area": "Area must be positive"
+    },
+    "toast": {
+      "createSuccess": "Field created",
+      "updateSuccess": "Field updated",
+      "deleteSuccess": "Field deleted"
+    }
+  },
+  "harvests": {
+    "new": "New Harvest",
+    "emptyDepsHint": "Create a field first to be able to register harvests.",
+    "table": {
+      "date": "Date",
+      "field": "Field",
+      "quantity": "Quantity",
+      "quality": "Quality",
+      "notes": "Notes",
+      "searchPlaceholder": "Search harvests...",
+      "empty": "No harvests registered."
+    },
+    "dialog": {
+      "createTitle": "Register Harvest",
+      "editTitle": "Edit Harvest",
+      "detailsTitle": "Harvest Details"
+    },
+    "form": {
+      "field": "Field",
+      "date": "Date",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "quality": "Quality",
+      "notes": "Notes",
+      "qualityPlaceholder": "e.g. A, B, C"
+    },
+    "details": {
+      "field": "Field",
+      "date": "Date",
+      "quantity": "Quantity",
+      "quality": "Quality",
+      "notes": "Notes",
+      "createdAt": "Registered at"
+    },
+    "validation": {
+      "field": "Select a field",
+      "quantity": "Quantity must be greater than zero",
+      "date": "Date is required"
+    },
+    "toast": {
+      "createSuccess": "Harvest registered",
+      "updateSuccess": "Harvest updated",
+      "deleteSuccess": "Harvest deleted"
+    }
+  }
+}

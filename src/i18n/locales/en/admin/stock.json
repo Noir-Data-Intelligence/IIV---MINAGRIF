@@ -1,0 +1,198 @@
+{
+  "page": {
+    "title": "Integrated Stock",
+    "description": "Unified inventory: laboratory, vaccines, agriculture, livestock, semen, administrative and fuel."
+  },
+  "kpis": {
+    "totalItems": "Total Items",
+    "totalItemsCaption": "References in inventory",
+    "totalValue": "Total Stock Value",
+    "totalValueCaption": "Quantity × unit cost",
+    "belowMin": "Items Below Minimum",
+    "belowMinCaption": "Critical stock to replenish",
+    "expiring": "Expiring Soon",
+    "expiringCaption": "Expiry within the next 30 days"
+  },
+  "tabs": {
+    "items": "Items",
+    "locations": "Locations",
+    "movements": "Movements"
+  },
+  "category": {
+    "laboratorio": "Laboratory",
+    "vacinas": "Vaccines",
+    "agricola": "Agriculture",
+    "pecuaria": "Livestock",
+    "administrativo": "Administrative",
+    "semen": "Semen",
+    "combustivel": "Fuel"
+  },
+  "movementType": {
+    "entrada": "Inbound",
+    "saida": "Outbound",
+    "transferencia": "Transfer",
+    "ajuste": "Adjustment"
+  },
+  "actions": {
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "common": {
+    "emptyCell": "—",
+    "none": "— None —",
+    "selectPlaceholder": "Select"
+  },
+  "filters": {
+    "allCategories": "All categories",
+    "categoryPlaceholder": "Category",
+    "allTypes": "All types",
+    "typePlaceholder": "Type"
+  },
+  "delete": {
+    "title": "Delete record?",
+    "description": "This action is permanent and cannot be undone."
+  },
+  "toast": {
+    "error": "An error occurred. Please try again."
+  },
+  "badges": {
+    "critical": "Critical",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "items": {
+    "new": "New Item",
+    "table": {
+      "name": "Name",
+      "category": "Category",
+      "quantity": "Quantity",
+      "minStock": "Minimum",
+      "location": "Location",
+      "expiry": "Expiry",
+      "unitCost": "Unit Cost",
+      "searchPlaceholder": "Search by name, SKU or supplier...",
+      "empty": "No items registered."
+    },
+    "dialog": {
+      "createTitle": "New Item",
+      "editTitle": "Edit Item",
+      "detailsTitle": "Item Details"
+    },
+    "form": {
+      "name": "Name",
+      "category": "Category",
+      "sku": "SKU",
+      "unit": "Unit",
+      "quantity": "Quantity",
+      "minStock": "Minimum Stock",
+      "location": "Location",
+      "expiry": "Expiry",
+      "supplier": "Supplier",
+      "unitCost": "Unit Cost (Kz)",
+      "notes": "Notes",
+      "unitPlaceholder": "e.g. unit, litre, box of 100"
+    },
+    "details": {
+      "name": "Name",
+      "category": "Category",
+      "sku": "SKU",
+      "unit": "Unit",
+      "quantity": "Quantity",
+      "minStock": "Minimum Stock",
+      "location": "Location",
+      "expiry": "Expiry",
+      "supplier": "Supplier",
+      "unitCost": "Unit Cost",
+      "stockValue": "Stock Value",
+      "notes": "Notes",
+      "createdAt": "Registered on"
+    },
+    "validation": {
+      "name": "Name too short",
+      "unit": "Unit is required",
+      "quantity": "Invalid quantity",
+      "minStock": "Invalid minimum"
+    },
+    "toast": {
+      "createSuccess": "Item created",
+      "updateSuccess": "Item updated",
+      "deleteSuccess": "Item deleted"
+    }
+  },
+  "locations": {
+    "new": "New Location",
+    "table": {
+      "name": "Name",
+      "description": "Description",
+      "status": "Status",
+      "searchPlaceholder": "Search locations...",
+      "empty": "No locations registered."
+    },
+    "dialog": {
+      "createTitle": "New Location",
+      "editTitle": "Edit Location",
+      "detailsTitle": "Location Details"
+    },
+    "form": {
+      "name": "Name",
+      "description": "Description",
+      "status": "Status",
+      "activeOption": "Active",
+      "inactiveOption": "Inactive"
+    },
+    "details": {
+      "name": "Name",
+      "description": "Description",
+      "status": "Status",
+      "createdAt": "Registered on"
+    },
+    "validation": {
+      "name": "Name too short"
+    },
+    "toast": {
+      "createSuccess": "Location created",
+      "updateSuccess": "Location updated",
+      "deleteSuccess": "Location deleted"
+    }
+  },
+  "movements": {
+    "new": "New Movement",
+    "table": {
+      "date": "Date",
+      "item": "Item",
+      "type": "Type",
+      "quantity": "Quantity",
+      "route": "From → To",
+      "reason": "Reason",
+      "searchPlaceholder": "Search by reason...",
+      "empty": "No movements registered."
+    },
+    "dialog": {
+      "createTitle": "New Movement"
+    },
+    "form": {
+      "item": "Item",
+      "type": "Type",
+      "quantity": "Quantity",
+      "fromLocation": "Source",
+      "toLocation": "Destination",
+      "date": "Date",
+      "reason": "Reason"
+    },
+    "validation": {
+      "item": "Select an item",
+      "quantity": "Quantity must be greater than zero"
+    },
+    "toast": {
+      "createSuccess": "Movement recorded",
+      "deleteSuccess": "Movement deleted"
+    }
+  }
+}

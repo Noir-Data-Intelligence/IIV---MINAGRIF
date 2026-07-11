@@ -1,0 +1,90 @@
+{
+  "page": {
+    "title": "Produção Pecuária",
+    "description": "Registo de leite, ovos, carne, mel e outras produções por estação."
+  },
+  "kpis": {
+    "total": "Registos Totais",
+    "totalCaption": "Total de registos de produção",
+    "month": "Produção no Mês",
+    "monthCaption": "Registos do mês corrente",
+    "milk": "Leite Total",
+    "milkCaption": "Litros de leite acumulados",
+    "eggs": "Ovos Totais",
+    "eggsCaption": "Unidades de ovos acumuladas"
+  },
+  "type": {
+    "Leite": "Leite",
+    "Ovos": "Ovos",
+    "Carne": "Carne",
+    "Mel": "Mel",
+    "Outro": "Outro"
+  },
+  "actions": {
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "new": "Novo Registo"
+  },
+  "form": {
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar",
+    "station": "Estação",
+    "productType": "Tipo de produto",
+    "date": "Data",
+    "quantity": "Quantidade",
+    "unit": "Unidade",
+    "recordedBy": "Registado por",
+    "notes": "Notas",
+    "recordedByPlaceholder": "Nome do responsável"
+  },
+  "common": {
+    "emptyCell": "—",
+    "selectPlaceholder": "Seleccionar"
+  },
+  "filters": {
+    "allTypes": "Todos os tipos",
+    "typePlaceholder": "Tipo"
+  },
+  "table": {
+    "date": "Data",
+    "station": "Estação",
+    "product": "Produto",
+    "quantity": "Quantidade",
+    "recordedBy": "Registado por",
+    "notes": "Notas",
+    "searchPlaceholder": "Pesquisar produções...",
+    "empty": "Sem produção registada."
+  },
+  "dialog": {
+    "createTitle": "Novo Registo de Produção",
+    "editTitle": "Editar Registo",
+    "detailsTitle": "Detalhes do Registo"
+  },
+  "details": {
+    "station": "Estação",
+    "product": "Produto",
+    "date": "Data",
+    "quantity": "Quantidade",
+    "recordedBy": "Registado por",
+    "notes": "Notas",
+    "createdAt": "Criado em"
+  },
+  "validation": {
+    "station": "Seleccione uma estação",
+    "quantity": "Quantidade deve ser maior que zero",
+    "date": "Data obrigatória"
+  },
+  "delete": {
+    "title": "Eliminar registo?",
+    "description": "Esta acção é permanente e não pode ser revertida."
+  },
+  "toast": {
+    "createSuccess": "Registo criado",
+    "updateSuccess": "Registo actualizado",
+    "deleteSuccess": "Registo eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}
