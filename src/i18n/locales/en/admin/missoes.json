@@ -1,0 +1,167 @@
+{
+  "page": {
+    "title": "Service Missions",
+    "description": "Planning, approval and accountability for official trips."
+  },
+  "kpi": {
+    "total": "Total missions",
+    "active": "In progress",
+    "pending": "Pending approval",
+    "budget": "Total budget"
+  },
+  "status": {
+    "planeada": "Planned",
+    "submetida": "Submitted",
+    "aprovada": "Approved",
+    "em_curso": "In progress",
+    "concluida": "Completed",
+    "cancelada": "Cancelled"
+  },
+  "expenseCategory": {
+    "transporte": "Transport",
+    "alojamento": "Accommodation",
+    "alimentacao": "Meals",
+    "combustivel": "Fuel",
+    "outro": "Other"
+  },
+  "reportStatus": {
+    "rascunho": "Draft",
+    "submetido": "Submitted",
+    "aprovado": "Approved",
+    "rejeitado": "Rejected"
+  },
+  "actions": {
+    "new": "New Mission",
+    "view": "Details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "submit": "Submit for approval",
+    "approve": "Approve",
+    "reject": "Reject",
+    "add": "Add",
+    "save": "Save",
+    "generatePdf": "Generate travel order PDF",
+    "saveDraft": "Save draft",
+    "submitReport": "Submit report",
+    "approveReport": "Approve report"
+  },
+  "table": {
+    "title": "Title",
+    "destination": "Destination",
+    "startDate": "Start",
+    "endDate": "End",
+    "status": "Status",
+    "budget": "Budget",
+    "searchPlaceholder": "Search missions...",
+    "empty": "No missions found.",
+    "emptyCell": "—",
+    "allStatus": "All statuses"
+  },
+  "tabs": {
+    "summary": "Summary",
+    "participants": "Participants",
+    "guide": "Travel Order",
+    "accountability": "Accountability"
+  },
+  "details": {
+    "destination": "Destination",
+    "purpose": "Purpose",
+    "startDate": "Start",
+    "endDate": "End",
+    "budget": "Budget",
+    "status": "Status",
+    "notes": "Notes"
+  },
+  "form": {
+    "labels": {
+      "title": "Title",
+      "destination": "Destination",
+      "purpose": "Purpose",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "status": "Status",
+      "budget": "Budget",
+      "currency": "Currency",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "title": "e.g. Sanitary inspection in Huambo",
+      "destination": "e.g. Huambo",
+      "purpose": "Mission purpose",
+      "notes": "Additional notes"
+    },
+    "submitCreate": "Create Mission",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "New Mission",
+    "editTitle": "Edit Mission",
+    "deleteTitle": "Delete mission?",
+    "deleteDescription": "This action is permanent and removes all associated sub-entities (travel order, participants, expenses and report)."
+  },
+  "participants": {
+    "user": "User",
+    "selectUser": "Select user",
+    "role": "Role",
+    "rolePlaceholder": "Lead, Support…",
+    "perDiem": "Per Diem",
+    "name": "Name",
+    "empty": "No participants.",
+    "unknownUser": "User"
+  },
+  "guide": {
+    "locked": "The travel order can only be issued after the mission is approved.",
+    "number": "Order No.",
+    "issueDate": "Issue Date",
+    "perDiem": "Base Per Diem",
+    "transport": "Transport",
+    "transportPlaceholder": "Vehicle IIV-1234",
+    "notes": "Notes",
+    "empty": "No travel order has been issued for this mission yet."
+  },
+  "accountability": {
+    "budget": "Budget",
+    "spent": "Total spent",
+    "balance": "Balance",
+    "execution": "Budget execution",
+    "overspent": "(exceeded)",
+    "expenses": "Expenses",
+    "date": "Date",
+    "category": "Category",
+    "description": "Description",
+    "amount": "Amount",
+    "emptyExpenses": "No expenses recorded.",
+    "report": "Final Report",
+    "reportApproved": "Report approved.",
+    "reportSubmitted": "Submitted — awaiting management approval.",
+    "summary": "Summary",
+    "outcomes": "Outcomes"
+  },
+  "toast": {
+    "createSuccess": "Mission created successfully",
+    "updateSuccess": "Mission updated",
+    "deleteSuccess": "Mission deleted",
+    "submitSuccess": "Mission submitted for approval",
+    "approveSuccess": "Mission approved",
+    "rejectSuccess": "Mission returned for revision",
+    "participantAdded": "Participant added",
+    "participantRemoved": "Participant removed",
+    "guideSaved": "Travel order saved",
+    "expenseAdded": "Expense recorded",
+    "expenseRemoved": "Expense removed",
+    "reportSaved": "Report saved",
+    "reportSubmitted": "Report submitted",
+    "reportApproved": "Report approved",
+    "selectUser": "Please select a user",
+    "invalidAmount": "Invalid amount",
+    "guideNumberRequired": "Order number is required",
+    "error": "An error occurred. Please try again."
+  },
+  "validation": {
+    "titleShort": "Title too short",
+    "destinationShort": "Destination too short",
+    "datesRequired": "Dates are required"
+  }
+}

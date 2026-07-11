@@ -1,0 +1,92 @@
+{
+  "page": {
+    "title": "Formações",
+    "description": "Catálogo de formações, capacitações e workshops do instituto."
+  },
+  "kpis": {
+    "total": "Total",
+    "totalCaption": "Formações registadas",
+    "inProgress": "Em curso",
+    "inProgressCaption": "A decorrer actualmente",
+    "completed": "Concluídas",
+    "completedCaption": "Já finalizadas",
+    "hours": "Horas totais",
+    "hoursCaption": "Soma da carga horária"
+  },
+  "status": {
+    "planeada": "Planeada",
+    "em_curso": "Em curso",
+    "concluida": "Concluída",
+    "cancelada": "Cancelada"
+  },
+  "actions": {
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "new": "Nova Formação"
+  },
+  "filters": {
+    "allStatus": "Todos os estados",
+    "statusPlaceholder": "Estado"
+  },
+  "table": {
+    "title": "Título",
+    "trainer": "Formador",
+    "location": "Local",
+    "startDate": "Início",
+    "endDate": "Fim",
+    "hours": "Horas",
+    "status": "Estado",
+    "searchPlaceholder": "Pesquisar formações...",
+    "empty": "Nenhuma formação registada.",
+    "emptyCell": "—"
+  },
+  "dialog": {
+    "createTitle": "Nova Formação",
+    "editTitle": "Editar Formação",
+    "detailsTitle": "Detalhes da Formação"
+  },
+  "form": {
+    "title": "Título",
+    "description": "Descrição",
+    "trainer": "Formador",
+    "location": "Local",
+    "startDate": "Início",
+    "endDate": "Fim",
+    "hours": "Horas",
+    "status": "Estado",
+    "notes": "Notas",
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "details": {
+    "title": "Título",
+    "description": "Descrição",
+    "trainer": "Formador",
+    "location": "Local",
+    "startDate": "Início",
+    "endDate": "Fim",
+    "hours": "Horas",
+    "status": "Estado",
+    "notes": "Notas",
+    "createdAt": "Criada em"
+  },
+  "validation": {
+    "title": "Título demasiado curto",
+    "startDate": "Data de início obrigatória",
+    "endDate": "Data de fim obrigatória",
+    "hours": "Horas devem ser positivas"
+  },
+  "delete": {
+    "title": "Eliminar formação?",
+    "description": "Esta acção é permanente e não pode ser anulada."
+  },
+  "toast": {
+    "createSuccess": "Formação criada",
+    "updateSuccess": "Formação actualizada",
+    "deleteSuccess": "Formação eliminada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

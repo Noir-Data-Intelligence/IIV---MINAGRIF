@@ -1,0 +1,238 @@
+{
+  "page": {
+    "title": "Recursos Humanos",
+    "description": "Fichas de colaboradores, vínculos contratuais, férias e ausências."
+  },
+  "kpis": {
+    "total": "Colaboradores",
+    "totalCaption": "Total no quadro de pessoal",
+    "active": "Activos",
+    "activeCaption": "Em funções actualmente",
+    "expiring": "Contratos a expirar",
+    "expiringCaption": "Nos próximos 60 dias",
+    "onLeave": "Ausências em curso",
+    "onLeaveCaption": "Aprovadas e a decorrer hoje"
+  },
+  "tabs": {
+    "employees": "Colaboradores",
+    "contracts": "Contratos",
+    "leaves": "Férias & Ausências"
+  },
+  "contractType": {
+    "efectivo": "Efectivo",
+    "termo_certo": "Termo certo",
+    "termo_incerto": "Termo incerto",
+    "prestacao_servicos": "Prestação de serviços",
+    "estagio": "Estágio"
+  },
+  "leaveType": {
+    "ferias": "Férias",
+    "doenca": "Doença",
+    "maternidade": "Maternidade",
+    "paternidade": "Paternidade",
+    "luto": "Luto",
+    "sem_vencimento": "Sem vencimento",
+    "outro": "Outro"
+  },
+  "leaveStatus": {
+    "pendente": "Pendente",
+    "aprovada": "Aprovada",
+    "rejeitada": "Rejeitada",
+    "concluida": "Concluída"
+  },
+  "actions": {
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "common": {
+    "emptyCell": "—",
+    "none": "— Nenhum —",
+    "selectPlaceholder": "Seleccionar",
+    "yes": "Sim",
+    "no": "Não"
+  },
+  "filters": {
+    "allStatus": "Todos os estados",
+    "allTypes": "Todos os tipos",
+    "statusPlaceholder": "Estado",
+    "typePlaceholder": "Tipo"
+  },
+  "delete": {
+    "title": "Eliminar registo?",
+    "description": "Esta acção é permanente e não pode ser anulada."
+  },
+  "toast": {
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "employees": {
+    "new": "Novo Colaborador",
+    "table": {
+      "number": "Nº",
+      "name": "Nome",
+      "department": "Departamento",
+      "phone": "Telefone",
+      "hireDate": "Admissão",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar colaboradores...",
+      "empty": "Nenhum colaborador registado."
+    },
+    "active": {
+      "yes": "Activo",
+      "no": "Inactivo"
+    },
+    "dialog": {
+      "createTitle": "Novo Colaborador",
+      "editTitle": "Editar Colaborador",
+      "detailsTitle": "Detalhes do Colaborador"
+    },
+    "form": {
+      "number": "Nº Mecanográfico",
+      "name": "Nome Completo",
+      "nationalId": "Bilhete de Identidade",
+      "phone": "Telefone",
+      "email": "Email",
+      "department": "Departamento",
+      "hireDate": "Data de admissão",
+      "status": "Estado",
+      "qualifications": "Qualificações",
+      "notes": "Notas",
+      "activeOption": "Activo",
+      "inactiveOption": "Inactivo"
+    },
+    "details": {
+      "number": "Nº Mecanográfico",
+      "name": "Nome",
+      "nationalId": "Bilhete de Identidade",
+      "phone": "Telefone",
+      "email": "Email",
+      "department": "Departamento",
+      "hireDate": "Admissão",
+      "status": "Estado",
+      "qualifications": "Qualificações",
+      "notes": "Notas",
+      "createdAt": "Criado em"
+    },
+    "validation": {
+      "number": "Nº mecanográfico obrigatório",
+      "name": "Nome demasiado curto"
+    },
+    "toast": {
+      "createSuccess": "Colaborador criado",
+      "updateSuccess": "Colaborador actualizado",
+      "deleteSuccess": "Colaborador eliminado"
+    }
+  },
+  "contracts": {
+    "new": "Novo Contrato",
+    "emptyEmployeesHint": "Crie primeiro um colaborador no separador Colaboradores.",
+    "table": {
+      "employee": "Colaborador",
+      "position": "Cargo",
+      "type": "Tipo",
+      "startDate": "Início",
+      "endDate": "Fim",
+      "salary": "Salário",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar contratos...",
+      "empty": "Nenhum contrato registado."
+    },
+    "active": {
+      "yes": "Activo",
+      "no": "Cessado"
+    },
+    "dialog": {
+      "createTitle": "Novo Contrato",
+      "editTitle": "Editar Contrato",
+      "detailsTitle": "Detalhes do Contrato"
+    },
+    "form": {
+      "employee": "Colaborador",
+      "position": "Cargo",
+      "type": "Tipo de vínculo",
+      "startDate": "Início",
+      "endDate": "Fim",
+      "salary": "Salário",
+      "currency": "Moeda",
+      "status": "Estado",
+      "notes": "Notas",
+      "activeOption": "Activo",
+      "inactiveOption": "Cessado"
+    },
+    "details": {
+      "employee": "Colaborador",
+      "position": "Cargo",
+      "type": "Tipo",
+      "startDate": "Início",
+      "endDate": "Fim",
+      "salary": "Salário",
+      "status": "Estado",
+      "notes": "Notas",
+      "createdAt": "Criado em"
+    },
+    "validation": {
+      "employee": "Seleccione um colaborador",
+      "position": "Cargo obrigatório",
+      "startDate": "Data de início obrigatória",
+      "salary": "Salário deve ser positivo"
+    },
+    "toast": {
+      "createSuccess": "Contrato criado",
+      "updateSuccess": "Contrato actualizado",
+      "deleteSuccess": "Contrato eliminado"
+    }
+  },
+  "leaves": {
+    "new": "Nova Ausência",
+    "emptyEmployeesHint": "Crie primeiro um colaborador no separador Colaboradores.",
+    "table": {
+      "employee": "Colaborador",
+      "type": "Tipo",
+      "startDate": "Início",
+      "endDate": "Fim",
+      "days": "Dias",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar ausências...",
+      "empty": "Nenhuma ausência registada."
+    },
+    "dialog": {
+      "createTitle": "Nova Ausência",
+      "editTitle": "Editar Ausência",
+      "detailsTitle": "Detalhes da Ausência"
+    },
+    "form": {
+      "employee": "Colaborador",
+      "type": "Tipo",
+      "startDate": "Início",
+      "endDate": "Fim",
+      "status": "Estado",
+      "reason": "Motivo"
+    },
+    "details": {
+      "employee": "Colaborador",
+      "type": "Tipo",
+      "startDate": "Início",
+      "endDate": "Fim",
+      "days": "Dias",
+      "status": "Estado",
+      "reason": "Motivo",
+      "createdAt": "Registada em"
+    },
+    "validation": {
+      "employee": "Seleccione um colaborador",
+      "startDate": "Data de início obrigatória",
+      "endDate": "Data de fim obrigatória"
+    },
+    "toast": {
+      "createSuccess": "Ausência registada",
+      "updateSuccess": "Ausência actualizada",
+      "deleteSuccess": "Ausência eliminada"
+    }
+  }
+}

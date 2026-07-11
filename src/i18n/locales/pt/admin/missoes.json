@@ -1,0 +1,167 @@
+{
+  "page": {
+    "title": "Missões de Serviço",
+    "description": "Planeamento, aprovação e prestação de contas de deslocações."
+  },
+  "kpi": {
+    "total": "Total de missões",
+    "active": "Em curso",
+    "pending": "Pendentes de aprovação",
+    "budget": "Orçamento total"
+  },
+  "status": {
+    "planeada": "Planeada",
+    "submetida": "Submetida",
+    "aprovada": "Aprovada",
+    "em_curso": "Em curso",
+    "concluida": "Concluída",
+    "cancelada": "Cancelada"
+  },
+  "expenseCategory": {
+    "transporte": "Transporte",
+    "alojamento": "Alojamento",
+    "alimentacao": "Alimentação",
+    "combustivel": "Combustível",
+    "outro": "Outro"
+  },
+  "reportStatus": {
+    "rascunho": "Rascunho",
+    "submetido": "Submetido",
+    "aprovado": "Aprovado",
+    "rejeitado": "Rejeitado"
+  },
+  "actions": {
+    "new": "Nova Missão",
+    "view": "Detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "submit": "Submeter para aprovação",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "add": "Adicionar",
+    "save": "Guardar",
+    "generatePdf": "Gerar PDF da guia",
+    "saveDraft": "Guardar rascunho",
+    "submitReport": "Submeter relatório",
+    "approveReport": "Aprovar relatório"
+  },
+  "table": {
+    "title": "Título",
+    "destination": "Destino",
+    "startDate": "Início",
+    "endDate": "Fim",
+    "status": "Estado",
+    "budget": "Orçamento",
+    "searchPlaceholder": "Pesquisar missões...",
+    "empty": "Nenhuma missão encontrada.",
+    "emptyCell": "—",
+    "allStatus": "Todos os estados"
+  },
+  "tabs": {
+    "summary": "Resumo",
+    "participants": "Participantes",
+    "guide": "Guia de Marcha",
+    "accountability": "Prestação de Contas"
+  },
+  "details": {
+    "destination": "Destino",
+    "purpose": "Objectivo",
+    "startDate": "Início",
+    "endDate": "Fim",
+    "budget": "Orçamento",
+    "status": "Estado",
+    "notes": "Notas"
+  },
+  "form": {
+    "labels": {
+      "title": "Título",
+      "destination": "Destino",
+      "purpose": "Objectivo",
+      "startDate": "Data de início",
+      "endDate": "Data de fim",
+      "status": "Estado",
+      "budget": "Orçamento",
+      "currency": "Moeda",
+      "notes": "Notas"
+    },
+    "placeholders": {
+      "title": "Ex: Fiscalização sanitária no Huambo",
+      "destination": "Ex: Huambo",
+      "purpose": "Objectivo da missão",
+      "notes": "Notas adicionais"
+    },
+    "submitCreate": "Criar Missão",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Nova Missão",
+    "editTitle": "Editar Missão",
+    "deleteTitle": "Apagar missão?",
+    "deleteDescription": "Esta acção é permanente e remove todas as sub-entidades associadas (guia, participantes, despesas e relatório)."
+  },
+  "participants": {
+    "user": "Utilizador",
+    "selectUser": "Seleccionar utilizador",
+    "role": "Função",
+    "rolePlaceholder": "Responsável, Apoio…",
+    "perDiem": "Per Diem",
+    "name": "Nome",
+    "empty": "Sem participantes.",
+    "unknownUser": "Utilizador"
+  },
+  "guide": {
+    "locked": "A Guia de Marcha só pode ser emitida após aprovação da missão.",
+    "number": "Nº da Guia",
+    "issueDate": "Data de Emissão",
+    "perDiem": "Per Diem base",
+    "transport": "Transporte",
+    "transportPlaceholder": "Viatura IIV-1234",
+    "notes": "Notas",
+    "empty": "Ainda não há guia de marcha emitida para esta missão."
+  },
+  "accountability": {
+    "budget": "Orçamento",
+    "spent": "Total gasto",
+    "balance": "Saldo",
+    "execution": "Execução orçamental",
+    "overspent": "(excedido)",
+    "expenses": "Despesas",
+    "date": "Data",
+    "category": "Categoria",
+    "description": "Descrição",
+    "amount": "Valor",
+    "emptyExpenses": "Sem despesas registadas.",
+    "report": "Relatório Final",
+    "reportApproved": "Relatório aprovado.",
+    "reportSubmitted": "Submetido — a aguardar aprovação da Direcção.",
+    "summary": "Resumo",
+    "outcomes": "Resultados / Outcomes"
+  },
+  "toast": {
+    "createSuccess": "Missão criada com sucesso",
+    "updateSuccess": "Missão actualizada",
+    "deleteSuccess": "Missão apagada",
+    "submitSuccess": "Missão submetida para aprovação",
+    "approveSuccess": "Missão aprovada",
+    "rejectSuccess": "Missão devolvida para revisão",
+    "participantAdded": "Participante adicionado",
+    "participantRemoved": "Participante removido",
+    "guideSaved": "Guia guardada",
+    "expenseAdded": "Despesa registada",
+    "expenseRemoved": "Despesa removida",
+    "reportSaved": "Relatório guardado",
+    "reportSubmitted": "Relatório submetido",
+    "reportApproved": "Relatório aprovado",
+    "selectUser": "Seleccione um utilizador",
+    "invalidAmount": "Valor inválido",
+    "guideNumberRequired": "Nº da guia obrigatório",
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "validation": {
+    "titleShort": "Título demasiado curto",
+    "destinationShort": "Destino demasiado curto",
+    "datesRequired": "Datas obrigatórias"
+  }
+}

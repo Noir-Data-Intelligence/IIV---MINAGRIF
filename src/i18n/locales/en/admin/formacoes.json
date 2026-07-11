@@ -1,0 +1,92 @@
+{
+  "page": {
+    "title": "Training",
+    "description": "Catalogue of training courses, capacity-building and workshops."
+  },
+  "kpis": {
+    "total": "Total",
+    "totalCaption": "Registered courses",
+    "inProgress": "In progress",
+    "inProgressCaption": "Currently running",
+    "completed": "Completed",
+    "completedCaption": "Already finished",
+    "hours": "Total hours",
+    "hoursCaption": "Sum of course hours"
+  },
+  "status": {
+    "planeada": "Planned",
+    "em_curso": "In progress",
+    "concluida": "Completed",
+    "cancelada": "Cancelled"
+  },
+  "actions": {
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "new": "New Course"
+  },
+  "filters": {
+    "allStatus": "All statuses",
+    "statusPlaceholder": "Status"
+  },
+  "table": {
+    "title": "Title",
+    "trainer": "Trainer",
+    "location": "Location",
+    "startDate": "Start",
+    "endDate": "End",
+    "hours": "Hours",
+    "status": "Status",
+    "searchPlaceholder": "Search courses...",
+    "empty": "No courses registered.",
+    "emptyCell": "—"
+  },
+  "dialog": {
+    "createTitle": "New Course",
+    "editTitle": "Edit Course",
+    "detailsTitle": "Course Details"
+  },
+  "form": {
+    "title": "Title",
+    "description": "Description",
+    "trainer": "Trainer",
+    "location": "Location",
+    "startDate": "Start",
+    "endDate": "End",
+    "hours": "Hours",
+    "status": "Status",
+    "notes": "Notes",
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "details": {
+    "title": "Title",
+    "description": "Description",
+    "trainer": "Trainer",
+    "location": "Location",
+    "startDate": "Start",
+    "endDate": "End",
+    "hours": "Hours",
+    "status": "Status",
+    "notes": "Notes",
+    "createdAt": "Created on"
+  },
+  "validation": {
+    "title": "Title is too short",
+    "startDate": "Start date is required",
+    "endDate": "End date is required",
+    "hours": "Hours must be positive"
+  },
+  "delete": {
+    "title": "Delete course?",
+    "description": "This action is permanent and cannot be undone."
+  },
+  "toast": {
+    "createSuccess": "Course created",
+    "updateSuccess": "Course updated",
+    "deleteSuccess": "Course deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

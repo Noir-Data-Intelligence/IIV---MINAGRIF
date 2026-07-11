@@ -1,0 +1,238 @@
+{
+  "page": {
+    "title": "Human Resources",
+    "description": "Employee records, contracts, holidays and leaves of absence."
+  },
+  "kpis": {
+    "total": "Employees",
+    "totalCaption": "Total headcount",
+    "active": "Active",
+    "activeCaption": "Currently on duty",
+    "expiring": "Expiring Contracts",
+    "expiringCaption": "In the next 60 days",
+    "onLeave": "Ongoing Leaves",
+    "onLeaveCaption": "Approved and running today"
+  },
+  "tabs": {
+    "employees": "Employees",
+    "contracts": "Contracts",
+    "leaves": "Holidays & Leaves"
+  },
+  "contractType": {
+    "efectivo": "Permanent",
+    "termo_certo": "Fixed-term",
+    "termo_incerto": "Open-ended term",
+    "prestacao_servicos": "Service contract",
+    "estagio": "Internship"
+  },
+  "leaveType": {
+    "ferias": "Holidays",
+    "doenca": "Sick leave",
+    "maternidade": "Maternity",
+    "paternidade": "Paternity",
+    "luto": "Bereavement",
+    "sem_vencimento": "Unpaid leave",
+    "outro": "Other"
+  },
+  "leaveStatus": {
+    "pendente": "Pending",
+    "aprovada": "Approved",
+    "rejeitada": "Rejected",
+    "concluida": "Completed"
+  },
+  "actions": {
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "common": {
+    "emptyCell": "—",
+    "none": "— None —",
+    "selectPlaceholder": "Select",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "filters": {
+    "allStatus": "All statuses",
+    "allTypes": "All types",
+    "statusPlaceholder": "Status",
+    "typePlaceholder": "Type"
+  },
+  "delete": {
+    "title": "Delete record?",
+    "description": "This action is permanent and cannot be undone."
+  },
+  "toast": {
+    "error": "An error occurred. Please try again."
+  },
+  "employees": {
+    "new": "New Employee",
+    "table": {
+      "number": "No.",
+      "name": "Name",
+      "department": "Department",
+      "phone": "Phone",
+      "hireDate": "Hire date",
+      "status": "Status",
+      "searchPlaceholder": "Search employees...",
+      "empty": "No employees registered."
+    },
+    "active": {
+      "yes": "Active",
+      "no": "Inactive"
+    },
+    "dialog": {
+      "createTitle": "New Employee",
+      "editTitle": "Edit Employee",
+      "detailsTitle": "Employee Details"
+    },
+    "form": {
+      "number": "Staff Number",
+      "name": "Full Name",
+      "nationalId": "National ID",
+      "phone": "Phone",
+      "email": "Email",
+      "department": "Department",
+      "hireDate": "Hire date",
+      "status": "Status",
+      "qualifications": "Qualifications",
+      "notes": "Notes",
+      "activeOption": "Active",
+      "inactiveOption": "Inactive"
+    },
+    "details": {
+      "number": "Staff Number",
+      "name": "Name",
+      "nationalId": "National ID",
+      "phone": "Phone",
+      "email": "Email",
+      "department": "Department",
+      "hireDate": "Hire date",
+      "status": "Status",
+      "qualifications": "Qualifications",
+      "notes": "Notes",
+      "createdAt": "Created on"
+    },
+    "validation": {
+      "number": "Staff number is required",
+      "name": "Name is too short"
+    },
+    "toast": {
+      "createSuccess": "Employee created",
+      "updateSuccess": "Employee updated",
+      "deleteSuccess": "Employee deleted"
+    }
+  },
+  "contracts": {
+    "new": "New Contract",
+    "emptyEmployeesHint": "Create an employee first in the Employees tab.",
+    "table": {
+      "employee": "Employee",
+      "position": "Position",
+      "type": "Type",
+      "startDate": "Start",
+      "endDate": "End",
+      "salary": "Salary",
+      "status": "Status",
+      "searchPlaceholder": "Search contracts...",
+      "empty": "No contracts registered."
+    },
+    "active": {
+      "yes": "Active",
+      "no": "Terminated"
+    },
+    "dialog": {
+      "createTitle": "New Contract",
+      "editTitle": "Edit Contract",
+      "detailsTitle": "Contract Details"
+    },
+    "form": {
+      "employee": "Employee",
+      "position": "Position",
+      "type": "Contract type",
+      "startDate": "Start",
+      "endDate": "End",
+      "salary": "Salary",
+      "currency": "Currency",
+      "status": "Status",
+      "notes": "Notes",
+      "activeOption": "Active",
+      "inactiveOption": "Terminated"
+    },
+    "details": {
+      "employee": "Employee",
+      "position": "Position",
+      "type": "Type",
+      "startDate": "Start",
+      "endDate": "End",
+      "salary": "Salary",
+      "status": "Status",
+      "notes": "Notes",
+      "createdAt": "Created on"
+    },
+    "validation": {
+      "employee": "Select an employee",
+      "position": "Position is required",
+      "startDate": "Start date is required",
+      "salary": "Salary must be positive"
+    },
+    "toast": {
+      "createSuccess": "Contract created",
+      "updateSuccess": "Contract updated",
+      "deleteSuccess": "Contract deleted"
+    }
+  },
+  "leaves": {
+    "new": "New Leave",
+    "emptyEmployeesHint": "Create an employee first in the Employees tab.",
+    "table": {
+      "employee": "Employee",
+      "type": "Type",
+      "startDate": "Start",
+      "endDate": "End",
+      "days": "Days",
+      "status": "Status",
+      "searchPlaceholder": "Search leaves...",
+      "empty": "No leaves registered."
+    },
+    "dialog": {
+      "createTitle": "New Leave",
+      "editTitle": "Edit Leave",
+      "detailsTitle": "Leave Details"
+    },
+    "form": {
+      "employee": "Employee",
+      "type": "Type",
+      "startDate": "Start",
+      "endDate": "End",
+      "status": "Status",
+      "reason": "Reason"
+    },
+    "details": {
+      "employee": "Employee",
+      "type": "Type",
+      "startDate": "Start",
+      "endDate": "End",
+      "days": "Days",
+      "status": "Status",
+      "reason": "Reason",
+      "createdAt": "Registered on"
+    },
+    "validation": {
+      "employee": "Select an employee",
+      "startDate": "Start date is required",
+      "endDate": "End date is required"
+    },
+    "toast": {
+      "createSuccess": "Leave recorded",
+      "updateSuccess": "Leave updated",
+      "deleteSuccess": "Leave deleted"
+    }
+  }
+}
