@@ -87,8 +87,8 @@ export default function Servicos() {
                   <p className="kicker text-[hsl(var(--iiv-gold-text))]">
                     <span className="editorial-rule mr-3" /> {s.kicker}
                   </p>
-                  <div className="flex items-center gap-4 mt-5 mb-2">
-                    <Icon className="h-7 w-7 text-primary" strokeWidth={1.5} />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl gradient-green-soft text-primary-foreground shadow-lg mt-5 mb-4">
+                    <Icon className="h-6 w-6" strokeWidth={1.75} />
                   </div>
                   <h2 className="font-serif text-3xl md:text-4xl leading-tight">{s.title}</h2>
                   <p className="mt-5 text-muted-foreground leading-relaxed">{s.desc}</p>

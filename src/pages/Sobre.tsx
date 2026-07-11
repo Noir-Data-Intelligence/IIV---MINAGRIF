@@ -134,9 +134,15 @@ export default function Sobre() {
             {valores.map((v, i) => {
               const Icon = valorIcons[i];
               return (
-                <motion.div key={v.title} variants={revealVariants} className="bg-card p-8 md:p-10 grid md:grid-cols-12 gap-6 items-start">
+                <motion.div
+                  key={v.title}
+                  variants={revealVariants}
+                  className="group bg-card p-8 md:p-10 grid md:grid-cols-12 gap-6 items-start hover:bg-accent/20 transition-colors duration-300"
+                >
                   <div className="md:col-span-3">
-                    <Icon className="h-8 w-8 text-[hsl(var(--iiv-gold-text))] mb-4" strokeWidth={1.5} />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl gradient-green-soft text-primary-foreground shadow-lg mb-5 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3">
+                      <Icon className="h-6 w-6" strokeWidth={1.75} />
+                    </div>
                     <h3 className="font-serif text-2xl">{v.title}</h3>
                   </div>
                   <p className="md:col-span-8 md:col-start-5 text-muted-foreground leading-relaxed">{v.text}</p>
@@ -168,8 +174,10 @@ export default function Sobre() {
               </p>
               <div className="mt-8 grid grid-cols-2 gap-px bg-border rounded-xl overflow-hidden border border-border/60">
                 {departments.map((d) => (
-                  <div key={d} className="bg-card p-5">
-                    <Award className="h-4 w-4 text-[hsl(var(--iiv-gold-text))] mb-2" />
+                  <div key={d} className="group bg-card p-5 hover:bg-accent/20 transition-colors">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[hsl(var(--iiv-gold-light))] dark:bg-accent mb-3 transition-transform duration-300 group-hover:scale-110">
+                      <Award className="h-4 w-4 text-[hsl(var(--iiv-gold-text))]" />
+                    </div>
                     <p className="font-serif text-lg">{d}</p>
                   </div>
                 ))}

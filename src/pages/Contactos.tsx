@@ -240,10 +240,12 @@ export default function Contactos() {
             {estacoes.map((e) => (
               <motion.div
                 key={e.nome}
-                className="bg-card p-6"
+                className="group bg-card p-6 hover:bg-accent/20 transition-colors duration-300"
                 variants={shouldReduceMotion ? undefined : fadeInUp}
               >
-                <MapPin className="h-4 w-4 text-[hsl(var(--iiv-gold-text))] mb-3" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[hsl(var(--iiv-gold-light))] dark:bg-accent mb-3.5 transition-transform duration-300 group-hover:scale-110">
+                  <MapPin className="h-4.5 w-4.5 text-[hsl(var(--iiv-gold-text))]" />
+                </div>
                 <p className="font-serif text-lg leading-tight">{e.nome}</p>
                 <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">{e.cidade}</p>
               </motion.div>

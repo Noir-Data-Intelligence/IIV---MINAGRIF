@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, ArrowUpRight, Microscope, Syringe, FlaskConical, BookOpen, Quote } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Microscope, Syringe, FlaskConical, BookOpen, Quote, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroSlideshow } from "@/components/home/HeroSlideshow";
 import { PartnersBar } from "@/components/home/PartnersBar";
@@ -21,6 +21,7 @@ import heroLab from "@/assets/hero/hero-lab-microscope.webp";
 import heroInvestigacao from "@/assets/hero/hero-stats-lab.webp";
 import heroVacinas from "@/assets/hero/hero-scientist-vaccine.webp";
 import heroCtaVet from "@/assets/hero/hero-cta-veterinarian.webp";
+import editorialLab from "@/assets/sobre/sobre-vintage-lab.webp";
 import noticiaFallback from "@/assets/noticias/noticias-fallback-card-sm.webp";
 
 // Namespace "home" não faz parte do bundle central (src/i18n/index.ts, que só
@@ -98,31 +99,62 @@ export default function Index() {
 
 
       {/* EDITORIAL INTRO */}
-      <section className="py-24 md:py-32">
+      <motion.section className="py-24 md:py-36 overflow-hidden" {...reveal(fadeInUp)}>
         <div className="container">
-          <div className="grid gap-12 md:grid-cols-12 items-start">
-            <div className="md:col-span-5">
-              <p className="kicker text-[hsl(var(--iiv-gold-text))]">
-                <span className="editorial-rule mr-3" /> {t("editorial.kicker")}
-              </p>
-              <h2 className="font-serif text-4xl md:text-5xl mt-6 leading-[1.05]">
-                {t("editorial.title")}
-              </h2>
-            </div>
-            <div className="md:col-span-6 md:col-start-7 space-y-6">
+          <div className="grid gap-16 lg:grid-cols-12 items-center">
+            <motion.div className="lg:col-span-5 relative" variants={shouldReduceMotion ? undefined : fadeInUp}>
+              <div className="absolute -inset-x-6 -top-10 -bottom-10 -z-10 rounded-[2.5rem] gradient-green-gold opacity-[0.08] blur-2xl" />
+              <div className="relative rounded-[1.75rem] overflow-hidden shadow-2xl">
+                <img
+                  src={editorialLab}
+                  alt=""
+                  className="aspect-[4/5] w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--iiv-green-dark))]/50 via-transparent to-transparent" />
+              </div>
+              <motion.div
+                className="absolute -bottom-8 -right-6 sm:-right-10 flex items-center gap-3 rounded-2xl bg-card border border-border/60 shadow-2xl p-4 pr-6 max-w-[240px]"
+                initial={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.9, y: 10 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.2 }}
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl gradient-green text-primary-foreground">
+                  <ShieldCheck className="h-5 w-5" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <p className="font-serif text-xl leading-none">{t("editorial.badgeValue", "60+")}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{t("editorial.badgeLabel", "anos ao serviço da pecuária angolana")}</p>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div className="lg:col-span-6 lg:col-start-7 space-y-7" variants={shouldReduceMotion ? undefined : fadeInUp}>
+              <div>
+                <p className="kicker text-[hsl(var(--iiv-gold-text))]">
+                  <span className="editorial-rule mr-3" /> {t("editorial.kicker")}
+                </p>
+                <h2 className="font-serif text-4xl md:text-6xl mt-6 leading-[1.02] tracking-tight">
+                  {t("editorial.title")}
+                </h2>
+              </div>
               <p className="lead">
                 {t("editorial.lead")}
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 {t("editorial.body")}
               </p>
-              <Link to="/sobre" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all">
-                {t("editorial.cta")} <ArrowRight className="h-4 w-4" />
+              <Link
+                to="/sobre"
+                className="group inline-flex items-center gap-2 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors h-12 px-6 rounded-xl"
+              >
+                {t("editorial.cta")} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* SERVIÇOS */}
       <motion.section className="section-divider py-24 md:py-32 bg-accent/30" {...reveal(fadeInUp)}>
@@ -138,36 +170,41 @@ export default function Index() {
           </div>
 
           <motion.div className="grid gap-6 md:grid-cols-12" {...reveal(staggerContainer)}>
-            {/* Card grande */}
+            {/* Card grande — imersivo, texto sobre a imagem */}
             <motion.div className="md:col-span-7" variants={shouldReduceMotion ? undefined : fadeInUp}>
-              <Link to="/servicos" className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card hover-lift block h-full">
-                <div className="aspect-[16/10] overflow-hidden">
-                  <img src={services[0].image} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                </div>
-                <div className="p-7">
+              <Link to="/servicos" className="group relative overflow-hidden rounded-2xl block h-full min-h-[420px] shadow-xl hover:shadow-2xl transition-shadow duration-300">
+                <img src={services[0].image} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--iiv-green-dark))] via-[hsl(var(--iiv-green-dark))]/50 to-transparent" />
+                <div className="relative h-full flex flex-col justify-end p-8 text-primary-foreground">
                   <div className="flex items-center gap-3 mb-3">
-                    <Microscope className="h-5 w-5 text-[hsl(var(--iiv-gold-text))]" />
-                    <span className="kicker text-muted-foreground">{t("services.featuredLabel")}</span>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur-sm">
+                      <Microscope className="h-4.5 w-4.5" />
+                    </div>
+                    <span className="kicker text-[hsl(var(--iiv-gold))]">{t("services.featuredLabel")}</span>
                   </div>
-                  <h3 className="font-serif text-2xl md:text-3xl mb-2">{services[0].title}</h3>
-                  <p className="text-muted-foreground leading-relaxed max-w-md">{services[0].desc}</p>
-                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                    {t("services.learnMore")} <ArrowUpRight className="h-4 w-4" />
+                  <h3 className="font-serif text-3xl md:text-4xl mb-3 leading-tight">{services[0].title}</h3>
+                  <p className="opacity-80 leading-relaxed max-w-md">{services[0].desc}</p>
+                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold">
+                    {t("services.learnMore")}
+                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                   </span>
                 </div>
               </Link>
             </motion.div>
 
-            {/* 3 cards médios */}
+            {/* 3 cards médios — numerados */}
             <motion.div className="md:col-span-5 grid gap-6" {...reveal(staggerContainer)}>
-              {services.slice(1).map((svc) => (
+              {services.slice(1).map((svc, i) => (
                 <motion.div key={svc.title} variants={shouldReduceMotion ? undefined : fadeInUp}>
                   <Link
                     to="/servicos"
-                    className="group flex gap-5 p-5 rounded-2xl border border-border/50 bg-card hover-lift items-center"
+                    className="group relative flex gap-5 p-5 rounded-2xl border border-border/50 bg-card shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 items-center"
                   >
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl">
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
                       <img src={svc.image} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                      <span className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-md bg-card/90 backdrop-blur-sm text-[10px] font-mono font-semibold text-[hsl(var(--iiv-gold-text))]">
+                        {String(i + 2).padStart(2, "0")}
+                      </span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -187,19 +224,22 @@ export default function Index() {
       </motion.section>
 
       {/* MANIFESTO SPLIT */}
-      <motion.section className="section-divider py-24 md:py-32" {...reveal(fadeInUp)}>
+      <motion.section className="section-divider py-24 md:py-32 overflow-hidden" {...reveal(fadeInUp)}>
         <div className="container">
-          <div className="grid gap-10 lg:grid-cols-2 items-center">
-            <div className="relative overflow-hidden rounded-2xl">
-              <img src={heroCtaVet} alt="Investigação no terreno em Angola" className="aspect-[4/5] w-full object-cover" loading="lazy" />
+          <div className="grid gap-10 lg:grid-cols-2 items-stretch">
+            <div className="relative overflow-hidden rounded-2xl shadow-xl min-h-[360px]">
+              <img src={heroCtaVet} alt="Investigação no terreno em Angola" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
               <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--iiv-green-dark))]/40 to-transparent" />
             </div>
-            <div className="lg:pl-10">
-              <Quote className="h-10 w-10 text-[hsl(var(--iiv-gold-text))] mb-6" strokeWidth={1} />
-              <p className="font-serif text-2xl md:text-3xl leading-[1.3] tracking-tight">
+            <div className="relative flex flex-col justify-center rounded-2xl bg-accent/30 p-10 lg:p-14 overflow-hidden">
+              <Quote className="absolute -top-4 right-8 h-32 w-32 text-[hsl(var(--iiv-gold))]/10 -z-0" strokeWidth={1} />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl gradient-gold shadow-lg mb-6">
+                <Quote className="h-5 w-5 text-secondary-foreground" strokeWidth={2} />
+              </div>
+              <p className="relative font-serif text-2xl md:text-3xl leading-[1.3] tracking-tight">
                 {t("manifesto.quote")}
               </p>
-              <div className="mt-8 flex items-center gap-4">
+              <div className="relative mt-8 flex items-center gap-4">
                 <div className="h-px w-12 bg-[hsl(var(--iiv-gold))]" />
                 <div>
                   <p className="font-semibold text-sm">{t("manifesto.author")}</p>
@@ -244,8 +284,8 @@ export default function Index() {
             ) : (
               noticias.map((n, i) => (
                 <motion.div key={n.id} variants={shouldReduceMotion ? undefined : fadeInUp}>
-                  <Link to={`/noticias/${n.slug}`} className="group">
-                    <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted mb-5">
+                  <Link to={`/noticias/${n.slug}`} className="group block rounded-2xl overflow-hidden bg-card shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                    <div className="aspect-[4/3] overflow-hidden bg-muted">
                       <img
                         src={noticiaImage(n.image_path, i)}
                         alt={n.titulo}
@@ -253,15 +293,18 @@ export default function Index() {
                         loading="lazy"
                       />
                     </div>
-                    <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-3">
-                      <span className="text-[hsl(var(--iiv-gold-text))]">{n.categoria}</span>
-                      <span className="h-px w-4 bg-border" />
-                      <time>{fmtData(n.published_at ?? n.created_at)}</time>
+                    <div className="p-5">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">
+                          {n.categoria}
+                        </span>
+                        <time className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">{fmtData(n.published_at ?? n.created_at)}</time>
+                      </div>
+                      <h3 className="font-serif text-xl md:text-2xl leading-tight group-hover:text-primary transition-colors">
+                        {n.titulo}
+                      </h3>
+                      {n.resumo && <p className="mt-3 text-sm text-muted-foreground leading-relaxed line-clamp-3">{n.resumo}</p>}
                     </div>
-                    <h3 className="font-serif text-xl md:text-2xl leading-tight group-hover:text-primary transition-colors">
-                      {n.titulo}
-                    </h3>
-                    {n.resumo && <p className="mt-3 text-sm text-muted-foreground leading-relaxed line-clamp-3">{n.resumo}</p>}
                   </Link>
                 </motion.div>
               ))
@@ -274,12 +317,13 @@ export default function Index() {
       {/* CTA */}
       <motion.section className="relative overflow-hidden gradient-green text-primary-foreground" {...reveal(fadeInUp)}>
         <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-[hsl(var(--iiv-gold))]/10 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] rounded-full bg-primary-foreground/5 blur-3xl" />
         <div className="container relative py-24 md:py-32">
           <div className="grid gap-10 md:grid-cols-2 items-center">
             <div>
               {/* --iiv-gold (não -text): secção CTA usa gradient-green, fundo escuro. */}
               <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3 bg-[hsl(var(--iiv-gold))]" /> {t("cta.kicker")}</p>
-              <h2 className="font-serif text-4xl md:text-5xl mt-5 leading-[1.05]">
+              <h2 className="font-serif text-4xl md:text-6xl mt-5 leading-[1.02] tracking-tight">
                 {t("cta.title")}
               </h2>
             </div>

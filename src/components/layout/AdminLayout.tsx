@@ -29,6 +29,7 @@ import {
 import { GlobalSearch } from "@/components/admin/GlobalSearch";
 import { NotificationCenter } from "@/components/admin/NotificationCenter";
 import { ChatWidget } from "@/components/admin/ChatWidget";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface NavItem { icon: any; label: string; path: string; module: ModuleKey }
 interface NavGroup { label: string; items: NavItem[]; icon: any; colorClass: string }
@@ -496,6 +497,9 @@ export function AdminLayout() {
               >
                 <Search className="h-4 w-4" />
               </button>
+
+              {/* Tema claro/escuro */}
+              <ThemeToggle />
 
               {/* Notifications */}
               <NotificationCenter />
