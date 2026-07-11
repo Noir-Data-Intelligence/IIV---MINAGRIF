@@ -1,0 +1,526 @@
+====================================================================================
+ PLANO DE DESENVOLVIMENTO DO BACKEND LARAVEL
+ Portal do IIV / MINAGRIF (Instituto de Investigacao Veterinaria - Angola)
+====================================================================================
+ Documento: Plano de Trabalho (apenas planeamento; nenhum codigo Laravel foi
+            escrito na producao deste documento)
+ Pre-requisito: Fases 0-4 do frontend estao concluidas (ver
+                PLANO-ATUALIZACAO-FRONTEND.txt) — remocao do Lovable, i18n
+                PT/EN, tema claro/escuro, TODAS as ~60 paginas (11 publicas +
+                4 auth + ~45 admin) a consumir uma camada de servicos +
+                React Query + MSW (mock), acessibilidade WCAG 2.1 AA validada
+                (0 ocorrencias/15 rotas) e redesign visual (Fase 4) aplicado.
+ Fonte de verdade do contrato: src/services/api/endpoints.ts (rotas),
+                src/types/dto/*.ts (44 ficheiros, um por dominio/grupo de
+                dominios), src/mocks/handlers/*.ts (comportamento esperado
+                do servidor: paginacao, filtros, validacoes, efeitos
+                colaterais de workflow) e src/lib/permissions.ts (RBAC).
+                Este documento ORGANIZA e TRADUZ esse contrato para Laravel;
+                nao o substitui — em caso de duvida sobre um campo exacto,
+                o DTO correspondente e sempre a referencia definitiva.
+====================================================================================
+
+
+------------------------------------------------------------------------------------
+0. SUMARIO EXECUTIVO
+------------------------------------------------------------------------------------
+
+    O frontend foi construido, de proposito, contra um contrato REST completo e
+    coeso (DTOs + endpoints + handlers mock) que HOJE e servido por MSW (Mock
+    Service Worker) no browser, simulando exactamente o comportamento que um
+    backend Laravel real deve ter — paginacao, filtros, ordenacao, validacao,
+    codigos de erro, e a logica de workflow (processos, missoes, avaliacoes,
+    documentos). Construir o backend Laravel e, por isso, um exercicio de
+    IMPLEMENTAR um contrato ja especificado, nao de o desenhar do zero.
+
+    A UNICA excepcao e a AUTENTICACAO: o modulo de login/registo/recuperacao de
+    senha (Login.tsx, Registar.tsx, RecuperarSenha.tsx, RedefinirSenha.tsx,
+    useAuth.tsx, useUserRole.tsx) ainda fala directamente com o Supabase Auth
+    (supabase.auth.signInWithPassword, etc.) — ficou FORA do âmbito da
+    migracao para mocks (decisao da Fase 2). Isto significa que a autenticacao
+    tem de ser DESENHADA DE RAIZ em Laravel (Sanctum), replicando apenas o
+    COMPORTAMENTO observavel que o frontend espera (ver Seccao 2), sem uma
+    tabela Supabase de referencia 1:1 como existe para os restantes ~44 dominios.
+
+    Este plano cobre: arquitectura Laravel, autenticacao/RBAC, modelo de dados
+    completo (~44 dominios), mapeamento de rotas, regras de negocio dos 4
+    workflows com maquina de estados (Processos, Missoes, Avaliacoes,
+    Documentos), armazenamento de ficheiros, notificacoes, geracao de PDF,
+    seeders, ambiente/deployment, e um plano de execucao faseado que espelha
+    a ordem dos grupos da Fase 2 do frontend (para paridade incremental e
+    testes modulo-a-modulo).
+
+
+------------------------------------------------------------------------------------
+1. ARQUITECTURA GERAL
+------------------------------------------------------------------------------------
+
+  1.1 STACK
+      - Laravel 11.x (PHP 8.3+), API-only (sem Blade/Inertia — o frontend e
+        SPA separado, servido pelo Vite/Nginx).
+      - Base de dados: PostgreSQL 15+ (mantém paridade com o Postgres que o
+        Supabase original usava — os DTOs ja assumem tipos Postgres-friendly:
+        arrays em `tags`/`roles`/`departmentIds`, JSON em `payload`).
+      - Autenticacao: Laravel Sanctum, modo SPA (cookie-based, `sanctum/csrf-cookie`
+        + sessao) — NAO tokens Bearer, para que o comportamento de sessao seja
+        equivalente ao que o Supabase Auth ja dava (sessao persistente,
+        refresh silencioso, sem gestao manual de tokens no frontend).
+      - Autorizacao: Gates/Policies do Laravel, alimentados pela tabela
+        `role_permissions` (ver 2.3) — replica exactamente `src/lib/permissions.ts`.
+      - Filas/Jobs: Laravel Queue (database ou Redis) para: envio de emails
+        (recuperacao de senha, notificacoes), geracao de relatorios pesados,
+        recalculo de agregados do dashboard.
+      - Cache: Redis (ou file em dev) para a matriz de permissoes (equivalente
+        ao cache em memoria de `useUserRole.tsx`) e para agregados do BI.
+      - Armazenamento: Laravel Filesystem, disco `public` em dev, S3-compatible
+        (ex: MinIO/DigitalOcean Spaces) em producao — ver Seccao 6.
+      - API Resources (`JsonResource`) em TODOS os endpoints de leitura, para
+        garantir a conversao snake_case -> camelCase e a forma exacta dos DTOs
+        (nunca devolver modelos Eloquent crus).
+      - Form Requests (`FormRequest`) em TODOS os endpoints de escrita, para
+        validacao — os campos obrigatorios/opcionais estao documentados nos
+        `*Input`/`*Payload` de cada DTO.
+      - i18n: o frontend já trata toda a apresentacao (PT/EN); o backend so
+        precisa devolver mensagens de erro de validacao em portugues por
+        omissao (`config/app.php` locale `pt`) — nao ha necessidade de um
+        pacote de traducao no Laravel.
+
+  1.2 ESTRUTURA DE PASTAS (sugerida)
+      app/
+        Models/                  (~44 modelos, 1 por tabela principal)
+        Http/
+          Controllers/Api/       (1 controller por recurso, RESTful)
+          Resources/             (1 Resource por DTO)
+          Requests/              (1 FormRequest por *Input/*Payload)
+          Middleware/
+            EnsureModulePermission.php   (substitui o RoleGuard do frontend
+                                           no lado servidor — 403 se
+                                           !canView(role, module))
+        Policies/                (1 Policy por recurso com regras write)
+        Services/
+          ProcessWorkflowService.php     (maquina de estados de Processos)
+          MissionWorkflowService.php     (submeter/aprovar/rejeitar)
+          EvaluationWorkflowService.php  (avaliacoes: submeter/aprovar/
+                                           rejeitar/validar/reabrir)
+          DocumentWorkflowService.php    (rascunho->submetido->aprovado)
+          PermissionMatrixService.php    (cache da matriz role_permissions)
+        Notifications/
+        Jobs/
+
+  1.3 VERSIONAMENTO DA API
+      Prefixo `/api` (sem versao no path — o frontend já assume isto via
+      `VITE_API_URL`). Se uma quebra de contrato for necessária no futuro,
+      introduzir `/api/v2` apenas para os recursos afectados, mantendo v1
+      para o resto (nao versionar tudo de uma vez).
+
+
+------------------------------------------------------------------------------------
+2. AUTENTICACAO E AUTORIZACAO (desenhado de raiz — sem tabela Supabase de origem)
+------------------------------------------------------------------------------------
+
+  2.1 O QUE O FRONTEND JA ASSUME (levantado em Login.tsx, Registar.tsx,
+      RecuperarSenha.tsx, RedefinirSenha.tsx, useAuth.tsx)
+      - Login por email + password (`supabase.auth.signInWithPassword`).
+      - Registo cria conta (verificar se o frontend exige confirmacao por
+        email antes do 1º login — validar contra Registar.tsx; se sim,
+        replicar com Laravel's `MustVerifyEmail`).
+      - Recuperar senha: pedido de reset por email (link com token).
+      - Redefinir senha: formulario com o token do link, define nova password.
+      - Sessao: `useAuth` expoe `{ user, session, loading, signOut }` — o
+        Laravel Sanctum SPA cobre isto directamente (cookie de sessao +
+        `GET /api/user` para hidratar o estado no arranque da app).
+      - Logout: limpa tb a cache local de role (`clearUserRoleCache`).
+
+  2.2 ROTAS DE AUTENTICACAO A CRIAR
+      GET  /sanctum/csrf-cookie   (fora do prefixo /api — obrigatorio antes
+                                    do 1º POST, padrao Sanctum SPA)
+      POST /api/login             { email, password } -> 204 + cookie sessao
+      POST /api/logout             -> 204
+      POST /api/register          { fullName, email, password,
+                                     password_confirmation } -> 201
+      POST /api/forgot-password   { email } -> 204 (sempre 204 mesmo se o
+                                     email nao existir — nao revelar)
+      POST /api/reset-password    { token, email, password,
+                                     password_confirmation } -> 204
+      GET  /api/user               -> UserDto do utilizador autenticado
+                                       (mesma forma do resource /api/users/{id})
+
+  2.3 TABELAS
+      users
+        id (uuid), full_name, email (unique), phone (nullable),
+        password (hash), email_verified_at, remember_token, timestamps
+        -> substitui profiles + auth.users do Supabase original.
+      user_roles                  (pivot; um user pode ter >1 papel —
+        user_id (fk users), role (enum: admin|diretor|gestor|tecnico|
+                 colaborador), timestamps                — a UI (useUserRole)
+        so usa o primeiro por ordem alfabetica quando ha varios, mas o
+        schema permite multiplos por design)
+      user_departments             (pivot)
+        user_id (fk users), department_id (fk departments)
+      role_permissions
+        id, role (enum AppRole), module (string — ver ModuleKey em
+        src/lib/permissions.ts para a lista fechada dos ~38 valores validos,
+        idealmente validada por enum/check constraint), can_view (bool),
+        can_write (bool)
+        -> alimenta PermissionMatrixService::forRole($role), com cache
+           (equivalente a ensurePermissionsLoaded() do frontend). Seed
+           inicial = tabela ROLE_PERMISSIONS estatica de permissions.ts,
+           1 linha por (role, module).
+
+  2.4 MIDDLEWARE / POLICIES
+      - `auth:sanctum` em TODAS as rotas `/api/*` excepto as publicas
+        (ver Seccao 4.1) e as de auth.
+      - `EnsureModulePermission:{module}` (route middleware parametrizado)
+        substitui o `<RoleGuard module="...">` do frontend do lado servidor
+        — sem isto, um utilizador pode contornar o RoleGuard client-side
+        com um pedido HTTP directo. Aplicar a TODAS as rotas de escrita
+        (POST/PUT/PATCH/DELETE) e, quando o modulo for sensivel, tambem a
+        leitura.
+      - Admin tem sempre `canView`/`canWrite` = true (mesma regra hardcoded
+        de `canView()`/`canWrite()` em permissions.ts — nao depender so da
+        tabela para o admin, e um safety net deliberado no frontend a manter).
+
+
+------------------------------------------------------------------------------------
+3. MODELO DE DADOS — POR GRUPO FUNCIONAL
+------------------------------------------------------------------------------------
+
+  Convencao: todas as tabelas usam `id` uuid (nao auto-increment — os DTOs
+  usam `id: string`), `created_at`/`updated_at` timestamps, soft-deletes
+  APENAS onde o DTO tem campos tipo `isActive`/status "arquivado" explicito
+  (nao usar SoftDeletes do Laravel por omissao — os DTOs nao esperam
+  `deleted_at`, preferem um campo de estado visivel).
+
+  Para cada grupo abaixo: a fonte exacta dos campos e o(s) ficheiro(s) DTO
+  indicado(s) em `src/types/dto/`. Os grupos ja verificados em detalhe
+  (secoes 3.1-3.6) servem de MODELO do nivel de precisao esperado; os
+  restantes (3.7) devem ser levantados directamente do DTO antes de
+  implementar — nao adivinhar campos.
+
+  3.1 GERAL
+      - departamentos (departamento.ts): id, name, description?
+      - legislacao (legislacao.ts): id, num, tipo, ano, titulo, descricao?,
+        slug, pdfUrl?, published (bool)
+      - noticias (noticia.ts): id, titulo, slug, resumo?, conteudo, categoria,
+        image_path?, destaque (bool), published (bool), published_at?,
+        created_at
+      - hero_slides (heroSlide.ts): id, kicker, title, subtitle, ctaLabel,
+        ctaLink, imageUrl?, sortOrder, published
+      - contact_messages (contactMessage.ts): submissoes do formulario de
+        Contactos — publico cria (rota sem auth), admin le/gere
+      - notifications (notification.ts): ver 3.4
+      - public_stats (publicStats.ts): agregado SO-LEITURA para a home
+        publica (nao e uma tabela propria — calcular via query agregada
+        sobre animais/analises/missoes/etc., cachear ~1h)
+
+  3.2 UTILIZADORES E RBAC — ver Seccao 2.3 (users, user_roles,
+      user_departments, role_permissions). DTOs: user.ts, rbac.ts.
+
+  3.3 PROCESSOS (workflow BPM genérico) — ver Seccao 5.1 para a maquina de
+      estados. DTOs: process.ts, processType.ts, processAttachment.ts.
+      Tabelas: process_types, process_type_steps, processes, process_steps,
+      process_events, process_attachments.
+
+  3.4 NOTIFICACOES E ALERTAS DO DASHBOARD
+      - notifications (notification.ts): id, user_id (fk — por utilizador),
+        title, message, type (enum info|sucesso|aviso|erro), link?, read
+        (bool), created_at
+      - dashboard_prefs (dashboardPrefs.ts): 1 linha por utilizador —
+        preferencias de KPIs/graficos visiveis no Dashboard (personalizacao)
+      - dashboard_alert_acks (dashboardAlertAck.ts): "vistos" de alertas
+        (por utilizador + metric_key), usado para silenciar um alerta ja
+        visto ate um novo limiar ser ultrapassado
+      - dashboard_alert_history (dashboardAlertHistory.ts): historial de
+        disparos de alerta (auditoria de quando cada limiar foi cruzado)
+
+  3.5 GESTAO DOCUMENTAL — ver Seccao 5.4. DTOs: documento.ts.
+      Tabelas: document_categories, documents, document_versions,
+      document_links (polimorfica: entity_type + entity_id), document_permissions.
+
+  3.6 MISSOES — ver Seccao 5.2. DTO: missoes.ts (5 entidades num ficheiro).
+      Tabelas: missions, mission_guides, mission_participants,
+      mission_expenses, mission_reports.
+
+  3.7 RESTANTES GRUPOS (levantar o DTO exacto antes de implementar cada um)
+      Laboratorio:        laboratorios, analises, insumos, resultados
+                           (DTOs: laboratorio.ts, analise.ts, insumo.ts,
+                           resultado.ts)
+      Producao:            produtos, lotes, planeamento, distribuicao
+                           (produto.ts, lote.ts — planeamento/distribuicao
+                           partilham o DTO de lote.ts conforme endpoints.ts)
+      Qualidade:           estacoes, animais (+ eventos/saude), inseminacao
+                           (centros/reprodutores/tanques/doses/registos),
+                           auditorias, nao_conformidades, logs_actividade
+                           (estacao.ts, animal.ts, inseminacao.ts,
+                           auditoria.ts, naoConformidade.ts, log.ts)
+      Financeiro & Patrimonio: contas, lancamentos, orcamentos (financeiro.ts),
+                           activos, manutencoes (patrimonio.ts)
+      Pessoas & Missoes:   colaboradores/contratos/ausencias (recursosHumanos.ts),
+                           formacoes (formacoes.ts) — alem de Missoes (3.6)
+      Recursos & Producao: stock_itens/localizacoes/movimentos (stock.ts),
+                           culturas/campos/colheitas (agricultura.ts),
+                           producao_pecuaria (pecuaria.ts)
+      Investigacao & BI:   linhas/projectos/publicacoes de investigacao
+                           (investigacao.ts); ciclos/criterios/avaliacoes
+                           (avaliacoes.ts — ver 5.3 para o workflow)
+      Gestao (extra):      processos_tipos (ja coberto em 3.3),
+                           document-links/permissions (ja em 3.5)
+
+      Para cada um destes: abrir o DTO, criar a migration com os MESMOS
+      campos (convertidos para snake_case), criar o Model, o Resource
+      (inverso exacto — camelCase), o FormRequest para cada *Input/*Payload,
+      e o Controller RESTful. NAO adicionar nem remover campos em relacao
+      ao DTO sem validar com quem gere o produto — o frontend depende do
+      formato exacto.
+
+
+------------------------------------------------------------------------------------
+4. ROTAS DA API — MAPEAMENTO DE src/services/api/endpoints.ts
+------------------------------------------------------------------------------------
+
+  4.1 ROTAS PUBLICAS (sem auth:sanctum) — consumidas pelo portal publico
+      GET  /noticias, /noticias/{id}                 (so published=true)
+      GET  /legislacao, /legislacao/{id}              (so published=true)
+      GET  /hero-slides                               (so published=true)
+      GET  /public/stats
+      POST /contact-messages                          (criar, rate-limited)
+      GET  /departamentos                              (usado no formulario
+                                                          de registo/RH?
+                                                          validar necessidade
+                                                          de exposicao publica)
+
+  4.2 ROTAS AUTENTICADAS (auth:sanctum + EnsureModulePermission)
+      Para CADA entrada em `endpoints.ts` fora da lista 4.1: gerar as rotas
+      RESTful equivalentes (index/store/show/update/destroy) MAIS as acoes
+      nomeadas explicitas ja documentadas no ficheiro (ex: `archive`/`restore`
+      em produtos; `advance`/`return`/`cancel` em processos; `submit`/
+      `approve`/`reject` em missoes/avaliacoes). Usar `Route::apiResource`
+      para o CRUD estandar e `Route::post/put` explicito para as acoes
+      nomeadas, mantendo o path EXACTO do endpoints.ts (incluindo os termos
+      em portugues: `/avancar`, `/devolver`, `/aprovar`, etc. — nao traduzir
+      para ingles, o frontend chama estes paths literalmente).
+
+      Modulos com paginacao (a maioria dos `list`): aceitar `page`, `perPage`,
+      `search` e os filtros especificos de cada `*ListParams` do DTO;
+      devolver sempre no formato de `PaginatedDto` (paginated.ts) —
+      { data: T[], meta: { total, page, perPage, totalPages } } — este é o
+      envelope que TODOS os hooks `use*List` do frontend esperam.
+
+  4.3 ACOES ESPECIAIS A REPLICAR EXACTAMENTE (efeitos colaterais no servidor)
+      - POST /processos                -> gera `code` (ex: PRC-2026-0001),
+        instancia process_steps a partir de process_type_steps, activa a
+        1ª etapa, regista evento "aberto" (ver process.ts, comentarios).
+      - POST /processos/{id}/avancar|devolver|cancelar -> maquina de estados
+        completa (ver 5.1) — o cliente so envia `{ notes?, actorId? }`.
+      - POST /missoes/{id}/submeter|aprovar|rejeitar -> transicoes de
+        `MissionStatus` (ver 5.2).
+      - POST /avaliacoes/{id}/submeter|aprovar|rejeitar|validar|reabrir ->
+        maquina de estados mais rica (5 transicoes — ver 5.3).
+      - PUT /documentos/{id} com mudanca de `status` -> workflow de aprovacao
+        documental (5.4).
+      - POST /produtos/{id}/archive|restore -> soft-toggle de `isActive`
+        (unico modulo com este padrao — confirmar em produto.ts).
+
+
+------------------------------------------------------------------------------------
+5. WORKFLOWS COM MAQUINA DE ESTADOS (a logica de negocio mais critica a portar)
+------------------------------------------------------------------------------------
+
+  5.1 PROCESSOS (process.ts) — motor BPM generico e reutilizavel
+      Estados do processo: aberto -> em_curso -> concluido | cancelado
+      Estados de etapa:    pendente -> em_curso -> concluida | rejeitada | devolvida
+      Regras:
+        - Ao criar: copiar as `process_type_steps` do tipo escolhido para
+          `process_steps` (na ordem `orderIndex`), 1ª etapa = em_curso,
+          restantes = pendente; `currentStepId` = 1ª etapa; status = em_curso;
+          gerar `code` sequencial por ano (PRC-{ano}-{seq:04d}).
+        - `avancar`: conclui a etapa actual (completed_at = now), activa a
+          etapa seguinte (em_curso, started_at = now) ou, se era a ultima,
+          marca o processo `concluido` (closed_at = now); regista
+          process_event tipo "avancado".
+        - `devolver`: marca a etapa actual como "devolvida", reactiva a
+          etapa anterior como "em_curso"; regista evento "devolvido".
+        - `cancelar`: status = cancelado, closed_at = now, qualquer etapa
+          em curso fica "rejeitada"; regista evento "cancelado".
+        - Toda transicao grava `notes` e `actorId` no evento correspondente
+          (ProcessEventDto.payload).
+      Implementar como `ProcessWorkflowService` injectavel no Controller —
+      nao logica inline, para poder ser testado isoladamente (ver Seccao 12).
+
+  5.2 MISSOES (missoes.ts)
+      planeada -> submetida -> aprovada -> em_curso -> concluida | cancelada
+      - `submeter`: planeada -> submetida (exige guia de marcha e >=1
+        participante? — confirmar regra exacta no handler mock
+        `src/mocks/handlers/missoes.ts` antes de implementar).
+      - `aprovar`/`rejeitar`: so a partir de "submetida".
+      - Relatorio final (`ReportDto`) e um sub-recurso 0..1 com o seu proprio
+        mini-workflow (rascunho -> submetido -> aprovado|rejeitado),
+        independente do status da missao-mae.
+
+  5.3 AVALIACOES DE DESEMPENHO (avaliacoes.ts)
+      Workflow mais rico: submeter -> aprovar/rejeitar -> validar -> reabrir
+      (5 acoes nomeadas em endpoints.ts). Levantar os estados exactos e as
+      transicoes permitidas directamente em avaliacoes.ts + o handler mock
+      correspondente antes de implementar — nao assumir uma maquina de
+      estados linear sem confirmar `reabrir` (que provavelmente permite
+      voltar atras a partir de um estado terminal, algo que a maioria dos
+      outros workflows nao tem).
+
+  5.4 DOCUMENTOS (documento.ts)
+      rascunho -> submetido -> aprovado | rejeitado -> (arquivado, terminal
+      a qualquer momento por um utilizador com permissao de escrita).
+      Cada nova versao de ficheiro (`DocVersionDto`) incrementa
+      `versionNumber` e actualiza `currentVersionId` no documento-pai;
+      versoes antigas mantêm-se acessiveis (nao apagar).
+
+
+------------------------------------------------------------------------------------
+6. ARMAZENAMENTO DE FICHEIROS
+------------------------------------------------------------------------------------
+
+    Entidades com ficheiros reais: document_versions (filePath/fileName/
+    fileSize/mimeType), mission_expenses (receiptUrl), legislacao (pdfUrl),
+    noticias (image_path), hero_slides (imageUrl), process_attachments,
+    avatares de utilizador (se aplicavel — confirmar em Perfil.tsx).
+
+    - Dev: disco `public` (`storage/app/public`, `php artisan storage:link`).
+    - Producao: disco S3-compatible — devolver sempre URLs assinadas
+      (`Storage::temporaryUrl`) para ficheiros privados (documentos com
+      `visibility: privado`/`departamento`); URLs publicas directas para
+      `visibility: publico` e para media do portal publico (noticias,
+      legislacao, hero slides).
+    - Upload: `POST` multipart dedicado por recurso (ex:
+      `POST /documentos/{id}/versions` com `file` + metadados), NUNCA
+      embutir base64 no JSON do recurso principal.
+    - Validar mime/tamanho no FormRequest (ex: PDFs ate 10MB para
+      legislacao/documentos, imagens ate 5MB para noticias/hero-slides).
+
+
+------------------------------------------------------------------------------------
+7. NOTIFICACOES, ALERTAS E TAREFAS AGENDADAS
+------------------------------------------------------------------------------------
+
+    - Notificacoes in-app (tabela `notifications`): geradas server-side por
+      eventos de dominio (ex: processo atribuido a um utilizador, missao
+      aprovada, documento rejeitado). Usar Laravel Notifications
+      (`Notification::send`) com o canal `database` a escrever directamente
+      na tabela ja no formato do `NotificationDto`.
+    - Polling vs. tempo-real: o frontend actual (`NotificationCenter.tsx`)
+      nao usa WebSockets — confirmar se faz polling periodico; se sim,
+      manter assim inicialmente (mais simples), com Laravel Echo +
+      Reverb/Pusher como evolucao futura opcional (nao bloqueante para o
+      lancamento).
+    - Alertas do dashboard (stock critico, lotes a expirar, nao-
+      conformidades abertas, analises pendentes — ver ALERT_META em
+      `Dashboard.tsx`): calcular via Scheduled Job diario
+      (`php artisan schedule:run`) que compara os agregados actuais contra
+      os limiares configurados (`dashboard_prefs`) e grava em
+      `dashboard_alert_history` quando um limiar e cruzado pela 1ª vez
+      nesse periodo (idempotente — nao duplicar entradas).
+    - Emails: recuperacao de senha (obrigatorio), e opcionalmente resumo
+      diario/semanal de alertas criticos por email (Laravel Mail + Queue).
+
+
+------------------------------------------------------------------------------------
+8. RELATORIOS / PDF E EXPORTACOES
+------------------------------------------------------------------------------------
+
+    Hoje a geracao de PDF (jsPDF + autoTable, `generateInstitutionalPdf.ts`,
+    `pdfFonts.ts`) e feita 100% no CLIENTE a partir dos dados ja carregados —
+    isto CONTINUA assim (nao ha necessidade de gerar PDF no Laravel), desde
+    que a API devolva os dados completos e sem paginacao truncada quando o
+    pedido inclui `perPage` alto o suficiente para os relatorios (ja e o
+    padrao usado em BI.tsx/ProcessosAnalitica.tsx: `{ page: 1, perPage: 1000 }`).
+    Unico cuidado do backend: garantir que `perPage` tem um tecto sao (ex:
+    2000) para nao permitir table scans descontrolados, mas alto o
+    suficiente para os relatorios institucionais nao ficarem truncados.
+
+
+------------------------------------------------------------------------------------
+9. SEEDERS E DADOS DE DEMONSTRACAO
+------------------------------------------------------------------------------------
+
+    Portar os fixtures usados pelos handlers MSW (`src/mocks/fixtures/` ou
+    equivalente, gerados com @faker-js/faker conforme o plano do frontend)
+    para Laravel Seeders/Factories, mantendo os MESMOS dados de demonstracao
+    (nomes, quantidades, datas) sempre que pratico — isto permite validar
+    visualmente que a API real produz o MESMO ecra que o mock produzia,
+    modulo a modulo, sem re-desenhar nada no frontend.
+    Seed obrigatorio de `role_permissions` = copia exacta de
+    `ROLE_PERMISSIONS` em `src/lib/permissions.ts` (5 papeis x ~38 modulos).
+    Criar pelo menos 1 utilizador de demonstracao por papel (admin, diretor,
+    gestor, tecnico, colaborador) com credenciais previsiveis para QA —
+    mesmo padrao das "contas demo" ja visiveis em Login.tsx.
+
+
+------------------------------------------------------------------------------------
+10. AMBIENTE, CONFIGURACAO E DEPLOYMENT
+------------------------------------------------------------------------------------
+
+    - `.env`: `APP_URL`, `SESSION_DOMAIN`/`SANCTUM_STATEFUL_DOMAINS` (tem de
+      incluir o dominio do frontend Vite para o Sanctum SPA funcionar via
+      cookies em dev e producao), `DB_*` (Postgres), `FILESYSTEM_DISK`,
+      `MAIL_*` (recuperacao de senha).
+    - CORS (`config/cors.php`): `supports_credentials => true`,
+      `allowed_origins` = dominio(s) exacto(s) do frontend (nunca `*` quando
+      `supports_credentials` e true).
+    - Frontend: mudar `VITE_API_URL` de vazio/relativo (hoje aponta para o
+      MSW no mesmo host) para o URL absoluto da API Laravel; nada mais no
+      frontend deve mudar SE o contrato for respeitado a risca — este e o
+      teste definitivo de que a modernizacao foi bem feita.
+    - Desligar o MSW: remover o `worker.start()` condicional (ver
+      `src/mocks/browser.ts` ou equivalente) atras de uma flag de ambiente,
+      nunca em producao.
+
+
+------------------------------------------------------------------------------------
+11. PLANO DE EXECUCAO FASEADO (espelha as Ondas da Fase 2 do frontend)
+------------------------------------------------------------------------------------
+
+    Construir e validar por grupo, na MESMA ordem em que o frontend foi
+    migrado para mocks — cada grupo, ao ficar pronto no Laravel, e testado
+    apontando o frontend real (via VITE_API_URL) so a esse grupo, com o
+    resto ainda em MSW se necessário (MSW e Laravel podem coexistir durante
+    a transicao: o `onUnhandledRequest` do MSW so intercepta o que nao
+    tiver sido explicitamente "passthrough").
+
+      Onda 1 — Fundacao:       Auth (Sec. 2) + Utilizadores + RBAC +
+                                Departamentos (pre-requisito de tudo o resto)
+      Onda 2 — Geral:          Notificacoes, Dashboard prefs/alerts,
+                                Legislacao, Noticias, Hero Slides,
+                                Contact Messages, Public Stats
+      Onda 3 — Laboratorio:    Laboratorios, Analises, Insumos, Resultados
+      Onda 4 — Producao:       Produtos, Lotes, Planeamento, Distribuicao
+      Onda 5 — Qualidade:      Estacoes, Animais, Inseminacao, Auditorias,
+                                Nao-Conformidades, Logs
+      Onda 6 — Gestao:         Documentos (+ categorias/links/permissoes),
+                                Processos (+ tipos + workflow, Sec. 5.1)
+      Onda 7 — Financeiro & Patrimonio: Contas, Lancamentos, Orcamentos,
+                                Activos, Manutencoes
+      Onda 8 — Pessoas & Missoes: RH (colaboradores/contratos/ausencias),
+                                Formacoes, Missoes (+ workflow, Sec. 5.2)
+      Onda 9 — Recursos & Producao: Stock, Agricultura, Producao Pecuaria
+      Onda 10 — Investigacao & BI: Investigacao (linhas/projectos/
+                                publicacoes), Avaliacoes (+ workflow, Sec. 5.3)
+      Onda 11 — Cutover final: desligar MSW, apontar VITE_API_URL para
+                                Laravel em todos os ambientes, remover
+                                dependencias Supabase remanescentes
+                                (`@supabase/supabase-js`, `src/integrations/supabase/`).
+
+
+------------------------------------------------------------------------------------
+12. TESTES
+------------------------------------------------------------------------------------
+
+    - Feature tests (Pest ou PHPUnit) por recurso: pelo menos
+      index/store/update/destroy + 1 teste de autorizacao negativa (papel
+      sem permissao -> 403) por modulo.
+    - Testes dedicados aos 4 Workflow Services (Sec. 5) cobrindo TODAS as
+      transicoes validas e pelo menos uma transicao invalida por estado
+      (ex: tentar `avancar` um processo ja `concluido` -> 422/409).
+    - Teste de paginacao: confirmar que o envelope `{ data, meta }` bate
+      certo com `PaginatedDto` (paginated.ts) em pelo menos 1 modulo por Onda.
+    - Teste de RBAC: para cada um dos 5 papeis, confirmar que
+      `role_permissions` seedado reproduz exactamente `ROLE_PERMISSIONS`
+      de `src/lib/permissions.ts` (teste de paridade automatizado, correndo
+      os dois conjuntos de dados lado a lado se possivel).
