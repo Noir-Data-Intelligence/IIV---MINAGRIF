@@ -1,0 +1,53 @@
+{
+  "page": {
+    "title": "Meu Perfil",
+    "description": "Visualize e edite os seus dados pessoais"
+  },
+  "card": {
+    "personalData": "Dados Pessoais",
+    "changePassword": "Alterar Senha"
+  },
+  "avatar": {
+    "noName": "Sem nome",
+    "upload": "Carregar foto",
+    "remove": "Remover",
+    "tooLarge": "A imagem deve ter no máximo 2MB."
+  },
+  "form": {
+    "labels": {
+      "email": "Email",
+      "fullName": "Nome Completo",
+      "phone": "Telefone"
+    },
+    "placeholders": {
+      "fullName": "Insira o seu nome",
+      "phone": "+244 9XX XXX XXX"
+    },
+    "save": "Guardar Alterações"
+  },
+  "password": {
+    "labels": {
+      "newPassword": "Nova Senha",
+      "confirmPassword": "Confirmar Nova Senha"
+    },
+    "placeholders": {
+      "newPassword": "Mínimo 6 caracteres",
+      "confirmPassword": "Repita a nova senha"
+    },
+    "submit": "Alterar Senha"
+  },
+  "toast": {
+    "avatarUpdated": "Foto actualizada",
+    "avatarRemoved": "Foto removida",
+    "profileUpdated": "Perfil actualizado",
+    "profileUpdatedDescription": "Os seus dados foram guardados com sucesso.",
+    "profileError": "Não foi possível guardar o perfil.",
+    "passwordChanged": "Senha alterada",
+    "passwordChangedDescription": "A sua senha foi alterada com sucesso.",
+    "passwordFillAll": "Preencha todos os campos de senha.",
+    "passwordTooShort": "A nova senha deve ter pelo menos 6 caracteres.",
+    "passwordMismatch": "As senhas não coincidem.",
+    "passwordError": "Não foi possível alterar a senha.",
+    "error": "Erro"
+  }
+}

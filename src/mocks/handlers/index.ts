@@ -15,6 +15,31 @@ import { produtosHandlers } from "@/mocks/handlers/produtos";
 import { lotesHandlers } from "@/mocks/handlers/lotes";
 import { planeamentoHandlers } from "@/mocks/handlers/planeamento";
 import { distribuicaoHandlers } from "@/mocks/handlers/distribuicao";
+import { estacoesHandlers } from "@/mocks/handlers/estacoes";
+import { auditoriasHandlers } from "@/mocks/handlers/auditorias";
+import { naoConformidadesHandlers } from "@/mocks/handlers/naoConformidades";
+import { logsHandlers } from "@/mocks/handlers/logs";
+import { animaisHandlers } from "@/mocks/handlers/animais";
+import { inseminacaoHandlers } from "@/mocks/handlers/inseminacao";
+import { documentosHandlers } from "@/mocks/handlers/documentos";
+import { documentLinksHandlers } from "@/mocks/handlers/documentLinks";
+import { documentPermissionsHandlers } from "@/mocks/handlers/documentPermissions";
+import { processTypesHandlers } from "@/mocks/handlers/processTypes";
+import { processesHandlers } from "@/mocks/handlers/processes";
+import { financeiroHandlers } from "@/mocks/handlers/financeiro";
+import { patrimonioHandlers } from "@/mocks/handlers/patrimonio";
+import { recursosHumanosHandlers } from "@/mocks/handlers/recursosHumanos";
+import { formacoesHandlers } from "@/mocks/handlers/formacoes";
+import { missoesHandlers } from "@/mocks/handlers/missoes";
+import { investigacaoHandlers } from "@/mocks/handlers/investigacao";
+import { stockHandlers } from "@/mocks/handlers/stock";
+import { avaliacoesHandlers } from "@/mocks/handlers/avaliacoes";
+import { agriculturaHandlers } from "@/mocks/handlers/agricultura";
+import { pecuariaHandlers } from "@/mocks/handlers/pecuaria";
+import { perfilHandlers } from "@/mocks/handlers/perfil";
+import { dashboardAlertHistoryHandlers } from "@/mocks/handlers/dashboardAlertHistory";
+import { dashboardPrefsHandlers } from "@/mocks/handlers/dashboardPrefs";
+import { dashboardAlertAcksHandlers } from "@/mocks/handlers/dashboardAlertAcks";
 
 /**
  * Agregador de todos os handlers MSW.
@@ -40,6 +65,31 @@ export const handlers = [
   ...lotesHandlers,
   ...planeamentoHandlers,
   ...distribuicaoHandlers,
+  ...estacoesHandlers,
+  ...auditoriasHandlers,
+  ...naoConformidadesHandlers,
+  ...logsHandlers,
+  ...animaisHandlers,
+  ...inseminacaoHandlers,
+  ...documentosHandlers,
+  ...documentLinksHandlers,
+  ...documentPermissionsHandlers,
+  ...processTypesHandlers,
+  ...processesHandlers,
+  ...financeiroHandlers,
+  ...patrimonioHandlers,
+  ...recursosHumanosHandlers,
+  ...formacoesHandlers,
+  ...missoesHandlers,
+  ...investigacaoHandlers,
+  ...stockHandlers,
+  ...avaliacoesHandlers,
+  ...agriculturaHandlers,
+  ...pecuariaHandlers,
+  ...perfilHandlers,
+  ...dashboardAlertHistoryHandlers,
+  ...dashboardPrefsHandlers,
+  ...dashboardAlertAcksHandlers,
 ];
 
 export default handlers;

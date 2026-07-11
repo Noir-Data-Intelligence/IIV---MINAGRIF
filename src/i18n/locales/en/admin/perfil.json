@@ -1,0 +1,53 @@
+{
+  "page": {
+    "title": "My Profile",
+    "description": "View and edit your personal data"
+  },
+  "card": {
+    "personalData": "Personal Data",
+    "changePassword": "Change Password"
+  },
+  "avatar": {
+    "noName": "No name",
+    "upload": "Upload photo",
+    "remove": "Remove",
+    "tooLarge": "The image must be at most 2MB."
+  },
+  "form": {
+    "labels": {
+      "email": "Email",
+      "fullName": "Full Name",
+      "phone": "Phone"
+    },
+    "placeholders": {
+      "fullName": "Enter your name",
+      "phone": "+244 9XX XXX XXX"
+    },
+    "save": "Save Changes"
+  },
+  "password": {
+    "labels": {
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password"
+    },
+    "placeholders": {
+      "newPassword": "At least 6 characters",
+      "confirmPassword": "Repeat the new password"
+    },
+    "submit": "Change Password"
+  },
+  "toast": {
+    "avatarUpdated": "Photo updated",
+    "avatarRemoved": "Photo removed",
+    "profileUpdated": "Profile updated",
+    "profileUpdatedDescription": "Your data has been saved successfully.",
+    "profileError": "Could not save the profile.",
+    "passwordChanged": "Password changed",
+    "passwordChangedDescription": "Your password has been changed successfully.",
+    "passwordFillAll": "Fill in all password fields.",
+    "passwordTooShort": "The new password must be at least 6 characters long.",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordError": "Could not change the password.",
+    "error": "Error"
+  }
+}

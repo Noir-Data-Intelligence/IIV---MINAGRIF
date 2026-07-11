@@ -55,6 +55,20 @@ export const endpoints = {
     detail: (id: string) => `/notifications/${id}`,
     markAllRead: "/notifications/mark-all-read",
   },
+  perfil: {
+    me: "/perfil/me",
+  },
+  dashboardPrefs: {
+    me: "/dashboard-prefs/me",
+  },
+  dashboardAlertAcks: {
+    list: "/dashboard-alert-acks",
+    detail: (metricKey: string) => `/dashboard-alert-acks/${metricKey}`,
+  },
+  dashboardAlertHistory: {
+    list: "/dashboard-alert-history",
+    detail: (id: string) => `/dashboard-alert-history/${id}`,
+  },
 
   // --- LABORATÓRIO ---------------------------------------------------------
   laboratorios: {
@@ -72,6 +86,41 @@ export const endpoints = {
   resultados: {
     list: "/resultados",
     detail: (id: string) => `/resultados/${id}`,
+  },
+
+  // --- QUALIDADE ------------------------------------------------------------
+  estacoes: {
+    list: "/estacoes",
+    detail: (id: string) => `/estacoes/${id}`,
+  },
+  auditorias: {
+    list: "/auditorias",
+    detail: (id: string) => `/auditorias/${id}`,
+  },
+  naoConformidades: {
+    list: "/nao-conformidades",
+    detail: (id: string) => `/nao-conformidades/${id}`,
+  },
+  logs: {
+    list: "/logs",
+  },
+  animais: {
+    list: "/animais",
+    detail: (id: string) => `/animais/${id}`,
+    events: (animalId: string) => `/animais/${animalId}/eventos`,
+    health: (animalId: string) => `/animais/${animalId}/saude`,
+  },
+  inseminacao: {
+    centros: "/inseminacao/centros",
+    centro: (id: string) => `/inseminacao/centros/${id}`,
+    reprodutores: "/inseminacao/reprodutores",
+    reprodutor: (id: string) => `/inseminacao/reprodutores/${id}`,
+    tanques: "/inseminacao/tanques",
+    tanque: (id: string) => `/inseminacao/tanques/${id}`,
+    doses: "/inseminacao/doses",
+    dose: (id: string) => `/inseminacao/doses/${id}`,
+    registos: "/inseminacao/registos",
+    registo: (id: string) => `/inseminacao/registos/${id}`,
   },
 
   // --- PRODUÇÃO -------------------------------------------------------------
@@ -94,6 +143,146 @@ export const endpoints = {
     detail: (id: string) => `/distribuicao/${id}`,
   },
 
+  // --- GESTÃO -----------------------------------------------------------
+  documentos: {
+    list: "/documentos",
+    detail: (id: string) => `/documentos/${id}`,
+    versions: (id: string) => `/documentos/${id}/versions`,
+  },
+  documentCategories: {
+    list: "/document-categories",
+  },
+  documentLinks: {
+    list: "/document-links",
+    detail: (id: string) => `/document-links/${id}`,
+  },
+  documentPermissions: {
+    list: "/document-permissions",
+    detail: (id: string) => `/document-permissions/${id}`,
+  },
+  processosTipos: {
+    list: "/processos-tipos",
+    detail: (id: string) => `/processos-tipos/${id}`,
+    steps: (typeId: string) => `/processos-tipos/${typeId}/etapas`,
+    step: (typeId: string, stepId: string) => `/processos-tipos/${typeId}/etapas/${stepId}`,
+  },
+  processos: {
+    list: "/processos",
+    detail: (id: string) => `/processos/${id}`,
+    stats: "/processos/stats",
+    steps: (id: string) => `/processos/${id}/etapas`,
+    events: (id: string) => `/processos/${id}/eventos`,
+    advance: (id: string) => `/processos/${id}/avancar`,
+    return: (id: string) => `/processos/${id}/devolver`,
+    cancel: (id: string) => `/processos/${id}/cancelar`,
+    attachments: (id: string) => `/processos/${id}/anexos`,
+    attachment: (id: string, attachmentId: string) => `/processos/${id}/anexos/${attachmentId}`,
+  },
+
+  // --- FINANCEIRO & PATRIMÓNIO ------------------------------------------
+  contas: {
+    list: "/contas",
+    detail: (id: string) => `/contas/${id}`,
+  },
+  lancamentos: {
+    list: "/lancamentos",
+    detail: (id: string) => `/lancamentos/${id}`,
+  },
+  orcamentos: {
+    list: "/orcamentos",
+    detail: (id: string) => `/orcamentos/${id}`,
+  },
+  activos: {
+    list: "/activos",
+    detail: (id: string) => `/activos/${id}`,
+  },
+  manutencoes: {
+    list: "/manutencoes",
+    detail: (id: string) => `/manutencoes/${id}`,
+  },
+
+  // --- PESSOAS & MISSÕES ------------------------------------------------
+  rh: {
+    colaboradores: "/rh/colaboradores",
+    colaborador: (id: string) => `/rh/colaboradores/${id}`,
+    contratos: "/rh/contratos",
+    contrato: (id: string) => `/rh/contratos/${id}`,
+    ausencias: "/rh/ausencias",
+    ausencia: (id: string) => `/rh/ausencias/${id}`,
+  },
+  formacoes: {
+    list: "/formacoes",
+    detail: (id: string) => `/formacoes/${id}`,
+  },
+  missoes: {
+    list: "/missoes",
+    detail: (id: string) => `/missoes/${id}`,
+    stats: "/missoes/stats",
+    submit: (id: string) => `/missoes/${id}/submeter`,
+    approve: (id: string) => `/missoes/${id}/aprovar`,
+    reject: (id: string) => `/missoes/${id}/rejeitar`,
+    participants: (id: string) => `/missoes/${id}/participantes`,
+    participant: (id: string, pid: string) => `/missoes/${id}/participantes/${pid}`,
+    guide: (id: string) => `/missoes/${id}/guia`,
+    expenses: (id: string) => `/missoes/${id}/despesas`,
+    expense: (id: string, eid: string) => `/missoes/${id}/despesas/${eid}`,
+    report: (id: string) => `/missoes/${id}/relatorio`,
+    approveReport: (id: string) => `/missoes/${id}/relatorio/aprovar`,
+  },
+
+  // --- RECURSOS & PRODUÇÃO -----------------------------------------------
+  stock: {
+    itens: "/stock/itens",
+    item: (id: string) => `/stock/itens/${id}`,
+    localizacoes: "/stock/localizacoes",
+    localizacao: (id: string) => `/stock/localizacoes/${id}`,
+    movimentos: "/stock/movimentos",
+    movimento: (id: string) => `/stock/movimentos/${id}`,
+  },
+  culturas: {
+    list: "/culturas",
+    detail: (id: string) => `/culturas/${id}`,
+  },
+  campos: {
+    list: "/campos",
+    detail: (id: string) => `/campos/${id}`,
+  },
+  colheitas: {
+    list: "/colheitas",
+    detail: (id: string) => `/colheitas/${id}`,
+  },
+  producaoPecuaria: {
+    list: "/producao-pecuaria",
+    detail: (id: string) => `/producao-pecuaria/${id}`,
+  },
+
+  // --- INVESTIGAÇÃO & BI --------------------------------------------------
+  investigacao: {
+    stats: "/investigacao/stats",
+    lines: "/investigacao/linhas",
+    line: (id: string) => `/investigacao/linhas/${id}`,
+    projects: "/investigacao/projectos",
+    project: (id: string) => `/investigacao/projectos/${id}`,
+    publications: "/investigacao/publicacoes",
+    publication: (id: string) => `/investigacao/publicacoes/${id}`,
+  },
+  avaliacoes: {
+    cycles: "/avaliacoes/ciclos",
+    cycle: (id: string) => `/avaliacoes/ciclos/${id}`,
+    criterias: "/avaliacoes/criterios",
+    criteria: (id: string) => `/avaliacoes/criterios/${id}`,
+    list: "/avaliacoes",
+    detail: (id: string) => `/avaliacoes/${id}`,
+    stats: "/avaliacoes/stats",
+    scores: (id: string) => `/avaliacoes/${id}/pontuacoes`,
+    history: (id: string) => `/avaliacoes/${id}/historico`,
+    submit: (id: string) => `/avaliacoes/${id}/submeter`,
+    approve: (id: string) => `/avaliacoes/${id}/aprovar`,
+    reject: (id: string) => `/avaliacoes/${id}/rejeitar`,
+    validate: (id: string) => `/avaliacoes/${id}/validar`,
+    reopen: (id: string) => `/avaliacoes/${id}/reabrir`,
+  },
+
   // --- Módulos futuros (contrato documentado, ainda sem implementação) -----
   //
   // GERAL
@@ -102,40 +291,18 @@ export const endpoints = {
   //   utilizadores:  "/utilizadores"          (+ detail /{id})
   //   departamentos: "/departamentos"         (+ detail /{id})
   //
-  // QUALIDADE
-  //   estacoes:          "/estacoes"
-  //   auditorias:        "/auditorias"
-  //   naoConformidades:  "/nao-conformidades"
-  //   animais:           "/animais"
-  //   inseminacao:       "/inseminacao/{centros|reprodutores|tanques}"
-  //   logs:              "/logs"
+  // QUALIDADE — migrado por completo, ver secção QUALIDADE acima
   //
-  // RECURSOS & PRODUÇÃO
-  //   stock:             "/stock/{itens|localizacoes|movimentos}"
-  //   agricultura:       "/agricultura"
-  //   producaoPecuaria:  "/producao-pecuaria"
+  // RECURSOS & PRODUÇÃO — migrado por completo, ver secção acima
   //
-  // GESTÃO
-  //   documentos:  "/documentos" (+ /versions, /permissions)
-  //   processos:   "/processos"  (+ /etapas)
+  // GESTÃO — migrado por completo, ver secção GESTÃO acima
   //
-  // FINANCEIRO & PATRIMÓNIO
-  //   contas:       "/contas"
-  //   orcamentos:   "/orcamentos"
-  //   activos:      "/activos"
-  //   manutencoes:  "/manutencoes"
-  //   (KPIs agregados dedicados: ex. "/financeiro/resumo")
+  // FINANCEIRO & PATRIMÓNIO — migrado por completo, ver secção acima
   //
-  // PESSOAS & MISSÕES
-  //   rhColaboradores: "/rh/colaboradores"
-  //   missoes:         "/missoes" (+ /aprovar, /guia-marcha, /prestacao-contas)
-  //   formacoes:       "/formacoes"
+  // PESSOAS & MISSÕES — migrado por completo, ver secção acima
   //
-  // INVESTIGAÇÃO & BI
-  //   linhasPesquisa: "/linhas-pesquisa"
-  //   publicacoes:    "/publicacoes"
-  //   avaliacoes:     "/avaliacoes" (+ /aprovar)
-  //   bi:             "/bi/institucional"
+  // INVESTIGAÇÃO & BI — migrado por completo, ver secção acima (BI é só
+  //   agregação de leitura sobre os módulos já migrados, sem endpoints próprios)
   //
   // AUTH (ver secção 3.2)
   //   login:      "/login"   (POST)

@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABEL, type AppRole } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -11,8 +9,9 @@ import { KPISkeleton, CardSkeleton } from "@/components/admin/LoadingStates";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
+import { motion, useReducedMotion } from "framer-motion";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
@@ -22,14 +21,35 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  Users, FlaskConical, Activity, Pill, Boxes, Truck, TrendingUp,
+  Users, Activity, Boxes, Truck, TrendingUp,
   LayoutDashboard, AlertTriangle, PackageX, CalendarClock, Settings2, RotateCcw, BellOff, EyeOff,
+  ChevronRight, X, type LucideIcon,
 } from "lucide-react";
 
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, AreaChart, Area,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, AreaChart, Area,
 } from "recharts";
+import {
+  ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  axisTickStyle, buildChartConfig, chartColors, formatAxisNumber, getChartColor, NoDataOverlay,
+} from "@/components/charts";
+
+import { useAnalisesList } from "@/hooks/queries/useAnalises";
+import { useLotesList } from "@/hooks/queries/useLotes";
+import { useDistribuicaoList } from "@/hooks/queries/useDistribuicao";
+import { useNaoConformidadesList } from "@/hooks/queries/useNaoConformidades";
+import { useInsumosList } from "@/hooks/queries/useInsumos";
+import { useProdutosList } from "@/hooks/queries/useProdutos";
+import { useLaboratoriosList } from "@/hooks/queries/useLaboratorios";
+import { useUsersList } from "@/hooks/queries/useUsers";
+import { useDashboardPrefsQuery, useUpdateDashboardPrefs } from "@/hooks/queries/useDashboardPrefs";
+import {
+  useAlertAcksList, useCreateAlertAck, useDeleteAlertAck,
+} from "@/hooks/queries/useDashboardAlertAcks";
+import { useCreateAlertHistory } from "@/hooks/queries/useDashboardAlertHistory";
+import { isInMonth, isExpiringSoon } from "@/lib/dashboard-metrics";
 
 type KpiKey =
   | "analysesPending" | "completionRate" | "batchesActive" | "distributionsMonth"
@@ -92,27 +112,33 @@ const DEFAULT_THRESHOLDS: Record<string, number> = {
   analysesPending: 20,
 };
 
-const ALERT_META: Record<AlertKey, { label: string; help: string; tone: "warning" | "destructive" }> = {
-  lowStock:        { label: "Stock Crítico",         help: "Avisar quando o número de insumos abaixo do mínimo atingir este valor.", tone: "destructive" },
-  expiringSoon:    { label: "Lotes a Expirar",       help: "Avisar quando houver pelo menos este número de lotes a expirar em 30 dias.", tone: "warning" },
-  ncOpen:          { label: "Não Conformidades",     help: "Avisar quando o número de não conformidades abertas atingir este valor.", tone: "destructive" },
-  analysesPending: { label: "Análises Pendentes",    help: "Avisar quando o número de análises pendentes atingir este valor.", tone: "warning" },
+const ALERT_META: Record<AlertKey, { label: string; help: string; caption: string; icon: LucideIcon; tone: "warning" | "destructive" }> = {
+  lowStock:        { label: "Stock Crítico",         help: "Avisar quando o número de insumos abaixo do mínimo atingir este valor.", caption: "Insumos abaixo do mínimo", icon: PackageX, tone: "destructive" },
+  expiringSoon:    { label: "Lotes a Expirar",       help: "Avisar quando houver pelo menos este número de lotes a expirar em 30 dias.", caption: "Nos próximos 30 dias", icon: CalendarClock, tone: "warning" },
+  ncOpen:          { label: "Não Conformidades",     help: "Avisar quando o número de não conformidades abertas atingir este valor.", caption: "Abertas ou em análise", icon: AlertTriangle, tone: "destructive" },
+  analysesPending: { label: "Análises Pendentes",    help: "Avisar quando o número de análises pendentes atingir este valor.", caption: "Agendadas e em progresso", icon: Activity, tone: "warning" },
 };
 
-
-
-
-const COLORS = [
-  "hsl(152, 42%, 24%)", "hsl(38, 75%, 50%)", "hsl(200, 55%, 48%)",
-  "hsl(0, 65%, 48%)", "hsl(280, 45%, 55%)", "hsl(170, 45%, 38%)",
-];
-
-const tooltipStyle = {
-  borderRadius: 10,
-  border: "1px solid hsl(var(--border))",
-  background: "hsl(var(--card))",
-  boxShadow: "0 8px 24px -8px rgba(0,0,0,0.15)",
-  fontSize: 12,
+/** Estilos semânticos por tonalidade de alerta (evita hardcode de hex; usa tokens Tailwind/shadcn). */
+const ALERT_TONE_STYLES: Record<"warning" | "destructive", {
+  card: string; accent: string; iconWrap: string; badge: string; badgeLabel: string; value: string;
+}> = {
+  destructive: {
+    card: "border-destructive/25 bg-destructive/[0.035]",
+    accent: "bg-destructive",
+    iconWrap: "bg-destructive/10 text-destructive",
+    badge: "bg-destructive/10 text-destructive",
+    badgeLabel: "Crítico",
+    value: "text-destructive",
+  },
+  warning: {
+    card: "border-amber-500/25 bg-amber-500/[0.035]",
+    accent: "bg-amber-500",
+    iconWrap: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    badgeLabel: "Atenção",
+    value: "text-amber-600 dark:text-amber-400",
+  },
 };
 
 type Trend = { value: string; direction: "up" | "down" } | undefined;
@@ -124,20 +150,36 @@ const calcTrend = (current: number, previous: number): Trend => {
   return { value: `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`, direction: diff >= 0 ? "up" : "down" };
 };
 
-const inMonth = (dateStr: string | null | undefined, year: number, month: number) => {
-  if (!dateStr) return false;
-  const d = new Date(dateStr);
-  return d.getFullYear() === year && d.getMonth() === month;
-};
+const MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 export default function Dashboard() {
   const { role } = useUserRole();
-  const { user } = useAuth();
   const activeRole: AppRole = role ?? "colaborador";
   const roleKpis = KPIS_BY_ROLE[activeRole];
   const roleCharts = CHARTS_BY_ROLE[activeRole];
 
-  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+
+  // ---- Fontes de dados (hooks migrados, agregação client-side) ----
+  const analisesQuery = useAnalisesList({ page: 1, perPage: 1000 });
+  const lotesQuery = useLotesList({ page: 1, perPage: 1000 });
+  const distribuicaoQuery = useDistribuicaoList({ page: 1, perPage: 1000 });
+  const ncQuery = useNaoConformidadesList({ page: 1, perPage: 1000 });
+  const insumosQuery = useInsumosList({ page: 1, perPage: 1000 });
+  const produtosQuery = useProdutosList({ page: 1, perPage: 1000 });
+  const laboratoriosQuery = useLaboratoriosList({ page: 1, perPage: 1000 });
+  const usersQuery = useUsersList({});
+
+  const loading =
+    analisesQuery.isLoading || lotesQuery.isLoading || distribuicaoQuery.isLoading ||
+    ncQuery.isLoading || insumosQuery.isLoading || produtosQuery.isLoading ||
+    laboratoriosQuery.isLoading || usersQuery.isLoading;
+
+  // ---- Preferências de painel (recurso mock dedicado) ----
+  const prefsQuery = useDashboardPrefsQuery();
+  const updatePrefs = useUpdateDashboardPrefs();
+  const prefsLoaded = prefsQuery.isSuccess;
+
   const [selectedKpis, setSelectedKpis] = useState<KpiKey[]>(roleKpis);
   const [selectedCharts, setSelectedCharts] = useState<ChartKey[]>(roleCharts);
   const [thresholds, setThresholds] = useState<Record<string, number>>(DEFAULT_THRESHOLDS);
@@ -145,65 +187,17 @@ export default function Dashboard() {
   const [draftKpis, setDraftKpis] = useState<Set<KpiKey>>(new Set(roleKpis));
   const [draftCharts, setDraftCharts] = useState<Set<ChartKey>>(new Set(roleCharts));
   const [draftThresholds, setDraftThresholds] = useState<Record<string, number>>(DEFAULT_THRESHOLDS);
-  const [savingPrefs, setSavingPrefs] = useState(false);
-  const [acks, setAcks] = useState<Record<string, string>>({}); // metric_key -> acknowledged_until ISO
 
-  const loadAcks = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("dashboard_alert_acks")
-      .select("metric_key, acknowledged_until")
-      .eq("user_id", user.id)
-      .gt("acknowledged_until", new Date().toISOString());
-    const map: Record<string, string> = {};
-    (data ?? []).forEach((r: any) => { map[r.metric_key] = r.acknowledged_until; });
-    setAcks(map);
-  };
-
-  useEffect(() => { loadAcks(); /* eslint-disable-next-line */ }, [user]);
-
-  const ackAlert = async (metric: AlertKey, hours: number) => {
-    if (!user) return;
-    const until = new Date(Date.now() + hours * 3600 * 1000).toISOString();
-    const { error } = await supabase
-      .from("dashboard_alert_acks")
-      .upsert({ user_id: user.id, metric_key: metric, acknowledged_until: until }, { onConflict: "user_id,metric_key" });
-    if (error) return toast.error("Erro ao silenciar alerta");
-    toast.success(`Alerta silenciado por ${hours < 24 ? `${hours}h` : `${hours / 24} dias`}`);
-    setAcks((p) => ({ ...p, [metric]: until }));
-  };
-
-  const unackAlert = async (metric: AlertKey) => {
-    if (!user) return;
-    await supabase.from("dashboard_alert_acks").delete().eq("user_id", user.id).eq("metric_key", metric);
-    setAcks((p) => { const n = { ...p }; delete n[metric]; return n; });
-    toast.success("Alerta reativado");
-  };
-
-
-  // Load user prefs
   useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase
-        .from("user_dashboard_prefs")
-        .select("kpis, charts, thresholds")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (data) {
-        const k = (data.kpis as KpiKey[]).filter((x) => roleKpis.includes(x));
-        const c = (data.charts as ChartKey[]).filter((x) => roleCharts.includes(x));
-        setSelectedKpis(k.length ? k : roleKpis);
-        setSelectedCharts(c.length ? c : roleCharts);
-        setThresholds({ ...DEFAULT_THRESHOLDS, ...((data.thresholds as Record<string, number>) ?? {}) });
-      } else {
-        setSelectedKpis(roleKpis);
-        setSelectedCharts(roleCharts);
-        setThresholds(DEFAULT_THRESHOLDS);
-      }
-      setPrefsLoaded(true);
-    })();
-  }, [user, activeRole]);
+    if (!prefsQuery.data) return;
+    const data = prefsQuery.data;
+    const k = (data.kpis as KpiKey[]).filter((x) => roleKpis.includes(x));
+    const c = (data.charts as ChartKey[]).filter((x) => roleCharts.includes(x));
+    setSelectedKpis(k.length ? k : roleKpis);
+    setSelectedCharts(c.length ? c : roleCharts);
+    setThresholds({ ...DEFAULT_THRESHOLDS, ...(data.thresholds ?? {}) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefsQuery.data, activeRole]);
 
   const allowedKpis = new Set(selectedKpis);
   const allowedCharts = new Set(selectedCharts);
@@ -233,164 +227,170 @@ export default function Dashboard() {
   };
 
   const savePrefs = async () => {
-    if (!user) return;
-    setSavingPrefs(true);
     const kpisArr = Array.from(draftKpis);
     const chartsArr = Array.from(draftCharts);
-    const { error } = await supabase
-      .from("user_dashboard_prefs")
-      .upsert(
-        { user_id: user.id, kpis: kpisArr, charts: chartsArr, thresholds: draftThresholds },
-        { onConflict: "user_id" }
-      );
-    setSavingPrefs(false);
-    if (error) {
+    try {
+      await updatePrefs.mutateAsync({ kpis: kpisArr, charts: chartsArr, thresholds: draftThresholds });
+      setSelectedKpis(kpisArr);
+      setSelectedCharts(chartsArr);
+      setThresholds(draftThresholds);
+      setPrefsOpen(false);
+      toast.success("Preferências guardadas");
+    } catch {
       toast.error("Erro ao guardar preferências");
-      return;
     }
-    setSelectedKpis(kpisArr);
-    setSelectedCharts(chartsArr);
-    setPrefsOpen(false);
-    toast.success("Preferências guardadas");
   };
 
+  // ---- Silenciar/reactivar alertas (recurso mock dedicado) ----
+  const acksQuery = useAlertAcksList();
+  const createAck = useCreateAlertAck();
+  const deleteAck = useDeleteAlertAck();
 
-  const [stats, setStats] = useState({
-    users: 0, labs: 0, products: 0,
-    analysesPending: 0, analysesPendingPrev: 0,
-    batchesActive: 0, batchesActivePrev: 0,
-    distributionsMonth: 0, distributionsMonthPrev: 0,
-    completionRate: 0,
-    ncOpen: 0,
-    lowStock: 0,
-    expiringSoon: 0,
-  });
-  const [analysisStatus, setAnalysisStatus] = useState<{ name: string; value: number }[]>([]);
-  const [productionStatus, setProductionStatus] = useState<{ name: string; value: number }[]>([]);
-  const [monthlyAnalyses, setMonthlyAnalyses] = useState<{ month: string; total: number }[]>([]);
-  const [monthlyProduction, setMonthlyProduction] = useState<{ month: string; produced: number; distributed: number }[]>([]);
-  const [productTypes, setProductTypes] = useState<{ name: string; value: number }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const acks = useMemo(() => {
+    const map: Record<string, string> = {};
+    (acksQuery.data ?? []).forEach((a) => { map[a.metricKey] = a.acknowledgedUntil; });
+    return map;
+  }, [acksQuery.data]);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const [users, labs, analyses, products, batches, dists, ncs, supplies] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("laboratories").select("*", { count: "exact", head: true }),
-        supabase.from("lab_analyses").select("*"),
-        supabase.from("products").select("*"),
-        supabase.from("production_batches").select("*"),
-        supabase.from("batch_distributions").select("*"),
-        supabase.from("nonconformities").select("*"),
-        supabase.from("lab_supplies").select("*"),
-      ]);
+  const ackAlert = async (metric: AlertKey, hours: number) => {
+    try {
+      await createAck.mutateAsync({ metricKey: metric, hours });
+      toast.success(`Alerta silenciado por ${hours < 24 ? `${hours}h` : `${hours / 24} dias`}`);
+    } catch {
+      toast.error("Erro ao silenciar alerta");
+    }
+  };
 
-      const now = new Date();
-      const curY = now.getFullYear(), curM = now.getMonth();
-      const prev = new Date(curY, curM - 1, 1);
-      const prevY = prev.getFullYear(), prevM = prev.getMonth();
-      const in30 = new Date(now.getTime() + 30 * 86400000);
+  const unackAlert = async (metric: AlertKey) => {
+    try {
+      await deleteAck.mutateAsync(metric);
+      toast.success("Alerta reativado");
+    } catch {
+      toast.error("Erro ao reativar alerta");
+    }
+  };
 
-      const analysesData = analyses.data ?? [];
-      const batchesData = batches.data ?? [];
-      const distsData = dists.data ?? [];
-      const ncsData = ncs.data ?? [];
-      const suppliesData = supplies.data ?? [];
+  // ---- Agregação de KPIs/estatísticas ----
+  const stats = useMemo(() => {
+    const analyses = analisesQuery.data?.data ?? [];
+    const batches = lotesQuery.data?.data ?? [];
+    const dists = distribuicaoQuery.data?.data ?? [];
+    const ncs = ncQuery.data?.data ?? [];
+    const supplies = insumosQuery.data?.data ?? [];
 
-      const analysesPending = analysesData.filter((a: any) => a.status === "agendada" || a.status === "em_progresso").length;
-      const analysesPendingPrev = analysesData.filter((a: any) =>
-        (a.status === "agendada" || a.status === "em_progresso") && inMonth(a.created_at, prevY, prevM)
-      ).length;
+    const now = new Date();
+    const curY = now.getFullYear(), curM = now.getMonth();
+    const prev = new Date(curY, curM - 1, 1);
+    const prevY = prev.getFullYear(), prevM = prev.getMonth();
 
-      const batchesActive = batchesData.filter((b: any) => b.status === "em_producao" || b.status === "planeada").length;
-      const batchesActivePrev = batchesData.filter((b: any) =>
-        (b.status === "em_producao" || b.status === "planeada") && inMonth(b.created_at, prevY, prevM)
-      ).length;
+    const analysesPending = analyses.filter((a) => a.status === "agendada" || a.status === "em_progresso").length;
+    const analysesPendingPrev = analyses.filter((a) =>
+      (a.status === "agendada" || a.status === "em_progresso") && isInMonth(a.createdAt, prevY, prevM),
+    ).length;
 
-      const distributionsMonth = distsData.filter((d: any) => inMonth(d.distribution_date, curY, curM))
-        .reduce((s: number, d: any) => s + (d.quantity || 0), 0);
-      const distributionsMonthPrev = distsData.filter((d: any) => inMonth(d.distribution_date, prevY, prevM))
-        .reduce((s: number, d: any) => s + (d.quantity || 0), 0);
+    const batchesActive = batches.filter((b) => b.status === "em_producao" || b.status === "planeada").length;
+    const batchesActivePrev = batches.filter((b) =>
+      (b.status === "em_producao" || b.status === "planeada") && isInMonth(b.createdAt, prevY, prevM),
+    ).length;
 
-      const concluded = analysesData.filter((a: any) => a.status === "concluida").length;
-      const completionRate = analysesData.length > 0 ? Math.round((concluded / analysesData.length) * 100) : 0;
+    const distributionsMonth = dists.filter((d) => isInMonth(d.distributionDate, curY, curM))
+      .reduce((s, d) => s + (d.quantity || 0), 0);
+    const distributionsMonthPrev = dists.filter((d) => isInMonth(d.distributionDate, prevY, prevM))
+      .reduce((s, d) => s + (d.quantity || 0), 0);
 
-      const ncOpen = ncsData.filter((n: any) => n.status === "aberta" || n.status === "em_analise").length;
-      const lowStock = suppliesData.filter((s: any) => (s.quantity ?? 0) <= (s.min_stock ?? 0)).length;
-      const expiringSoon = batchesData.filter((b: any) => {
-        if (!b.expiry_date) return false;
-        const d = new Date(b.expiry_date);
-        return d >= now && d <= in30;
-      }).length;
+    const concluded = analyses.filter((a) => a.status === "concluida").length;
+    const completionRate = analyses.length > 0 ? Math.round((concluded / analyses.length) * 100) : 0;
 
-      setStats({
-        users: users.count ?? 0,
-        labs: labs.count ?? 0,
-        products: products.data?.length ?? 0,
-        analysesPending, analysesPendingPrev,
-        batchesActive, batchesActivePrev,
-        distributionsMonth, distributionsMonthPrev,
-        completionRate,
-        ncOpen, lowStock, expiringSoon,
-      });
+    const ncOpen = ncs.filter((n) => n.status === "aberta" || n.status === "em_resolucao").length;
+    const lowStock = supplies.filter((s) => (s.quantity ?? 0) <= (s.minStock ?? 0)).length;
+    const expiringSoon = batches.filter((b) => isExpiringSoon(b.expiryDate)).length;
 
-      // Analysis status pie
-      const statusLabels: Record<string, string> = { agendada: "Agendada", em_progresso: "Em Progresso", concluida: "Concluída", cancelada: "Cancelada" };
-      const aStatusCounts: Record<string, number> = {};
-      analysesData.forEach((a: any) => { aStatusCounts[a.status] = (aStatusCounts[a.status] || 0) + 1; });
-      setAnalysisStatus(Object.entries(aStatusCounts).map(([k, v]) => ({ name: statusLabels[k] || k, value: v })));
-
-      // Production status pie
-      const pStatusLabels: Record<string, string> = { planeada: "Planeada", em_producao: "Em Produção", concluida: "Concluída", suspensa: "Suspensa" };
-      const pStatusCounts: Record<string, number> = {};
-      batchesData.forEach((b: any) => { pStatusCounts[b.status] = (pStatusCounts[b.status] || 0) + 1; });
-      setProductionStatus(Object.entries(pStatusCounts).map(([k, v]) => ({ name: pStatusLabels[k] || k, value: v })));
-
-      // Monthly series (last 6 months)
-      const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-      const monthlyA: Record<string, number> = {};
-      const monthlyP: Record<string, { produced: number; distributed: number }> = {};
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(curY, curM - i, 1);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        monthlyA[key] = 0;
-        monthlyP[key] = { produced: 0, distributed: 0 };
-      }
-      analysesData.forEach((a: any) => {
-        const key = a.scheduled_date?.substring(0, 7);
-        if (key && key in monthlyA) monthlyA[key]++;
-      });
-      batchesData.forEach((b: any) => {
-        const key = b.production_date?.substring(0, 7);
-        if (key && key in monthlyP) monthlyP[key].produced += b.quantity_produced || 0;
-      });
-      distsData.forEach((d: any) => {
-        const key = d.distribution_date?.substring(0, 7);
-        if (key && key in monthlyP) monthlyP[key].distributed += d.quantity || 0;
-      });
-      setMonthlyAnalyses(Object.entries(monthlyA).map(([k, v]) => {
-        const [y, m] = k.split("-");
-        return { month: `${monthNames[parseInt(m) - 1]}/${y.slice(2)}`, total: v };
-      }));
-      setMonthlyProduction(Object.entries(monthlyP).map(([k, v]) => {
-        const [y, m] = k.split("-");
-        return { month: `${monthNames[parseInt(m) - 1]}/${y.slice(2)}`, ...v };
-      }));
-
-      // Product types
-      const typeCounts: Record<string, number> = {};
-      const typeLabels: Record<string, string> = { vacina: "Vacinas", soro: "Soros", reagente: "Reagentes" };
-      (products.data ?? []).forEach((p: any) => { typeCounts[p.product_type] = (typeCounts[p.product_type] || 0) + 1; });
-      setProductTypes(Object.entries(typeCounts).map(([k, v]) => ({ name: typeLabels[k] || k, value: v })));
-
-      setLoading(false);
+    return {
+      users: usersQuery.data?.length ?? 0,
+      labs: laboratoriosQuery.data?.meta.total ?? 0,
+      products: produtosQuery.data?.meta.total ?? 0,
+      analysesPending, analysesPendingPrev,
+      batchesActive, batchesActivePrev,
+      distributionsMonth, distributionsMonthPrev,
+      completionRate,
+      ncOpen, lowStock, expiringSoon,
     };
-    fetch();
-  }, []);
+  }, [
+    analisesQuery.data, lotesQuery.data, distribuicaoQuery.data, ncQuery.data,
+    insumosQuery.data, usersQuery.data, laboratoriosQuery.data, produtosQuery.data,
+  ]);
 
-  // Log alert triggers (debounce: 1 alerta por métrica por hora)
+  // ---- Séries dos gráficos ----
+  const analysisStatus = useMemo(() => {
+    const labels: Record<string, string> = { agendada: "Agendada", em_progresso: "Em Progresso", concluida: "Concluída", cancelada: "Cancelada" };
+    const counts: Record<string, number> = {};
+    (analisesQuery.data?.data ?? []).forEach((a) => { counts[a.status] = (counts[a.status] || 0) + 1; });
+    return Object.entries(counts).map(([k, v]) => ({ name: labels[k] || k, value: v }));
+  }, [analisesQuery.data]);
+
+  const productionStatus = useMemo(() => {
+    const labels: Record<string, string> = { planeada: "Planeada", em_producao: "Em Produção", concluida: "Concluída", suspensa: "Suspensa" };
+    const counts: Record<string, number> = {};
+    (lotesQuery.data?.data ?? []).forEach((b) => { counts[b.status] = (counts[b.status] || 0) + 1; });
+    return Object.entries(counts).map(([k, v]) => ({ name: labels[k] || k, value: v }));
+  }, [lotesQuery.data]);
+
+  const { monthlyAnalyses, monthlyProduction } = useMemo(() => {
+    const now = new Date();
+    const curY = now.getFullYear(), curM = now.getMonth();
+    const monthlyA: Record<string, number> = {};
+    const monthlyP: Record<string, { produced: number; distributed: number }> = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(curY, curM - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthlyA[key] = 0;
+      monthlyP[key] = { produced: 0, distributed: 0 };
+    }
+    (analisesQuery.data?.data ?? []).forEach((a) => {
+      const key = a.scheduledDate?.substring(0, 7);
+      if (key && key in monthlyA) monthlyA[key]++;
+    });
+    (lotesQuery.data?.data ?? []).forEach((b) => {
+      const key = b.productionDate?.substring(0, 7);
+      if (key && key in monthlyP) monthlyP[key].produced += b.quantityProduced || 0;
+    });
+    (distribuicaoQuery.data?.data ?? []).forEach((d) => {
+      const key = d.distributionDate?.substring(0, 7);
+      if (key && key in monthlyP) monthlyP[key].distributed += d.quantity || 0;
+    });
+    const toMonth = (k: string) => {
+      const [y, m] = k.split("-");
+      return `${MONTH_NAMES[parseInt(m) - 1]}/${y.slice(2)}`;
+    };
+    return {
+      monthlyAnalyses: Object.entries(monthlyA).map(([k, v]) => ({ month: toMonth(k), total: v })),
+      monthlyProduction: Object.entries(monthlyP).map(([k, v]) => ({ month: toMonth(k), ...v })),
+    };
+  }, [analisesQuery.data, lotesQuery.data, distribuicaoQuery.data]);
+
+  const productTypes = useMemo(() => {
+    const labels: Record<string, string> = { vacina: "Vacinas", soro: "Soros", reagente: "Reagentes" };
+    const counts: Record<string, number> = {};
+    (produtosQuery.data?.data ?? []).forEach((p) => { counts[p.productType] = (counts[p.productType] || 0) + 1; });
+    return Object.entries(counts).map(([k, v]) => ({ name: labels[k] || k, value: v }));
+  }, [produtosQuery.data]);
+
+  // Configs de gráfico (ChartContainer / preset partilhado).
+  const analysisStatusConfig = useMemo(() => buildChartConfig(analysisStatus.map((d) => d.name)), [analysisStatus]);
+  const productionStatusConfig = useMemo(() => buildChartConfig(productionStatus.map((d) => d.name)), [productionStatus]);
+  const monthlyAnalysesConfig = useMemo(() => buildChartConfig(["total"], { total: "Análises" }), []);
+  const monthlyProductionConfig = useMemo(
+    () => buildChartConfig(["produced", "distributed"], { produced: "Produzido", distributed: "Distribuído" }),
+    [],
+  );
+  const productTypesConfig = useMemo(() => buildChartConfig(["value"], { value: "Quantidade" }), []);
+
+  // ---- Registo de histórico quando um alerta dispara (debounce server-side de 1h) ----
+  const createAlertHistory = useCreateAlertHistory();
+  const loggedRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
-    if (!user || loading || !prefsLoaded) return;
+    if (loading || !prefsLoaded) return;
     const currentValues: Record<AlertKey, number> = {
       lowStock: stats.lowStock,
       expiringSoon: stats.expiringSoon,
@@ -398,37 +398,23 @@ export default function Dashboard() {
       analysesPending: stats.analysesPending,
     };
     const active = ALERT_KEYS.filter((k) => {
-      const t = thresholds[k] ?? 0;
+      const th = thresholds[k] ?? 0;
       if (acks[k] && new Date(acks[k]) > new Date()) return false; // silenciado
-      return t > 0 && currentValues[k] >= t;
+      return th > 0 && currentValues[k] >= th;
     });
-    if (active.length === 0) return;
-
-    (async () => {
-      const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const { data: recent } = await supabase
-        .from("dashboard_alert_history")
-        .select("metric_key")
-        .eq("user_id", user.id)
-        .in("metric_key", active)
-        .gte("created_at", hourAgo);
-      const recentSet = new Set((recent ?? []).map((r: any) => r.metric_key));
-      const toInsert = active
-        .filter((k) => !recentSet.has(k))
-        .map((k) => ({
-          user_id: user.id,
-          metric_key: k,
-          label: ALERT_META[k].label,
-          value: currentValues[k],
-          threshold: thresholds[k],
-          tone: ALERT_META[k].tone,
-        }));
-      if (toInsert.length > 0) {
-        await supabase.from("dashboard_alert_history").insert(toInsert);
-      }
-    })();
-  }, [user, loading, prefsLoaded, stats.lowStock, stats.expiringSoon, stats.ncOpen, stats.analysesPending, thresholds, acks]);
-
+    active.forEach((k) => {
+      if (loggedRef.current.has(k)) return;
+      loggedRef.current.add(k);
+      createAlertHistory.mutate({
+        metricKey: k,
+        label: ALERT_META[k].label,
+        value: currentValues[k],
+        threshold: thresholds[k],
+        tone: ALERT_META[k].tone,
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, prefsLoaded, stats.lowStock, stats.expiringSoon, stats.ncOpen, stats.analysesPending, thresholds, acks]);
 
   const allKpis: Array<{
     key: KpiKey; icon: any; label: string; value: string | number; caption?: string; trend?: Trend;
@@ -480,7 +466,6 @@ export default function Dashboard() {
     },
   ];
   const kpis = allKpis.filter((k) => allowedKpis.has(k.key));
-
 
   if (loading) return (
     <div className="space-y-8">
@@ -571,20 +556,18 @@ export default function Dashboard() {
               </div>
             </div>
 
-
             <DialogFooter className="gap-2 sm:gap-2">
               <Button variant="ghost" onClick={resetDraft} className="gap-2 mr-auto">
                 <RotateCcw className="h-4 w-4" /> Repor predefinição
               </Button>
               <Button variant="outline" onClick={() => setPrefsOpen(false)}>Cancelar</Button>
-              <Button onClick={savePrefs} disabled={savingPrefs}>
-                {savingPrefs ? "A guardar..." : "Guardar"}
+              <Button onClick={savePrefs} disabled={updatePrefs.isPending}>
+                {updatePrefs.isPending ? "A guardar..." : "Guardar"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </AdminPageHeader>
-
 
       {/* Alerts — limiares configuráveis */}
       {(() => {
@@ -605,64 +588,105 @@ export default function Dashboard() {
         });
         if (active.length === 0 && silenced.length === 0) return null;
         return (
-          <div className="space-y-2 animate-fade-up">
-            <div className="flex justify-end">
-              <Link to="/admin/historico-alertas" className="text-xs text-muted-foreground hover:text-foreground underline">
-                Ver histórico de alertas →
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </span>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Alertas Ativos
+                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">({active.length})</span>
+                </h2>
+              </div>
+              <Link
+                to="/admin/historico-alertas"
+                className="inline-flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+              >
+                Ver histórico de alertas <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
-            {active.map((k) => {
-              const meta = ALERT_META[k];
-              const value = currentValues[k];
-              const t = thresholds[k];
-              return (
-                <Alert
-                  key={k}
-                  variant={meta.tone === "destructive" ? "destructive" : "default"}
-                  className={meta.tone === "warning" ? "border-amber-500/50 bg-amber-500/5" : ""}
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle className="font-serif flex items-center justify-between gap-3">
-                    <span>{meta.label}</span>
-                    <div className="flex items-center gap-3">
-                      <Link to={`/admin/painel/${k}`} className="text-xs font-normal underline hover:no-underline">
-                        Ver detalhes →
-                      </Link>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
-                            <EyeOff className="h-3 w-3" /> Marcar como visto
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuLabel className="text-xs">Silenciar por...</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => ackAlert(k, 1)}>1 hora</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => ackAlert(k, 4)}>4 horas</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => ackAlert(k, 24)}>24 horas</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => ackAlert(k, 24 * 7)}>7 dias</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </AlertTitle>
-                  <AlertDescription className="text-sm">
-                    Valor atual: <strong>{value}</strong> · Limiar definido: <strong>{t}</strong>.
-                  </AlertDescription>
-                </Alert>
-              );
-            })}
+
+            <motion.div
+              variants={prefersReducedMotion ? undefined : staggerContainer}
+              initial={prefersReducedMotion ? undefined : "hidden"}
+              animate={prefersReducedMotion ? undefined : "visible"}
+              className="grid grid-cols-1 gap-4 md:grid-cols-2"
+            >
+              {active.map((k) => {
+                const meta = ALERT_META[k];
+                const Icon = meta.icon;
+                const tone = ALERT_TONE_STYLES[meta.tone];
+                const value = currentValues[k];
+                const t = thresholds[k];
+                return (
+                  <motion.div key={k} variants={prefersReducedMotion ? undefined : fadeInUp}>
+                    <Card className={cn("relative overflow-hidden rounded-2xl shadow-elegant", tone.card)}>
+                      <span className={cn("absolute inset-y-0 left-0 w-1", tone.accent)} aria-hidden="true" />
+                      <CardContent className="p-5 pl-6 sm:p-6 sm:pl-7">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", tone.iconWrap)}>
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0 pt-0.5">
+                              <p className="text-sm font-semibold leading-tight text-foreground">{meta.label}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{meta.caption}</p>
+                            </div>
+                          </div>
+                          <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide", tone.badge)}>
+                            {tone.badgeLabel}
+                          </span>
+                        </div>
+
+                        <div className="mt-5 flex items-baseline gap-2">
+                          <span className={cn("text-4xl font-serif font-semibold leading-none", tone.value)}>{value}</span>
+                          <span className="text-xs text-muted-foreground">/ limiar {t}</span>
+                        </div>
+
+                        <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
+                          <Link
+                            to={`/admin/painel/${k}`}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline underline-offset-2"
+                          >
+                            Ver detalhes <ChevronRight className="h-3 w-3" />
+                          </Link>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground">
+                                <EyeOff className="h-3 w-3" /> Marcar como visto
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuLabel className="text-xs">Silenciar por...</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => ackAlert(k, 1)}>1 hora</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => ackAlert(k, 4)}>4 horas</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => ackAlert(k, 24)}>24 horas</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => ackAlert(k, 24 * 7)}>7 dias</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
             {silenced.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 px-1 pt-1 text-xs text-muted-foreground">
-                <BellOff className="h-3.5 w-3.5" />
-                <span>Silenciados:</span>
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                <BellOff className="h-3.5 w-3.5 shrink-0" />
+                <span className="font-medium">Silenciados:</span>
                 {silenced.map((k) => (
                   <button
                     key={k}
                     onClick={() => unackAlert(k)}
-                    className="underline hover:text-foreground"
+                    className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background px-2.5 py-1 transition-colors hover:border-foreground/30 hover:text-foreground"
                     title={`Reativar alerta (silenciado até ${new Date(acks[k]).toLocaleString("pt-PT")})`}
                   >
-                    {ALERT_META[k].label} ✕
+                    {ALERT_META[k].label}
+                    <X className="h-3 w-3" />
                   </button>
                 ))}
               </div>
@@ -670,8 +694,6 @@ export default function Dashboard() {
           </div>
         );
       })()}
-
-
 
       {/* KPI Cards — operational metrics */}
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
@@ -702,17 +724,17 @@ export default function Dashboard() {
             <Card className="lg:col-span-2 glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Análises por Mês</CardTitle><Link to="/admin/painel/monthlyAnalyses" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
               <CardContent>
-                {monthlyAnalyses.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
+                {monthlyAnalyses.some((d) => d.total > 0) ? (
+                  <ChartContainer config={monthlyAnalysesConfig} className="h-[280px] w-full">
                     <BarChart data={monthlyAnalyses}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                      <YAxis allowDecimals={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Bar dataKey="total" name="Análises" fill="hsl(152, 42%, 24%)" radius={[6, 6, 0, 0]} />
+                      <XAxis dataKey="month" tick={axisTickStyle} />
+                      <YAxis allowDecimals={false} tick={axisTickStyle} tickFormatter={formatAxisNumber} width={32} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="total" name="Análises" fill={chartColors[0]} radius={[6, 6, 0, 0]} />
                     </BarChart>
-                  </ResponsiveContainer>
-                ) : <p className="text-sm text-muted-foreground py-10 text-center">Sem dados de análises.</p>}
+                  </ChartContainer>
+                ) : <NoDataOverlay message="Sem dados de análises." height={280} />}
               </CardContent>
             </Card>
           )}
@@ -722,21 +744,16 @@ export default function Dashboard() {
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Estado das Análises</CardTitle><Link to="/admin/painel/analysisStatus" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
               <CardContent>
                 {analysisStatus.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
+                  <ChartContainer config={analysisStatusConfig} className="h-[280px] w-full">
                     <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-                      <Pie data={analysisStatus} cx="50%" cy="45%" innerRadius={48} outerRadius={82} dataKey="value" strokeWidth={2} stroke="hsl(var(--card))" labelLine={false}>
-                        {analysisStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      <Pie data={analysisStatus} cx="50%" cy="45%" innerRadius={48} outerRadius={82} dataKey="value" nameKey="name" strokeWidth={2} stroke="hsl(var(--card))" labelLine={false}>
+                        {analysisStatus.map((_, i) => <Cell key={i} fill={getChartColor(i)} />)}
                       </Pie>
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle" formatter={(value, _entry, i) => {
-                        const total = analysisStatus.reduce((s, d) => s + d.value, 0);
-                        const v = analysisStatus[i as number]?.value ?? 0;
-                        const pct = total ? Math.round((v / total) * 100) : 0;
-                        return `${value} ${pct}%`;
-                      }} wrapperStyle={{ fontSize: 12 }} />
+                      <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                      <ChartLegend content={<ChartLegendContent nameKey="name" />} />
                     </PieChart>
-                  </ResponsiveContainer>
-                ) : <p className="text-sm text-muted-foreground py-10 text-center">Sem dados.</p>}
+                  </ChartContainer>
+                ) : <NoDataOverlay message="Sem dados." height={280} />}
               </CardContent>
             </Card>
           )}
@@ -750,19 +767,19 @@ export default function Dashboard() {
             <Card className="lg:col-span-2 glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Produção vs Distribuição</CardTitle><Link to="/admin/painel/monthlyProduction" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
               <CardContent>
-                {monthlyProduction.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
+                {monthlyProduction.some((d) => d.produced > 0 || d.distributed > 0) ? (
+                  <ChartContainer config={monthlyProductionConfig} className="h-[280px] w-full">
                     <AreaChart data={monthlyProduction}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                      <YAxis allowDecimals={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Legend />
-                      <Area type="monotone" dataKey="produced" name="Produzido" stroke="hsl(152, 42%, 24%)" fill="hsl(152, 42%, 24%)" fillOpacity={0.15} strokeWidth={2} />
-                      <Area type="monotone" dataKey="distributed" name="Distribuído" stroke="hsl(38, 75%, 50%)" fill="hsl(38, 75%, 50%)" fillOpacity={0.15} strokeWidth={2} />
+                      <XAxis dataKey="month" tick={axisTickStyle} />
+                      <YAxis allowDecimals={false} tick={axisTickStyle} tickFormatter={formatAxisNumber} width={32} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <ChartLegend content={<ChartLegendContent />} />
+                      <Area type="monotone" dataKey="produced" name="Produzido" stroke={chartColors[0]} fill={chartColors[0]} fillOpacity={0.15} strokeWidth={2} />
+                      <Area type="monotone" dataKey="distributed" name="Distribuído" stroke={chartColors[1]} fill={chartColors[1]} fillOpacity={0.15} strokeWidth={2} />
                     </AreaChart>
-                  </ResponsiveContainer>
-                ) : <p className="text-sm text-muted-foreground py-10 text-center">Sem dados de produção.</p>}
+                  </ChartContainer>
+                ) : <NoDataOverlay message="Sem dados de produção." height={280} />}
               </CardContent>
             </Card>
           )}
@@ -772,21 +789,16 @@ export default function Dashboard() {
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Estado dos Lotes</CardTitle><Link to="/admin/painel/productionStatus" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
               <CardContent>
                 {productionStatus.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
+                  <ChartContainer config={productionStatusConfig} className="h-[280px] w-full">
                     <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-                      <Pie data={productionStatus} cx="50%" cy="45%" innerRadius={48} outerRadius={82} dataKey="value" strokeWidth={2} stroke="hsl(var(--card))" labelLine={false}>
-                        {productionStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      <Pie data={productionStatus} cx="50%" cy="45%" innerRadius={48} outerRadius={82} dataKey="value" nameKey="name" strokeWidth={2} stroke="hsl(var(--card))" labelLine={false}>
+                        {productionStatus.map((_, i) => <Cell key={i} fill={getChartColor(i)} />)}
                       </Pie>
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle" formatter={(value, _entry, i) => {
-                        const total = productionStatus.reduce((s, d) => s + d.value, 0);
-                        const v = productionStatus[i as number]?.value ?? 0;
-                        const pct = total ? Math.round((v / total) * 100) : 0;
-                        return `${value} ${pct}%`;
-                      }} wrapperStyle={{ fontSize: 12 }} />
+                      <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                      <ChartLegend content={<ChartLegendContent nameKey="name" />} />
                     </PieChart>
-                  </ResponsiveContainer>
-                ) : <p className="text-sm text-muted-foreground py-10 text-center">Sem dados.</p>}
+                  </ChartContainer>
+                ) : <NoDataOverlay message="Sem dados." height={280} />}
               </CardContent>
             </Card>
           )}
@@ -798,15 +810,15 @@ export default function Dashboard() {
         <Card className="glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
           <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Produtos por Tipo</CardTitle><Link to="/admin/painel/productTypes" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
+            <ChartContainer config={productTypesConfig} className="h-[220px] w-full">
               <BarChart data={productTypes} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis type="number" allowDecimals={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                <YAxis type="category" dataKey="name" width={80} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="value" name="Quantidade" fill="hsl(38, 75%, 50%)" radius={[0, 6, 6, 0]} />
+                <XAxis type="number" allowDecimals={false} tick={axisTickStyle} tickFormatter={formatAxisNumber} />
+                <YAxis type="category" dataKey="name" width={80} tick={axisTickStyle} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="value" name="Quantidade" fill={chartColors[1]} radius={[0, 6, 6, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}

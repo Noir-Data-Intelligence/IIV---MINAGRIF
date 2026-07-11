@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,27 +17,36 @@ import {
   CalendarClock, Users, BarChart3, PieChart, Pill, ArrowLeft, Search,
   type LucideIcon,
 } from "lucide-react";
+import { useAnalisesList } from "@/hooks/queries/useAnalises";
+import { useLotesList } from "@/hooks/queries/useLotes";
+import { useNaoConformidadesList } from "@/hooks/queries/useNaoConformidades";
+import { useInsumosList } from "@/hooks/queries/useInsumos";
+import { useDistribuicaoList } from "@/hooks/queries/useDistribuicao";
+import { useProdutosList } from "@/hooks/queries/useProdutos";
+import { useUsersList } from "@/hooks/queries/useUsers";
+import { fmtDate, fmtDateTime, isExpiringSoon, isCurrentMonth } from "@/lib/dashboard-metrics";
 
 type Row = Record<string, any>;
 type Col = { key: string; label: string; render?: (r: Row) => React.ReactNode; className?: string };
 
 type StatusOpt = { value: string; label: string };
 
+/** Fontes de dados subjacentes a cada métrica (hooks já migrados). */
+type Source = "analises" | "lotes" | "nc" | "insumos" | "distribuicao" | "produtos" | "users";
+
 type MetricConfig = {
   title: string;
   description: string;
   icon: LucideIcon;
-  fetch: () => Promise<Row[]>;
+  source: Source;
+  /** Filtro client-side aplicado à fonte (ex: só stock crítico). */
+  filter?: (r: Row) => boolean;
   columns: Col[];
   searchKeys?: string[];
   statusKey?: string;
   statusOptions?: StatusOpt[];
   emptyMessage?: string;
 };
-
-const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleDateString("pt-PT") : "—");
-const fmtDateTime = (s?: string | null) =>
-  s ? new Date(s).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" }) : "—";
 
 const STATUS_ANALYSIS: Record<string, string> = {
   agendada: "Agendada", em_progresso: "Em Progresso", concluida: "Concluída", cancelada: "Cancelada",
@@ -55,20 +63,21 @@ function statusBadge(label: string, tone: "default" | "secondary" | "destructive
   return <Badge variant={tone}>{label}</Badge>;
 }
 
+// Colunas em camelCase (DTOs Laravel via API Resources).
 const analysisColumns: Col[] = [
-  { key: "client_name", label: "Cliente" },
-  { key: "analysis_type", label: "Tipo" },
-  { key: "sample_type", label: "Amostra" },
-  { key: "scheduled_date", label: "Agendada", render: (r) => fmtDate(r.scheduled_date) },
+  { key: "clientName", label: "Cliente" },
+  { key: "analysisType", label: "Tipo" },
+  { key: "sampleType", label: "Amostra" },
+  { key: "scheduledDate", label: "Agendada", render: (r) => fmtDate(r.scheduledDate) },
   { key: "status", label: "Estado", render: (r) => statusBadge(STATUS_ANALYSIS[r.status] || r.status) },
 ];
 
 const batchColumns: Col[] = [
-  { key: "batch_number", label: "Lote" },
-  { key: "quantity_produced", label: "Produzido" },
-  { key: "quantity_distributed", label: "Distribuído" },
-  { key: "production_date", label: "Produção", render: (r) => fmtDate(r.production_date) },
-  { key: "expiry_date", label: "Expira", render: (r) => fmtDate(r.expiry_date) },
+  { key: "batchNumber", label: "Lote" },
+  { key: "quantityProduced", label: "Produzido" },
+  { key: "quantityDistributed", label: "Distribuído" },
+  { key: "productionDate", label: "Produção", render: (r) => fmtDate(r.productionDate) },
+  { key: "expiryDate", label: "Expira", render: (r) => fmtDate(r.expiryDate) },
   { key: "status", label: "Estado", render: (r) => statusBadge(STATUS_BATCH[r.status] || r.status) },
 ];
 
@@ -78,16 +87,10 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Análises Pendentes",
     description: "Análises agendadas ou em progresso",
     icon: Activity,
-    fetch: async () => {
-      const { data } = await supabase
-        .from("lab_analyses")
-        .select("*")
-        .in("status", ["agendada", "em_progresso"])
-        .order("scheduled_date", { ascending: true });
-      return data ?? [];
-    },
+    source: "analises",
+    filter: (r) => r.status === "agendada" || r.status === "em_progresso",
     columns: analysisColumns,
-    searchKeys: ["client_name", "analysis_type", "sample_type"],
+    searchKeys: ["clientName", "analysisType", "sampleType"],
     statusKey: "status",
     statusOptions: [
       { value: "agendada", label: "Agendada" },
@@ -98,12 +101,9 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Taxa de Conclusão",
     description: "Todas as análises agrupadas por estado",
     icon: TrendingUp,
-    fetch: async () => {
-      const { data } = await supabase.from("lab_analyses").select("*").order("scheduled_date", { ascending: false });
-      return data ?? [];
-    },
+    source: "analises",
     columns: analysisColumns,
-    searchKeys: ["client_name", "analysis_type"],
+    searchKeys: ["clientName", "analysisType"],
     statusKey: "status",
     statusOptions: Object.entries(STATUS_ANALYSIS).map(([value, label]) => ({ value, label })),
   },
@@ -111,16 +111,10 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Lotes Ativos",
     description: "Lotes em produção ou planeados",
     icon: Boxes,
-    fetch: async () => {
-      const { data } = await supabase
-        .from("production_batches")
-        .select("*")
-        .in("status", ["em_producao", "planeada"])
-        .order("production_date", { ascending: false });
-      return data ?? [];
-    },
+    source: "lotes",
+    filter: (r) => r.status === "em_producao" || r.status === "planeada",
     columns: batchColumns,
-    searchKeys: ["batch_number"],
+    searchKeys: ["batchNumber"],
     statusKey: "status",
     statusOptions: [
       { value: "planeada", label: "Planeada" },
@@ -131,22 +125,12 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Distribuído no Mês",
     description: "Distribuições do mês corrente",
     icon: Truck,
-    fetch: async () => {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
-      const { data } = await supabase
-        .from("batch_distributions")
-        .select("*")
-        .gte("distribution_date", start)
-        .lt("distribution_date", end)
-        .order("distribution_date", { ascending: false });
-      return data ?? [];
-    },
+    source: "distribuicao",
+    filter: (r) => isCurrentMonth(r.distributionDate),
     columns: [
       { key: "destination", label: "Destino" },
       { key: "quantity", label: "Quantidade" },
-      { key: "distribution_date", label: "Data", render: (r) => fmtDate(r.distribution_date) },
+      { key: "distributionDate", label: "Data", render: (r) => fmtDate(r.distributionDate) },
       { key: "notes", label: "Notas", render: (r) => r.notes || "—" },
     ],
     searchKeys: ["destination", "notes"],
@@ -155,14 +139,8 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Não Conformidades Abertas",
     description: "Não conformidades abertas ou em resolução",
     icon: AlertTriangle,
-    fetch: async () => {
-      const { data } = await supabase
-        .from("nonconformities")
-        .select("*")
-        .in("status", ["aberta", "em_resolucao"])
-        .order("created_at", { ascending: false });
-      return data ?? [];
-    },
+    source: "nc",
+    filter: (r) => r.status === "aberta" || r.status === "em_resolucao",
     columns: [
       { key: "title", label: "Título" },
       { key: "severity", label: "Severidade", render: (r) => <Badge variant="outline">{r.severity}</Badge> },
@@ -180,16 +158,14 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Stock Crítico",
     description: "Insumos com quantidade abaixo do mínimo",
     icon: PackageX,
-    fetch: async () => {
-      const { data } = await supabase.from("lab_supplies").select("*");
-      return (data ?? []).filter((s: any) => (s.quantity ?? 0) <= (s.min_stock ?? 0));
-    },
+    source: "insumos",
+    filter: (r) => (r.quantity ?? 0) <= (r.minStock ?? 0),
     columns: [
       { key: "name", label: "Insumo" },
       { key: "quantity", label: "Quantidade" },
-      { key: "min_stock", label: "Mínimo" },
+      { key: "minStock", label: "Mínimo" },
       { key: "unit", label: "Unidade" },
-      { key: "expiry_date", label: "Expira", render: (r) => fmtDate(r.expiry_date) },
+      { key: "expiryDate", label: "Expira", render: (r) => fmtDate(r.expiryDate) },
     ],
     searchKeys: ["name", "unit"],
   },
@@ -197,34 +173,22 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Lotes a Expirar",
     description: "Lotes que expiram nos próximos 30 dias",
     icon: CalendarClock,
-    fetch: async () => {
-      const now = new Date();
-      const in30 = new Date(now.getTime() + 30 * 86400000);
-      const { data } = await supabase
-        .from("production_batches")
-        .select("*")
-        .gte("expiry_date", now.toISOString().slice(0, 10))
-        .lte("expiry_date", in30.toISOString().slice(0, 10))
-        .order("expiry_date", { ascending: true });
-      return data ?? [];
-    },
+    source: "lotes",
+    filter: (r) => isExpiringSoon(r.expiryDate),
     columns: batchColumns,
-    searchKeys: ["batch_number"],
+    searchKeys: ["batchNumber"],
   },
   users: {
     title: "Utilizadores",
     description: "Todos os utilizadores registados",
     icon: Users,
-    fetch: async () => {
-      const { data } = await (supabase as any).rpc("admin_list_profiles");
-      return (data ?? []) as any[];
-    },
+    source: "users",
     columns: [
-      { key: "full_name", label: "Nome", render: (r) => r.full_name || "—" },
+      { key: "fullName", label: "Nome", render: (r) => r.fullName || "—" },
       { key: "phone", label: "Telefone", render: (r) => r.phone || "—" },
-      { key: "created_at", label: "Registado", render: (r) => fmtDateTime(r.created_at) },
+      { key: "createdAt", label: "Registado", render: (r) => fmtDateTime(r.createdAt) },
     ],
-    searchKeys: ["full_name", "phone"],
+    searchKeys: ["fullName", "phone"],
   },
 
   // ---------- Charts ----------
@@ -232,12 +196,9 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Análises por Mês",
     description: "Todas as análises com data agendada",
     icon: BarChart3,
-    fetch: async () => {
-      const { data } = await supabase.from("lab_analyses").select("*").order("scheduled_date", { ascending: false });
-      return data ?? [];
-    },
+    source: "analises",
     columns: analysisColumns,
-    searchKeys: ["client_name", "analysis_type"],
+    searchKeys: ["clientName", "analysisType"],
     statusKey: "status",
     statusOptions: Object.entries(STATUS_ANALYSIS).map(([value, label]) => ({ value, label })),
   },
@@ -245,12 +206,9 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Estado das Análises",
     description: "Distribuição de análises por estado",
     icon: PieChart,
-    fetch: async () => {
-      const { data } = await supabase.from("lab_analyses").select("*").order("created_at", { ascending: false });
-      return data ?? [];
-    },
+    source: "analises",
     columns: analysisColumns,
-    searchKeys: ["client_name", "analysis_type"],
+    searchKeys: ["clientName", "analysisType"],
     statusKey: "status",
     statusOptions: Object.entries(STATUS_ANALYSIS).map(([value, label]) => ({ value, label })),
   },
@@ -258,15 +216,9 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Produção vs Distribuição",
     description: "Lotes produzidos e quantidades distribuídas",
     icon: BarChart3,
-    fetch: async () => {
-      const { data } = await supabase
-        .from("production_batches")
-        .select("*")
-        .order("production_date", { ascending: false });
-      return data ?? [];
-    },
+    source: "lotes",
     columns: batchColumns,
-    searchKeys: ["batch_number"],
+    searchKeys: ["batchNumber"],
     statusKey: "status",
     statusOptions: Object.entries(STATUS_BATCH).map(([value, label]) => ({ value, label })),
   },
@@ -274,15 +226,9 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Estado dos Lotes",
     description: "Distribuição de lotes por estado",
     icon: PieChart,
-    fetch: async () => {
-      const { data } = await supabase
-        .from("production_batches")
-        .select("*")
-        .order("created_at", { ascending: false });
-      return data ?? [];
-    },
+    source: "lotes",
     columns: batchColumns,
-    searchKeys: ["batch_number"],
+    searchKeys: ["batchNumber"],
     statusKey: "status",
     statusOptions: Object.entries(STATUS_BATCH).map(([value, label]) => ({ value, label })),
   },
@@ -290,18 +236,15 @@ const CONFIG: Record<string, MetricConfig> = {
     title: "Produtos por Tipo",
     description: "Catálogo de produtos agrupado por tipo",
     icon: Pill,
-    fetch: async () => {
-      const { data } = await supabase.from("products").select("*").order("name", { ascending: true });
-      return data ?? [];
-    },
+    source: "produtos",
     columns: [
       { key: "name", label: "Produto" },
-      { key: "product_type", label: "Tipo", render: (r) => <Badge variant="outline">{TYPE_PRODUCT[r.product_type] || r.product_type}</Badge> },
+      { key: "productType", label: "Tipo", render: (r) => <Badge variant="outline">{TYPE_PRODUCT[r.productType] || r.productType}</Badge> },
       { key: "unit", label: "Unidade" },
-      { key: "is_active", label: "Ativo", render: (r) => (r.is_active ? "Sim" : "Não") },
+      { key: "isArchived", label: "Ativo", render: (r) => (r.isArchived ? "Não" : "Sim") },
     ],
     searchKeys: ["name"],
-    statusKey: "product_type",
+    statusKey: "productType",
     statusOptions: Object.entries(TYPE_PRODUCT).map(([value, label]) => ({ value, label })),
   },
 };
@@ -310,36 +253,58 @@ export default function PainelDetalhe() {
   const { metric = "" } = useParams();
   const config = CONFIG[metric];
 
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  // Reset filtros ao trocar de métrica.
   useEffect(() => {
-    if (!config) return;
-    setLoading(true);
     setSearch("");
     setStatusFilter("all");
-    config.fetch().then((data) => {
-      setRows(data);
-      setLoading(false);
-    });
   }, [metric]);
+
+  // Fontes subjacentes — perPage alto para trazer tudo e filtrar client-side,
+  // à semelhança das páginas de detalhe/agregação já migradas.
+  const analisesQuery = useAnalisesList({ page: 1, perPage: 1000 });
+  const lotesQuery = useLotesList({ page: 1, perPage: 1000 });
+  const ncQuery = useNaoConformidadesList({ page: 1, perPage: 1000 });
+  const insumosQuery = useInsumosList({ page: 1, perPage: 1000 });
+  const distribuicaoQuery = useDistribuicaoList({ page: 1, perPage: 1000 });
+  const produtosQuery = useProdutosList({ page: 1, perPage: 1000 });
+  const usersQuery = useUsersList({});
+
+  const sources: Record<Source, { rows: Row[]; loading: boolean }> = {
+    analises: { rows: analisesQuery.data?.data ?? [], loading: analisesQuery.isLoading },
+    lotes: { rows: lotesQuery.data?.data ?? [], loading: lotesQuery.isLoading },
+    nc: { rows: ncQuery.data?.data ?? [], loading: ncQuery.isLoading },
+    insumos: { rows: insumosQuery.data?.data ?? [], loading: insumosQuery.isLoading },
+    distribuicao: { rows: distribuicaoQuery.data?.data ?? [], loading: distribuicaoQuery.isLoading },
+    produtos: { rows: produtosQuery.data?.data ?? [], loading: produtosQuery.isLoading },
+    users: { rows: usersQuery.data ?? [], loading: usersQuery.isLoading },
+  };
+
+  const { rows, loading } = config
+    ? sources[config.source]
+    : { rows: [] as Row[], loading: false };
+
+  const baseRows = useMemo(() => {
+    if (!config) return [];
+    return config.filter ? rows.filter(config.filter) : rows;
+  }, [rows, config]);
 
   const filtered = useMemo(() => {
     if (!config) return [];
-    let out = rows;
+    let out = baseRows;
     if (statusFilter !== "all" && config.statusKey) {
       out = out.filter((r) => r[config.statusKey!] === statusFilter);
     }
     if (search.trim() && config.searchKeys?.length) {
       const q = search.toLowerCase();
       out = out.filter((r) =>
-        config.searchKeys!.some((k) => String(r[k] ?? "").toLowerCase().includes(q))
+        config.searchKeys!.some((k) => String(r[k] ?? "").toLowerCase().includes(q)),
       );
     }
     return out;
-  }, [rows, search, statusFilter, config]);
+  }, [baseRows, search, statusFilter, config]);
 
   if (!config) return <Navigate to="/admin" replace />;
 

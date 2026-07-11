@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -9,124 +11,129 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Save, Loader2, KeyRound, Upload, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { fadeInUp } from "@/lib/motion";
+import { usePerfilQuery, useUpdatePerfil } from "@/hooks/queries/usePerfil";
+import i18n from "@/i18n";
+import ptPerfil from "@/i18n/locales/pt/admin/perfil.json";
+import enPerfil from "@/i18n/locales/en/admin/perfil.json";
 
-interface Profile {
-  id: string;
-  user_id: string;
-  full_name: string;
-  phone: string | null;
-  avatar_url: string | null;
-  created_at: string;
-  updated_at: string;
-}
+// Namespace autónomo registado em runtime, seguindo o padrão de Documentos.tsx.
+if (!i18n.hasResourceBundle("pt", "admin-perfil"))
+  i18n.addResourceBundle("pt", "admin-perfil", ptPerfil, true, true);
+if (!i18n.hasResourceBundle("en", "admin-perfil"))
+  i18n.addResourceBundle("en", "admin-perfil", enPerfil, true, true);
 
 export default function Perfil() {
+  const { t } = useTranslation("admin-perfil");
+  // Identificação do utilizador autenticado — fora do âmbito desta migração,
+  // mantém-se em Supabase Auth (ver useAuth()).
   const { user } = useAuth();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const prefersReduced = useReducedMotion();
+
+  // --- Dados de perfil (nome, telefone, avatar) — migrados para a camada mock ---
+  const { data: perfil, isLoading } = usePerfilQuery();
+  const updatePerfil = useUpdatePerfil();
+
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!perfil) return;
+    setFullName(perfil.fullName || "");
+    setPhone(perfil.phone || "");
+    setAvatarUrl(perfil.avatarUrl || null);
+  }, [perfil]);
+
+  // --- Alteração de password — MANTÉM-SE em Supabase Auth, fora do âmbito ---
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    const fetchProfile = async () => {
-      const { data } = await (supabase as any).rpc("get_my_profile");
-      const rows = Array.isArray(data) ? data : data ? [data] : [];
-      const row: any = rows[0] ?? null;
-      if (row) {
-        setProfile(row as Profile);
-        setFullName(row.full_name || "");
-        setPhone(row.phone || "");
-        setAvatarUrl(row.avatar_url || null);
-      }
-      setLoading(false);
-    };
-    fetchProfile();
-  }, [user]);
-
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Erro", description: "A imagem deve ter no máximo 2MB.", variant: "destructive" });
+      toast({ title: t("toast.error"), description: t("avatar.tooLarge"), variant: "destructive" });
       return;
     }
+    // Sem storage real: gera uma pré-visualização local imediata (tal como
+    // Documentos.tsx simula uploads sem persistir o ficheiro em si).
+    const url = URL.createObjectURL(file);
     setUploadingAvatar(true);
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (upErr) {
+    try {
+      const updated = await updatePerfil.mutateAsync({ avatarUrl: url });
+      setAvatarUrl(updated.avatarUrl);
+      toast({ title: t("toast.avatarUpdated") });
+    } catch (error) {
+      toast({
+        title: t("toast.error"),
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
       setUploadingAvatar(false);
-      toast({ title: "Erro", description: upErr.message, variant: "destructive" });
-      return;
     }
-    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-    const url = `${pub.publicUrl}?t=${Date.now()}`;
-    const { error: updErr } = await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
-    setUploadingAvatar(false);
-    if (updErr) {
-      toast({ title: "Erro", description: updErr.message, variant: "destructive" });
-      return;
-    }
-    setAvatarUrl(url);
-    toast({ title: "Foto actualizada" });
   };
 
   const handleAvatarRemove = async () => {
-    if (!user) return;
     setUploadingAvatar(true);
-    const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("user_id", user.id);
-    setUploadingAvatar(false);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-      return;
+    try {
+      const updated = await updatePerfil.mutateAsync({ avatarUrl: null });
+      setAvatarUrl(updated.avatarUrl);
+      toast({ title: t("toast.avatarRemoved") });
+    } catch (error) {
+      toast({
+        title: t("toast.error"),
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
     }
-    setAvatarUrl(null);
-    toast({ title: "Foto removida" });
   };
 
   const handleSave = async () => {
-    if (!user || !profile) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ full_name: fullName, phone: phone || null })
-      .eq("user_id", user.id);
-    setSaving(false);
-    if (error) {
-      toast({ title: "Erro", description: "Não foi possível guardar o perfil.", variant: "destructive" });
-    } else {
-      toast({ title: "Perfil actualizado", description: "Os seus dados foram guardados com sucesso." });
+    try {
+      await updatePerfil.mutateAsync({ fullName, phone: phone || null });
+      toast({ title: t("toast.profileUpdated"), description: t("toast.profileUpdatedDescription") });
+    } catch (error) {
+      toast({
+        title: t("toast.error"),
+        description: error instanceof Error ? error.message : t("toast.profileError"),
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
+  // Alteração de password: lógica intocada, continua a falar directamente com
+  // o Supabase Auth (fora do âmbito da migração para a camada mock).
   const handleChangePassword = async () => {
     if (!newPassword || !confirmPassword) {
-      toast({ title: "Erro", description: "Preencha todos os campos de senha.", variant: "destructive" });
+      toast({ title: t("toast.error"), description: t("toast.passwordFillAll"), variant: "destructive" });
       return;
     }
     if (newPassword.length < 6) {
-      toast({ title: "Erro", description: "A nova senha deve ter pelo menos 6 caracteres.", variant: "destructive" });
+      toast({ title: t("toast.error"), description: t("toast.passwordTooShort"), variant: "destructive" });
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
+      toast({ title: t("toast.error"), description: t("toast.passwordMismatch"), variant: "destructive" });
       return;
     }
     setChangingPassword(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setChangingPassword(false);
     if (error) {
-      toast({ title: "Erro", description: "Não foi possível alterar a senha.", variant: "destructive" });
+      toast({ title: t("toast.error"), description: t("toast.passwordError"), variant: "destructive" });
     } else {
-      toast({ title: "Senha alterada", description: "A sua senha foi alterada com sucesso." });
+      toast({ title: t("toast.passwordChanged"), description: t("toast.passwordChangedDescription") });
       setNewPassword("");
       setConfirmPassword("");
     }
@@ -140,115 +147,111 @@ export default function Perfil() {
     <div className="space-y-6 max-w-2xl">
       <AdminPageHeader
         icon={User}
-        title="Meu Perfil"
-        description="Visualize e edite os seus dados pessoais"
+        title={t("page.title")}
+        description={t("page.description")}
       />
 
-      <AdminCard title="Dados Pessoais" icon={User} loading={loading}>
-        <div className="space-y-6">
-          {/* Avatar */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20 text-lg">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">{fullName || "Sem nome"}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" disabled={uploadingAvatar} asChild>
-                  <label className="cursor-pointer">
-                    {uploadingAvatar ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
-                    Carregar foto
-                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
-                  </label>
-                </Button>
-                {avatarUrl && (
-                  <Button size="sm" variant="ghost" onClick={handleAvatarRemove} disabled={uploadingAvatar} className="text-destructive hover:text-destructive">
-                    <Trash2 className="mr-2 h-3 w-3" /> Remover
+      <motion.div initial={prefersReduced ? false : "hidden"} animate="visible" variants={fadeInUp}>
+        <AdminCard title={t("card.personalData")} icon={User} loading={isLoading}>
+          <div className="space-y-6">
+            {/* Avatar */}
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20 text-lg">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">{fullName || t("avatar.noName")}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" disabled={uploadingAvatar} asChild>
+                    <label className="cursor-pointer">
+                      {uploadingAvatar ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
+                      {t("avatar.upload")}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+                    </label>
                   </Button>
-                )}
+                  {avatarUrl && (
+                    <Button size="sm" variant="ghost" onClick={handleAvatarRemove} disabled={uploadingAvatar} className="text-destructive hover:text-destructive">
+                      <Trash2 className="mr-2 h-3 w-3" /> {t("avatar.remove")}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Form */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" value={user?.email || ""} disabled className="bg-muted/50" />
+            {/* Form */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="email">{t("form.labels.email")}</Label>
+                <Input id="email" value={user?.email || ""} disabled className="bg-muted/50" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">{t("form.labels.fullName")}</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder={t("form.placeholders.fullName")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">{t("form.labels.phone")}</Label>
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder={t("form.placeholders.phone")}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Nome Completo</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Insira o seu nome"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+244 9XX XXX XXX"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Membro desde</Label>
-              <Input
-                value={profile ? new Date(profile.created_at).toLocaleDateString("pt-AO") : "—"}
-                disabled
-                className="bg-muted/50"
-              />
-            </div>
-          </div>
 
-          <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Guardar Alterações
-            </Button>
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {t("form.save")}
+              </Button>
+            </div>
           </div>
-        </div>
-      </AdminCard>
+        </AdminCard>
+      </motion.div>
 
-      <AdminCard title="Alterar Senha" icon={KeyRound}>
-        <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Nova Senha</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-              />
+      <motion.div initial={prefersReduced ? false : "hidden"} animate="visible" variants={fadeInUp}>
+        <AdminCard title={t("card.changePassword")} icon={KeyRound}>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">{t("password.labels.newPassword")}</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={t("password.placeholders.newPassword")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">{t("password.labels.confirmPassword")}</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder={t("password.placeholders.confirmPassword")}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repita a nova senha"
-              />
+            <div className="flex justify-end">
+              <Button onClick={handleChangePassword} disabled={changingPassword}>
+                {changingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                {t("password.submit")}
+              </Button>
             </div>
           </div>
-          <div className="flex justify-end">
-            <Button onClick={handleChangePassword} disabled={changingPassword}>
-              {changingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-              Alterar Senha
-            </Button>
-          </div>
-        </div>
-      </AdminCard>
+        </AdminCard>
+      </motion.div>
     </div>
   );
 }

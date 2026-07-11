@@ -1,0 +1,83 @@
+{
+  "page": {
+    "title": "Alert History",
+    "description": "Track recurrences, trends and action owners"
+  },
+  "actions": {
+    "export": "Export",
+    "clear": "Clear"
+  },
+  "filters": {
+    "title": "Filters",
+    "metric": "Metric",
+    "status": "Status",
+    "from": "From",
+    "to": "To"
+  },
+  "metrics": {
+    "all": "All metrics",
+    "lowStock": "Critical Stock",
+    "expiringSoon": "Batches Expiring",
+    "ncOpen": "Non-conformities",
+    "analysesPending": "Pending Analyses"
+  },
+  "status": {
+    "all": "All statuses",
+    "pendente": "Pending",
+    "em_curso": "In progress",
+    "resolvido": "Resolved"
+  },
+  "trend": {
+    "title": "Trend (last 30 days)",
+    "series": "Alerts",
+    "empty": "No alerts in the last 30 days."
+  },
+  "table": {
+    "title": "Records",
+    "datetime": "Date/Time",
+    "metric": "Metric",
+    "value": "Value",
+    "threshold": "Threshold",
+    "assignee": "Owner",
+    "department": "Department",
+    "state": "Status",
+    "assign": "Assign",
+    "details": "Details",
+    "empty": "No alerts recorded for the selected filters.",
+    "emptyCell": "—"
+  },
+  "dialog": {
+    "title": "Assign Alert",
+    "summary": "{{label}} · value {{value}} (threshold {{threshold}})",
+    "department": "Department",
+    "noDepartment": "— No department —",
+    "assignee": "Owner",
+    "noAssignee": "— No owner —",
+    "state": "Action status",
+    "notes": "Action notes",
+    "notesPlaceholder": "Describe the planned or taken action...",
+    "select": "Select...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "confirmClear": "Delete your entire alert history? This action cannot be undone.",
+  "toast": {
+    "saved": "Assignment saved",
+    "saveError": "Error saving assignment",
+    "cleared": "History cleared",
+    "clearError": "Error clearing history"
+  },
+  "export": {
+    "filename": "alert-history",
+    "datetime": "Date/Time",
+    "metric": "Metric",
+    "value": "Value",
+    "threshold": "Threshold",
+    "severity": "Severity",
+    "state": "Status",
+    "assignee": "Owner",
+    "department": "Department",
+    "notes": "Notes"
+  }
+}

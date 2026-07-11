@@ -1,0 +1,83 @@
+{
+  "page": {
+    "title": "Histórico de Alertas",
+    "description": "Acompanhe recorrências, tendências e responsáveis pela ação"
+  },
+  "actions": {
+    "export": "Exportar",
+    "clear": "Limpar"
+  },
+  "filters": {
+    "title": "Filtros",
+    "metric": "Métrica",
+    "status": "Estado",
+    "from": "De",
+    "to": "Até"
+  },
+  "metrics": {
+    "all": "Todas as métricas",
+    "lowStock": "Stock Crítico",
+    "expiringSoon": "Lotes a Expirar",
+    "ncOpen": "Não Conformidades",
+    "analysesPending": "Análises Pendentes"
+  },
+  "status": {
+    "all": "Todos os estados",
+    "pendente": "Pendente",
+    "em_curso": "Em curso",
+    "resolvido": "Resolvido"
+  },
+  "trend": {
+    "title": "Tendência (últimos 30 dias)",
+    "series": "Alertas",
+    "empty": "Sem alertas nos últimos 30 dias."
+  },
+  "table": {
+    "title": "Registos",
+    "datetime": "Data/Hora",
+    "metric": "Métrica",
+    "value": "Valor",
+    "threshold": "Limiar",
+    "assignee": "Responsável",
+    "department": "Departamento",
+    "state": "Estado",
+    "assign": "Atribuir",
+    "details": "Detalhes",
+    "empty": "Sem alertas registados para os filtros selecionados.",
+    "emptyCell": "—"
+  },
+  "dialog": {
+    "title": "Atribuir Alerta",
+    "summary": "{{label}} · valor {{value}} (limiar {{threshold}})",
+    "department": "Departamento",
+    "noDepartment": "— Sem departamento —",
+    "assignee": "Responsável",
+    "noAssignee": "— Sem responsável —",
+    "state": "Estado da ação",
+    "notes": "Notas da ação",
+    "notesPlaceholder": "Descreva a ação prevista ou tomada...",
+    "select": "Selecionar...",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "A guardar..."
+  },
+  "confirmClear": "Apagar todo o seu histórico de alertas? Esta ação não pode ser revertida.",
+  "toast": {
+    "saved": "Atribuição guardada",
+    "saveError": "Erro ao guardar atribuição",
+    "cleared": "Histórico limpo",
+    "clearError": "Erro ao limpar histórico"
+  },
+  "export": {
+    "filename": "historico-alertas",
+    "datetime": "Data/Hora",
+    "metric": "Métrica",
+    "value": "Valor",
+    "threshold": "Limiar",
+    "severity": "Severidade",
+    "state": "Estado",
+    "assignee": "Responsável",
+    "department": "Departamento",
+    "notes": "Notas"
+  }
+}
