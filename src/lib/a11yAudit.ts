@@ -62,6 +62,19 @@ function waitForLoad(iframe: HTMLIFrameElement, timeoutMs = 12000): Promise<void
   });
 }
 
+// axe.run() em rotas com animações CSS contínuas (ex: hero com Ken Burns) pode nunca
+// resolver — o MutationObserver interno do axe mantém-se ocupado com o reflow constante.
+// Sem este timeout, uma única rota problemática bloqueia o crawl das restantes 14.
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+    promise.then(
+      (v) => { window.clearTimeout(timer); resolve(v); },
+      (e) => { window.clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
 export async function auditRoute(
   path: string,
   label: string,
@@ -85,6 +98,20 @@ export async function auditRoute(
     const doc = iframe.contentDocument;
     if (!win || !doc) throw new Error("Não foi possível aceder ao documento da rota.");
 
+    // Congela animações/transições CSS antes de correr o axe. Rotas com animação
+    // contínua (Ken Burns do hero, gráficos, "pulse") mantêm o layout em recalculo
+    // permanente; o axe fica preso num loop síncrono de recalculo de estilos que nenhum
+    // timeout consegue interromper (single-threaded). Uma vez congelado, o axe analisa
+    // um snapshot estático — mais rápido e mais determinístico.
+    const freeze = doc.createElement("style");
+    freeze.textContent = `*, *::before, *::after {
+      animation-play-state: paused !important;
+      animation-duration: 0s !important;
+      transition-duration: 0s !important;
+      transition-delay: 0s !important;
+    }`;
+    doc.head.appendChild(freeze);
+
     // Inject axe-core into the iframe scope (same origin -> permitted).
     if (!win.axe) {
       const script = doc.createElement("script");
@@ -94,10 +121,14 @@ export async function auditRoute(
     const axe = win.axe;
     if (!axe) throw new Error("Falhou a injecção do motor de auditoria.");
 
-    const results = await axe.run(doc, {
-      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
-      resultTypes: ["violations", "passes", "incomplete"],
-    });
+    const results = await withTimeout(
+      axe.run(doc, {
+        runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+        resultTypes: ["violations", "passes", "incomplete"],
+      }),
+      20000,
+      "Tempo esgotado a analisar a rota (possível animação contínua a bloquear o motor de auditoria).",
+    );
 
     const violations: A11yViolation[] = results.violations.map((v: any) => ({
       id: v.id,

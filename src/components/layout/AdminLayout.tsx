@@ -446,7 +446,7 @@ export function AdminLayout() {
                       <>
                         <BreadcrumbSeparator />
                         <BreadcrumbItem>
-                          <span className="text-muted-foreground/80">{currentItem.group}</span>
+                          <span className="text-muted-foreground">{currentItem.group}</span>
                         </BreadcrumbItem>
                         <BreadcrumbSeparator />
                         <BreadcrumbItem>

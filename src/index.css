@@ -17,10 +17,14 @@
     --primary-foreground: 60 20% 97%;
 
     --secondary: 38 75% 50%;
-    --secondary-foreground: 0 0% 100%;
+    /* Escuro (não branco) — branco sobre este dourado só atinge ~2.4:1, muito abaixo
+       do mínimo WCAG AA 4.5:1 (afecta todos os Badge/Button variant="secondary"). */
+    --secondary-foreground: 200 25% 12%;
 
     --muted: 200 12% 93%;
-    --muted-foreground: 200 8% 46%;
+    /* L=40% em vez de 46% — a 46% o par contra --background só atinge ~4.1:1,
+       abaixo do mínimo WCAG AA 4.5:1 para texto normal. */
+    --muted-foreground: 200 8% 40%;
 
     --accent: 152 25% 93%;
     --accent-foreground: 152 40% 18%;
@@ -49,6 +53,11 @@
     --iiv-green-light: 152 25% 93%;
     --iiv-gold: 38 75% 50%;
     --iiv-gold-light: 38 60% 93%;
+    /* Variante escura do dourado para TEXTO sobre fundos claros — a 50% de luminosidade
+       o dourado de marca só atinge ~2.3:1 de contraste (falha WCAG AA 4.5:1 para texto).
+       Usada em .kicker e legendas; --iiv-gold em si mantém-se inalterado para
+       fundos/botões/gradientes, onde o contraste é medido de forma diferente. */
+    --iiv-gold-text: 38 75% 32%;
 
     --chart-1: 152 42% 24%;
     --chart-2: 38 75% 50%;
@@ -71,7 +80,7 @@
     --primary-foreground: 0 0% 100%;
 
     --secondary: 38 65% 46%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary-foreground: 200 25% 12%;
 
     --muted: 200 20% 14%;
     --muted-foreground: 200 8% 56%;
@@ -95,6 +104,10 @@
     --sidebar-border: 200 18% 12%;
     --sidebar-ring: 38 65% 46%;
     --sidebar-muted: 200 10% 70%;
+
+    /* Em dark mode o dourado base já contrasta bem contra fundos escuros (~7.9:1) —
+       não precisa da variante escurecida usada em light mode. */
+    --iiv-gold-text: 38 75% 50%;
   }
 }
 

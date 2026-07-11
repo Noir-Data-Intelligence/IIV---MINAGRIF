@@ -164,7 +164,7 @@ export function NotificationCenter() {
                         {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-secondary" />}
                       </div>
                       <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
-                      <p className="text-[10px] text-muted-foreground/70 mt-1.5">
+                      <p className="text-[10px] text-muted-foreground mt-1.5">
                         {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: pt })}
                       </p>
                     </div>

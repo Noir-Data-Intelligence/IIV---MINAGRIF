@@ -209,7 +209,7 @@ export default function Noticias() {
         cell: ({ row }) => (
           <div className="max-w-sm">
             <div className="font-medium flex items-center gap-2">
-              {row.original.destaque && <Star className="h-3.5 w-3.5 text-[hsl(var(--iiv-gold))] fill-current" />}
+              {row.original.destaque && <Star className="h-3.5 w-3.5 text-[hsl(var(--iiv-gold-text))] fill-current" />}
               {row.original.titulo}
             </div>
             {row.original.resumo && (

@@ -121,7 +121,7 @@ export function AdminCard({
             </p>
           )}
           {caption && (
-            <p className={cn("text-[10px] mt-0.5", isGradient ? "text-primary-foreground/60" : "text-muted-foreground/70")}>
+            <p className={cn("text-[10px] mt-0.5", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
               {caption}
             </p>
           )}

@@ -745,8 +745,11 @@ export default function Dashboard() {
               <CardContent>
                 {analysisStatus.length > 0 ? (
                   <ChartContainer config={analysisStatusConfig} className="h-[280px] w-full">
-                    <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-                      <Pie data={analysisStatus} cx="50%" cy="45%" innerRadius={48} outerRadius={82} dataKey="value" nameKey="name" strokeWidth={2} stroke="hsl(var(--card))" labelLine={false}>
+                    {/* aria-hidden: o Recharts atribui role="img" sem nome a cada fatia (path)
+                        do Pie, o que o axe assinala (svg-img-alt). A legenda abaixo (ChartLegend)
+                        já expõe a mesma informação em texto acessível fora do SVG. */}
+                    <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }} aria-hidden="true" accessibilityLayer={false}>
+                      <Pie data={analysisStatus} cx="50%" cy="45%" innerRadius={48} outerRadius={82} dataKey="value" nameKey="name" strokeWidth={2} stroke="hsl(var(--card))" labelLine={false} rootTabIndex={-1}>
                         {analysisStatus.map((_, i) => <Cell key={i} fill={getChartColor(i)} />)}
                       </Pie>
                       <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
@@ -790,8 +793,11 @@ export default function Dashboard() {
               <CardContent>
                 {productionStatus.length > 0 ? (
                   <ChartContainer config={productionStatusConfig} className="h-[280px] w-full">
-                    <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-                      <Pie data={productionStatus} cx="50%" cy="45%" innerRadius={48} outerRadius={82} dataKey="value" nameKey="name" strokeWidth={2} stroke="hsl(var(--card))" labelLine={false}>
+                    {/* aria-hidden: o Recharts atribui role="img" sem nome a cada fatia (path)
+                        do Pie, o que o axe assinala (svg-img-alt). A legenda abaixo (ChartLegend)
+                        já expõe a mesma informação em texto acessível fora do SVG. */}
+                    <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }} aria-hidden="true" accessibilityLayer={false}>
+                      <Pie data={productionStatus} cx="50%" cy="45%" innerRadius={48} outerRadius={82} dataKey="value" nameKey="name" strokeWidth={2} stroke="hsl(var(--card))" labelLine={false} rootTabIndex={-1}>
                         {productionStatus.map((_, i) => <Cell key={i} fill={getChartColor(i)} />)}
                       </Pie>
                       <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />

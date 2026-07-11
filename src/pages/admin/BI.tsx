@@ -335,8 +335,10 @@ export default function BI() {
             <p className="text-xs text-muted-foreground -mt-2 mb-4">{t("charts.rh.subtitle")}</p>
             {staffByRole.length > 0 ? (
               <ChartContainer config={roleConfig} className="h-[340px] w-full">
-                <PieChart>
-                  <Pie data={staffByRole} dataKey="value" nameKey="name" outerRadius={120} innerRadius={64} paddingAngle={2}>
+                {/* aria-hidden: fatias do Pie recebem role="img" sem nome do Recharts (axe
+                    svg-img-alt); a ChartLegend abaixo já dá o texto acessível equivalente. */}
+                <PieChart aria-hidden="true" accessibilityLayer={false}>
+                  <Pie data={staffByRole} dataKey="value" nameKey="name" outerRadius={120} innerRadius={64} paddingAngle={2} rootTabIndex={-1}>
                     {staffByRole.map((_, i) => (
                       <Cell key={i} fill={getChartColor(i)} />
                     ))}

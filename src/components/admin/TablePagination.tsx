@@ -38,7 +38,7 @@ export function TablePagination({
         <div className="flex items-center gap-2">
           <span className="hidden sm:inline">Por página:</span>
           <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v) as PageSize)}>
-            <SelectTrigger className="h-8 w-[80px]">
+            <SelectTrigger className="h-8 w-[80px]" aria-label="Itens por página">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

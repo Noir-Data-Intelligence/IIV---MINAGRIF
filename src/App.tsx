@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,71 +6,84 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 
-import Index from "./pages/Index";
-import Sobre from "./pages/Sobre";
-import Servicos from "./pages/Servicos";
-import Noticias from "./pages/Noticias";
-import NoticiaDetalhe from "./pages/NoticiaDetalhe";
-import Legislacao from "./pages/Legislacao";
-import LegislacaoDetalhe from "./pages/LegislacaoDetalhe";
-import LegislacaoAdmin from "./pages/admin/Legislacao";
-import NoticiasAdmin from "./pages/admin/Noticias";
-import MensagensAdmin from "./pages/admin/Mensagens";
-import SlideshowAdmin from "./pages/admin/Slideshow";
+const Index = lazy(() => import("./pages/Index"));
+const Sobre = lazy(() => import("./pages/Sobre"));
+const Servicos = lazy(() => import("./pages/Servicos"));
+const Noticias = lazy(() => import("./pages/Noticias"));
+const NoticiaDetalhe = lazy(() => import("./pages/NoticiaDetalhe"));
+const Legislacao = lazy(() => import("./pages/Legislacao"));
+const LegislacaoDetalhe = lazy(() => import("./pages/LegislacaoDetalhe"));
+const LegislacaoAdmin = lazy(() => import("./pages/admin/Legislacao"));
+const NoticiasAdmin = lazy(() => import("./pages/admin/Noticias"));
+const MensagensAdmin = lazy(() => import("./pages/admin/Mensagens"));
+const SlideshowAdmin = lazy(() => import("./pages/admin/Slideshow"));
 
-import Contactos from "./pages/Contactos";
-import Termos from "./pages/Termos";
-import Privacidade from "./pages/Privacidade";
-import Notificacoes from "./pages/admin/Notificacoes";
-import Login from "./pages/Login";
-import Registar from "./pages/Registar";
-import RecuperarSenha from "./pages/RecuperarSenha";
-import RedefinirSenha from "./pages/RedefinirSenha";
-import Dashboard from "./pages/admin/Dashboard";
-import PainelDetalhe from "./pages/admin/PainelDetalhe";
-import Utilizadores from "./pages/admin/Utilizadores";
-import Departamentos from "./pages/admin/Departamentos";
-import Laboratorios from "./pages/admin/Laboratorios";
-import Analises from "./pages/admin/Analises";
-import Resultados from "./pages/admin/Resultados";
-import Insumos from "./pages/admin/Insumos";
-import Produtos from "./pages/admin/Produtos";
-import Lotes from "./pages/admin/Lotes";
-import Planeamento from "./pages/admin/Planeamento";
-import Distribuicao from "./pages/admin/Distribuicao";
-import Estacoes from "./pages/admin/Estacoes";
-import Animais from "./pages/admin/Animais";
-import Inseminacao from "./pages/admin/Inseminacao";
-import Stock from "./pages/admin/Stock";
-import Agricultura from "./pages/admin/Agricultura";
-import ProducaoPecuaria from "./pages/admin/ProducaoPecuaria";
-import Financeiro from "./pages/admin/Financeiro";
-import Patrimonio from "./pages/admin/Patrimonio";
-import Missoes from "./pages/admin/Missoes";
-import RecursosHumanos from "./pages/admin/RecursosHumanos";
-import Formacoes from "./pages/admin/Formacoes";
-import Investigacao from "./pages/admin/Investigacao";
-import Avaliacoes from "./pages/admin/Avaliacoes";
-import BI from "./pages/admin/BI";
-import Auditorias from "./pages/admin/Auditorias";
-import NaoConformidades from "./pages/admin/NaoConformidades";
-import LogsActividade from "./pages/admin/LogsActividade";
-import Perfil from "./pages/admin/Perfil";
-import Acessibilidade from "./pages/admin/Acessibilidade";
-import RBAC from "./pages/admin/RBAC";
-import HistoricoAlertas from "./pages/admin/HistoricoAlertas";
-import Documentos from "./pages/admin/Documentos";
-import Processos from "./pages/admin/Processos";
-import ProcessoDetalhe from "./pages/admin/ProcessoDetalhe";
-import ProcessosTipos from "./pages/admin/ProcessosTipos";
-import ProcessosAnalitica from "./pages/admin/ProcessosAnalitica";
+const Contactos = lazy(() => import("./pages/Contactos"));
+const Termos = lazy(() => import("./pages/Termos"));
+const Privacidade = lazy(() => import("./pages/Privacidade"));
+const Notificacoes = lazy(() => import("./pages/admin/Notificacoes"));
+const Login = lazy(() => import("./pages/Login"));
+const Registar = lazy(() => import("./pages/Registar"));
+const RecuperarSenha = lazy(() => import("./pages/RecuperarSenha"));
+const RedefinirSenha = lazy(() => import("./pages/RedefinirSenha"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const PainelDetalhe = lazy(() => import("./pages/admin/PainelDetalhe"));
+const Utilizadores = lazy(() => import("./pages/admin/Utilizadores"));
+const Departamentos = lazy(() => import("./pages/admin/Departamentos"));
+const Laboratorios = lazy(() => import("./pages/admin/Laboratorios"));
+const Analises = lazy(() => import("./pages/admin/Analises"));
+const Resultados = lazy(() => import("./pages/admin/Resultados"));
+const Insumos = lazy(() => import("./pages/admin/Insumos"));
+const Produtos = lazy(() => import("./pages/admin/Produtos"));
+const Lotes = lazy(() => import("./pages/admin/Lotes"));
+const Planeamento = lazy(() => import("./pages/admin/Planeamento"));
+const Distribuicao = lazy(() => import("./pages/admin/Distribuicao"));
+const Estacoes = lazy(() => import("./pages/admin/Estacoes"));
+const Animais = lazy(() => import("./pages/admin/Animais"));
+const Inseminacao = lazy(() => import("./pages/admin/Inseminacao"));
+const Stock = lazy(() => import("./pages/admin/Stock"));
+const Agricultura = lazy(() => import("./pages/admin/Agricultura"));
+const ProducaoPecuaria = lazy(() => import("./pages/admin/ProducaoPecuaria"));
+const Financeiro = lazy(() => import("./pages/admin/Financeiro"));
+const Patrimonio = lazy(() => import("./pages/admin/Patrimonio"));
+const Missoes = lazy(() => import("./pages/admin/Missoes"));
+const RecursosHumanos = lazy(() => import("./pages/admin/RecursosHumanos"));
+const Formacoes = lazy(() => import("./pages/admin/Formacoes"));
+const Investigacao = lazy(() => import("./pages/admin/Investigacao"));
+const Avaliacoes = lazy(() => import("./pages/admin/Avaliacoes"));
+const BI = lazy(() => import("./pages/admin/BI"));
+const Auditorias = lazy(() => import("./pages/admin/Auditorias"));
+const NaoConformidades = lazy(() => import("./pages/admin/NaoConformidades"));
+const LogsActividade = lazy(() => import("./pages/admin/LogsActividade"));
+const Perfil = lazy(() => import("./pages/admin/Perfil"));
+const Acessibilidade = lazy(() => import("./pages/admin/Acessibilidade"));
+const RBAC = lazy(() => import("./pages/admin/RBAC"));
+const HistoricoAlertas = lazy(() => import("./pages/admin/HistoricoAlertas"));
+const Documentos = lazy(() => import("./pages/admin/Documentos"));
+const Processos = lazy(() => import("./pages/admin/Processos"));
+const ProcessoDetalhe = lazy(() => import("./pages/admin/ProcessoDetalhe"));
+const ProcessosTipos = lazy(() => import("./pages/admin/ProcessosTipos"));
+const ProcessosAnalitica = lazy(() => import("./pages/admin/ProcessosAnalitica"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
 import { RoleGuard } from "@/components/RoleGuard";
-import NotFound from "./pages/NotFound";
 import { queryClient } from "@/lib/queryClient";
+
+// Fallback de rota: cada página já usa Skeleton internos para os seus próprios dados,
+// mas o chunk JS da própria página só chega depois deste primeiro paint — sem isto o
+// utilizador veria um ecrã em branco enquanto o lazy import() resolve.
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[60vh] w-full items-center justify-center">
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -79,6 +93,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <Suspense fallback={<RouteFallback />}>
           <Routes>
             {/* Public pages */}
             <Route element={<PublicLayout />}>
@@ -152,6 +167,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

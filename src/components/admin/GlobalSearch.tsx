@@ -366,7 +366,7 @@ export function GlobalSearch({ open, onOpenChange }: Props) {
                 >
                   <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="truncate">{r.label}</span>
-                  <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground/60">{r.group}</span>
+                  <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">{r.group}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -384,7 +384,7 @@ export function GlobalSearch({ open, onOpenChange }: Props) {
               >
                 <p.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                 <span>{p.label}</span>
-                <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground/60">{groupName}</span>
+                <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">{groupName}</span>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -405,7 +405,7 @@ export function GlobalSearch({ open, onOpenChange }: Props) {
                   <span className="truncate">{h.label}</span>
                   {h.sub && <span className="text-[11px] text-muted-foreground truncate">{h.sub}</span>}
                 </div>
-                <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground/60">{groupName}</span>
+                <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">{groupName}</span>
               </CommandItem>
             ))}
           </CommandGroup>

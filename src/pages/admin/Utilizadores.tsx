@@ -223,7 +223,7 @@ export default function Utilizadores() {
           value={roleFilter}
           onValueChange={(v) => { setRoleFilter(v); resetToFirstPage(); }}
         >
-          <SelectTrigger className="w-full md:w-52"><SelectValue placeholder={t("filters.rolePlaceholder")} /></SelectTrigger>
+          <SelectTrigger className="w-full md:w-52" aria-label={t("filters.rolePlaceholder")}><SelectValue placeholder={t("filters.rolePlaceholder")} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("filters.allRoles")}</SelectItem>
             {ALL_ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABEL[r]}</SelectItem>)}
@@ -233,7 +233,7 @@ export default function Utilizadores() {
           value={deptFilter}
           onValueChange={(v) => { setDeptFilter(v); resetToFirstPage(); }}
         >
-          <SelectTrigger className="w-full md:w-60"><SelectValue placeholder={t("filters.departmentPlaceholder")} /></SelectTrigger>
+          <SelectTrigger className="w-full md:w-60" aria-label={t("filters.departmentPlaceholder")}><SelectValue placeholder={t("filters.departmentPlaceholder")} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("filters.allDepartments")}</SelectItem>
             {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}

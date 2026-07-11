@@ -175,8 +175,10 @@ export default function ProcessosAnalitica() {
         <AdminCard title={t("charts.byStatus")}>
           {statusData.length > 0 ? (
             <ChartContainer config={statusConfig} className="h-[280px] w-full">
-              <PieChart>
-                <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={95} innerRadius={55} paddingAngle={2}>
+              {/* aria-hidden: fatias do Pie recebem role="img" sem nome do Recharts (axe
+                  svg-img-alt); a ChartLegend abaixo já dá o texto acessível equivalente. */}
+              <PieChart aria-hidden="true" accessibilityLayer={false}>
+                <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={95} innerRadius={55} paddingAngle={2} rootTabIndex={-1}>
                   {statusData.map((_, i) => (
                     <Cell key={i} fill={getChartColor(i)} />
                   ))}

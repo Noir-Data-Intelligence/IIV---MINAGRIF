@@ -39,7 +39,7 @@ export function NoDataOverlay({
       role="status"
     >
       <p className="text-sm font-medium text-muted-foreground">{message}</p>
-      {description ? <p className="text-xs text-muted-foreground/70">{description}</p> : null}
+      {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
     </div>
   );
 }

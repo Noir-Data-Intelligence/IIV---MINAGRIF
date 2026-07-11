@@ -41,7 +41,7 @@ export function LiveStats() {
                 </div>
               ))}
         </div>
-        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-muted-foreground/70 font-mono">
+        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-muted-foreground font-mono">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-[hsl(var(--iiv-gold))] mr-2 animate-pulse" />
           Dados actualizados em tempo real
         </p>

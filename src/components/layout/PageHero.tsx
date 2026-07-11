@@ -57,6 +57,9 @@ export function PageHero({ kicker, title, lead, image, breadcrumb, align = "left
         )}
 
         <motion.div initial="hidden" animate="visible" variants={revealVariants}>
+          {/* --iiv-gold (não a variante -text) — este kicker está sempre sobre o fundo
+              verde escuro do hero (bg-[hsl(var(--iiv-green-dark))]), nunca sobre claro,
+              pelo que o dourado base já contrasta bem (~7.9:1) sem escurecer. */}
           {kicker && (
             <div className={cn("kicker mb-5 text-[hsl(var(--iiv-gold))]", align === "center" && "flex justify-center")}>
               <span className="inline-block h-px w-8 align-middle bg-[hsl(var(--iiv-gold))]" />
