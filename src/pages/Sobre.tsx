@@ -7,8 +7,8 @@ import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptSobre from "@/i18n/locales/pt/public/sobre.json";
 import enSobre from "@/i18n/locales/en/public/sobre.json";
-import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
-import heroLab from "@/assets/hero/hero-lab.jpg";
+import sobreHeroInstitute from "@/assets/sobre/sobre-hero-institute.webp";
+import sobreTeamMeeting from "@/assets/sobre/sobre-team-meeting.webp";
 
 // Namespace "sobre" não faz parte do bundle central (src/i18n/index.ts, que só
 // regista "common"/"nav"). Registamo-lo aqui em runtime para manter esta página
@@ -52,7 +52,7 @@ export default function Sobre() {
         kicker={t("hero.kicker")}
         title={t("hero.title")}
         lead={t("hero.lead")}
-        image={heroInvestigacao}
+        image={sobreHeroInstitute}
         breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
@@ -67,7 +67,7 @@ export default function Sobre() {
             viewport={{ once: true, margin: "-80px" }}
           >
             <motion.div variants={revealVariants} className="md:col-span-5">
-              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("intro.kicker")}</p>
+              <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("intro.kicker")}</p>
               <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">
                 {t("intro.title")}
               </h2>
@@ -88,7 +88,7 @@ export default function Sobre() {
       <section className="section-divider py-24 bg-accent/30">
         <div className="container">
           <div className="mb-14">
-            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("timeline.kicker")}</p>
+            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("timeline.kicker")}</p>
             <h2 className="font-serif text-3xl md:text-4xl mt-5">{t("timeline.title")}</h2>
           </div>
           <motion.div
@@ -121,7 +121,7 @@ export default function Sobre() {
       <section className="section-divider py-24">
         <div className="container">
           <div className="mb-14 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("values.kicker")}</p>
+            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("values.kicker")}</p>
             <h2 className="font-serif text-3xl md:text-4xl mt-5">{t("values.title")}</h2>
           </div>
           <motion.div
@@ -136,7 +136,7 @@ export default function Sobre() {
               return (
                 <motion.div key={v.title} variants={revealVariants} className="bg-card p-8 md:p-10 grid md:grid-cols-12 gap-6 items-start">
                   <div className="md:col-span-3">
-                    <Icon className="h-8 w-8 text-[hsl(var(--iiv-gold))] mb-4" strokeWidth={1.5} />
+                    <Icon className="h-8 w-8 text-[hsl(var(--iiv-gold-text))] mb-4" strokeWidth={1.5} />
                     <h3 className="font-serif text-2xl">{v.title}</h3>
                   </div>
                   <p className="md:col-span-8 md:col-start-5 text-muted-foreground leading-relaxed">{v.text}</p>
@@ -158,10 +158,10 @@ export default function Sobre() {
             viewport={{ once: true, margin: "-80px" }}
           >
             <motion.div variants={revealVariants} className="overflow-hidden rounded-2xl">
-              <img src={heroLab} alt={t("structure.imageAlt")} className="aspect-[4/5] w-full object-cover" loading="lazy" />
+              <img src={sobreTeamMeeting} alt={t("structure.imageAlt")} className="aspect-[4/5] w-full object-cover" loading="lazy" />
             </motion.div>
             <motion.div variants={revealVariants}>
-              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("structure.kicker")}</p>
+              <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("structure.kicker")}</p>
               <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("structure.title")}</h2>
               <p className="mt-6 text-muted-foreground leading-relaxed">
                 {t("structure.text")}
@@ -169,7 +169,7 @@ export default function Sobre() {
               <div className="mt-8 grid grid-cols-2 gap-px bg-border rounded-xl overflow-hidden border border-border/60">
                 {departments.map((d) => (
                   <div key={d} className="bg-card p-5">
-                    <Award className="h-4 w-4 text-[hsl(var(--iiv-gold))] mb-2" />
+                    <Award className="h-4 w-4 text-[hsl(var(--iiv-gold-text))] mb-2" />
                     <p className="font-serif text-lg">{d}</p>
                   </div>
                 ))}

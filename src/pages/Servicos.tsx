@@ -9,11 +9,13 @@ import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptServicos from "@/i18n/locales/pt/public/servicos.json";
 import enServicos from "@/i18n/locales/en/public/servicos.json";
-import heroLab from "@/assets/hero/hero-lab.jpg";
-import heroVacinas from "@/assets/hero/hero-vacinas.jpg";
-import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
-import heroCampo from "@/assets/hero/hero-campo.jpg";
-import heroAves from "@/assets/hero/hero-aves.jpg";
+import servicosHeroDiagnostics from "@/assets/servicos/servicos-hero-diagnostics.webp";
+import servicosDiagnostico from "@/assets/servicos/servicos-card-diagnostico.webp";
+import servicosVacinas from "@/assets/servicos/servicos-card-vacinas.webp";
+import heroStatsLab from "@/assets/hero/hero-stats-lab.webp";
+import servicosFormacao from "@/assets/servicos/servicos-card-formacao.webp";
+import servicosInspeccao from "@/assets/servicos/servicos-card-inspeccao.webp";
+import legislacaoHeroLaw from "@/assets/legislacao/legislacao-hero-law.webp";
 
 // Namespace "servicos" não faz parte do bundle central (src/i18n/index.ts, que
 // só regista "common"/"nav"). Registamo-lo aqui em runtime para manter esta
@@ -22,12 +24,12 @@ if (!i18n.hasResourceBundle("pt", "servicos")) i18n.addResourceBundle("pt", "ser
 if (!i18n.hasResourceBundle("en", "servicos")) i18n.addResourceBundle("en", "servicos", enServicos, true, true);
 
 const servicoMeta = [
-  { icon: Microscope, image: heroLab },
-  { icon: Syringe, image: heroVacinas },
-  { icon: FlaskConical, image: heroInvestigacao },
-  { icon: BookOpen, image: heroCampo },
-  { icon: ShieldCheck, image: heroAves },
-  { icon: FileText, image: heroInvestigacao },
+  { icon: Microscope, image: servicosDiagnostico },
+  { icon: Syringe, image: servicosVacinas },
+  { icon: FlaskConical, image: heroStatsLab },
+  { icon: BookOpen, image: servicosFormacao },
+  { icon: ShieldCheck, image: servicosInspeccao },
+  { icon: FileText, image: legislacaoHeroLaw },
 ];
 
 interface ServicoItem {
@@ -58,7 +60,7 @@ export default function Servicos() {
         kicker={t("hero.kicker")}
         title={t("hero.title")}
         lead={t("hero.lead")}
-        image={heroLab}
+        image={servicosHeroDiagnostics}
         breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
@@ -82,7 +84,7 @@ export default function Servicos() {
                   </div>
                 </motion.div>
                 <motion.div variants={revealVariants} className={reverse ? "lg:order-1 lg:pr-10" : "lg:pl-10"}>
-                  <p className="kicker text-[hsl(var(--iiv-gold))]">
+                  <p className="kicker text-[hsl(var(--iiv-gold-text))]">
                     <span className="editorial-rule mr-3" /> {s.kicker}
                   </p>
                   <div className="flex items-center gap-4 mt-5 mb-2">
@@ -99,7 +101,7 @@ export default function Servicos() {
                   >
                     {s.caps.map((c) => (
                       <motion.li key={c} variants={revealVariants} className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-[hsl(var(--iiv-gold))] shrink-0" />
+                        <Check className="h-4 w-4 text-[hsl(var(--iiv-gold-text))] shrink-0" />
                         <span>{c}</span>
                       </motion.li>
                     ))}

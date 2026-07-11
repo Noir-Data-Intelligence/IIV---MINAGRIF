@@ -4,6 +4,7 @@ import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptPartners from "@/i18n/locales/pt/public/partners.json";
 import enPartners from "@/i18n/locales/en/public/partners.json";
+import partnersTexture from "@/assets/partners/partners-texture.webp";
 
 // Namespace "partners" não faz parte do bundle central (src/i18n/index.ts, que só
 // regista "common"/"nav"). Registamo-lo aqui em runtime para manter este componente
@@ -20,10 +21,16 @@ export function PartnersBar() {
   const itemVariants = prefersReducedMotion ? {} : fadeInUp;
 
   return (
-    <section className="section-divider py-16 md:py-20">
-      <div className="container">
+    <section className="section-divider relative py-16 md:py-20 overflow-hidden">
+      <img
+        src={partnersTexture}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover opacity-[0.06] dark:opacity-[0.08] pointer-events-none"
+        loading="lazy"
+      />
+      <div className="container relative">
         <div className="text-center mb-10">
-          <p className="kicker text-[hsl(var(--iiv-gold))] justify-center inline-flex">
+          <p className="kicker text-[hsl(var(--iiv-gold-text))] justify-center inline-flex">
             <span className="editorial-rule mr-3" /> {t("kicker")}
           </p>
           <h2 className="font-serif text-2xl md:text-3xl mt-4">

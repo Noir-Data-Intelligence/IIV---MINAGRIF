@@ -12,9 +12,9 @@ import { useNoticiasList } from "@/hooks/queries/useNoticias";
 import i18n from "@/i18n";
 import ptNoticias from "@/i18n/locales/pt/public/noticias.json";
 import enNoticias from "@/i18n/locales/en/public/noticias.json";
-import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
-import heroLab from "@/assets/hero/hero-lab.jpg";
-import heroVacinas from "@/assets/hero/hero-vacinas.jpg";
+import noticiasHeroNewsroom from "@/assets/noticias/noticias-hero-newsroom.webp";
+import noticiasFallbackCard from "@/assets/noticias/noticias-fallback-card-sm.webp";
+import heroScientistVaccine from "@/assets/hero/hero-scientist-vaccine.webp";
 
 // Namespace "noticias" partilhado por Noticias.tsx e NoticiaDetalhe.tsx. Registado aqui
 // via addResourceBundle (em vez de em src/i18n/index.ts, que não deve ser editado nesta tarefa).
@@ -25,7 +25,7 @@ i18n.addResourceBundle("en", "noticias", enNoticias, true, false);
 const ALL_CATEGORY = "__all__";
 
 /** Imagens de recurso quando a notícia não tem `image_path` resolúvel (sem storage real ainda). */
-const fallbackImages = [heroVacinas, heroInvestigacao, heroLab];
+const fallbackImages = [noticiasFallbackCard, heroScientistVaccine, noticiasFallbackCard];
 const imageUrl = (path: string | null, i: number) => path || fallbackImages[i % fallbackImages.length];
 
 function fmt(d: string) {
@@ -55,7 +55,7 @@ export default function Noticias() {
         kicker={t("list.hero.kicker")}
         title={t("list.hero.title")}
         lead={t("list.hero.lead")}
-        image={heroInvestigacao}
+        image={noticiasHeroNewsroom}
         breadcrumb={[{ label: t("list.hero.breadcrumb") }]}
       />
 
@@ -118,7 +118,7 @@ export default function Noticias() {
                     </div>
                     <div className="lg:col-span-5">
                       <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-4">
-                        <span className="text-[hsl(var(--iiv-gold))]">{destaque.categoria}</span>
+                        <span className="text-[hsl(var(--iiv-gold-text))]">{destaque.categoria}</span>
                         <span className="h-px w-4 bg-border" />
                         <time>{fmt(destaque.published_at ?? destaque.created_at)}</time>
                       </div>
@@ -154,7 +154,7 @@ export default function Noticias() {
                           />
                         </div>
                         <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-                          <span className="text-[hsl(var(--iiv-gold))]">{n.categoria}</span>
+                          <span className="text-[hsl(var(--iiv-gold-text))]">{n.categoria}</span>
                           <span className="h-px w-4 bg-border" />
                           <time>{fmt(n.published_at ?? n.created_at)}</time>
                         </div>

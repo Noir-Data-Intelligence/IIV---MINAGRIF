@@ -9,7 +9,7 @@ import { useNoticia } from "@/hooks/queries/useNoticias";
 import i18n from "@/i18n";
 import ptNoticias from "@/i18n/locales/pt/public/noticias.json";
 import enNoticias from "@/i18n/locales/en/public/noticias.json";
-import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
+import noticiasFallbackCard from "@/assets/noticias/noticias-fallback-card-sm.webp";
 
 // Namespace "noticias" partilhado por Noticias.tsx e NoticiaDetalhe.tsx. Registado aqui
 // via addResourceBundle (em vez de em src/i18n/index.ts, que não deve ser editado nesta tarefa).
@@ -20,7 +20,7 @@ function fmt(d: string) {
   return new Date(d).toLocaleDateString("pt-AO", { day: "2-digit", month: "long", year: "numeric" });
 }
 
-const imageUrl = (path: string | null) => path || heroInvestigacao;
+const imageUrl = (path: string | null) => path || noticiasFallbackCard;
 
 export default function NoticiaDetalhe() {
   const { slug } = useParams<{ slug: string }>();
@@ -88,7 +88,7 @@ export default function NoticiaDetalhe() {
           </Link>
 
           <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-4">
-            <span className="text-[hsl(var(--iiv-gold))]">{item.categoria}</span>
+            <span className="text-[hsl(var(--iiv-gold-text))]">{item.categoria}</span>
             <span className="h-px w-4 bg-border" />
             <time>{fmt(item.published_at ?? item.created_at)}</time>
           </div>

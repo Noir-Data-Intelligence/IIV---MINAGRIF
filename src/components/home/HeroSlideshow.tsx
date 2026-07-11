@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useHeroSlides } from "@/hooks/queries/useHeroSlides";
 
-import heroLab from "@/assets/hero/hero-lab.jpg";
-import heroVacinas from "@/assets/hero/hero-vacinas.jpg";
-import heroCampo from "@/assets/hero/hero-campo.jpg";
-import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
-import heroAves from "@/assets/hero/hero-aves.jpg";
+import heroLab from "@/assets/hero/hero-lab-microscope.webp";
+import heroVacinas from "@/assets/hero/hero-scientist-vaccine.webp";
+import heroCampo from "@/assets/hero/hero-cattle-savanna.webp";
+import heroInvestigacao from "@/assets/hero/hero-agriculture-aerial.webp";
+import heroAves from "@/assets/hero/hero-poultry-vaccination.webp";
 
 type Slide = {
   image: string;
@@ -113,6 +113,7 @@ export function HeroSlideshow() {
             className="max-w-2xl text-primary-foreground animate-fade-up"
             aria-live="polite"
           >
+            {/* --iiv-gold (não -text): sempre sobre o fundo verde escuro do slideshow. */}
             <div className="kicker mb-5 text-[hsl(var(--iiv-gold))]">
               <span className="inline-block h-px w-8 align-middle bg-[hsl(var(--iiv-gold))]" />
               <span className="ml-3">{slide.kicker}</span>

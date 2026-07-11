@@ -6,7 +6,7 @@ import { Download, Search, FileText } from "lucide-react";
 import { PageHero } from "@/components/layout/PageHero";
 import { SEO } from "@/components/SEO";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLegislacaoList } from "@/hooks/queries/useLegislacao";
 import { LEGISLACAO_TIPOS } from "@/types/dto/legislacao";
@@ -14,7 +14,7 @@ import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptLegislacao from "@/i18n/locales/pt/public/legislacao.json";
 import enLegislacao from "@/i18n/locales/en/public/legislacao.json";
-import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
+import legislacaoHeroLaw from "@/assets/legislacao/legislacao-hero-law.webp";
 
 // Namespace "legislacao" não faz parte do bundle central (src/i18n/index.ts,
 // que só regista "common"/"nav"). Registamo-lo aqui em runtime para manter
@@ -61,7 +61,7 @@ export default function Legislacao() {
         kicker={t("hero.kicker")}
         title={t("hero.title")}
         lead={t("hero.lead")}
-        image={heroInvestigacao}
+        image={legislacaoHeroLaw}
         breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
@@ -80,6 +80,12 @@ export default function Legislacao() {
                   </TabsTrigger>
                 ))}
               </TabsList>
+              {/* TabsContent vazio por valor: o filtro renderiza a lista fora do Tabs,
+                  mas o TabsTrigger do Radix aponta aria-controls para um painel deste
+                  id — sem ele, o atributo fica orfão (WCAG aria-valid-attr-value). */}
+              {tipos.map((t) => (
+                <TabsContent key={t} value={t} className="hidden" />
+              ))}
             </Tabs>
             <div className="relative max-w-sm w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -122,14 +128,14 @@ export default function Legislacao() {
                 >
                   <div className="col-span-2">
                     <Link to={`/legislacao/${l.slug}`} className="block">
-                      <p className="font-serif text-4xl md:text-5xl text-primary/30 group-hover:text-[hsl(var(--iiv-gold))] tracking-tight transition-colors">
+                      <p className="font-serif text-4xl md:text-5xl text-primary/30 group-hover:text-[hsl(var(--iiv-gold-text))] tracking-tight transition-colors">
                         {l.num}
                       </p>
                     </Link>
                   </div>
                   <div className="col-span-10 md:col-span-7">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="kicker text-[hsl(var(--iiv-gold))]">{tipoLabels[l.tipo] ?? l.tipo}</span>
+                      <span className="kicker text-[hsl(var(--iiv-gold-text))]">{tipoLabels[l.tipo] ?? l.tipo}</span>
                       <span className="font-mono text-[11px] text-muted-foreground">{l.ano}</span>
                     </div>
                     <Link to={`/legislacao/${l.slug}`}>
@@ -154,7 +160,8 @@ export default function Legislacao() {
                         download
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--iiv-gold))] hover:gap-3 transition-all"
+                        aria-label={`${t("list.download")} — ${l.titulo}`}
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--iiv-gold-text))] hover:gap-3 transition-all"
                       >
                         <Download className="h-4 w-4" />
                       </a>

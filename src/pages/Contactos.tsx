@@ -17,7 +17,7 @@ import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptContactos from "@/i18n/locales/pt/public/contactos.json";
 import enContactos from "@/i18n/locales/en/public/contactos.json";
-import heroCampo from "@/assets/hero/hero-campo.jpg";
+import contactosHeroOffice from "@/assets/contactos/contactos-hero-office.webp";
 
 // Namespace "contactos" não faz parte do bundle central (src/i18n/index.ts,
 // que só regista "common"/"nav"). Registamo-lo aqui em runtime para manter
@@ -114,7 +114,7 @@ export default function Contactos() {
         kicker={t("hero.kicker")}
         title={t("hero.title")}
         lead={t("hero.lead")}
-        image={heroCampo}
+        image={contactosHeroOffice}
         breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
@@ -132,7 +132,7 @@ export default function Contactos() {
               className="lg:col-span-7"
               variants={shouldReduceMotion ? undefined : fadeInUp}
             >
-              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("form.kicker")}</p>
+              <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("form.kicker")}</p>
               <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("form.title")}</h2>
               <p className="mt-4 text-muted-foreground">{t("form.lead")}</p>
 
@@ -168,6 +168,7 @@ export default function Contactos() {
             >
               <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
                 <div className="gradient-green p-7 text-primary-foreground">
+                  {/* --iiv-gold (não -text): este cartão usa gradient-green, fundo escuro. */}
                   <p className="kicker text-[hsl(var(--iiv-gold))]">{t("sidebar.kicker")}</p>
                   <h3 className="font-serif text-2xl mt-3 leading-tight">{t("sidebar.title")}</h3>
                 </div>
@@ -194,7 +195,7 @@ export default function Contactos() {
       <section className="section-divider py-20">
         <div className="container">
           <div className="mb-10 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("map.kicker")}</p>
+            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("map.kicker")}</p>
             <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("map.title")}</h2>
             <p className="mt-4 text-muted-foreground">{t("map.lead")}</p>
           </div>
@@ -225,7 +226,7 @@ export default function Contactos() {
       <section className="section-divider py-24 bg-accent/30">
         <div className="container">
           <div className="mb-12 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("estacoes.kicker")}</p>
+            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("estacoes.kicker")}</p>
             <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("estacoes.title")}</h2>
             <p className="mt-4 text-muted-foreground">{t("estacoes.lead")}</p>
           </div>
@@ -242,7 +243,7 @@ export default function Contactos() {
                 className="bg-card p-6"
                 variants={shouldReduceMotion ? undefined : fadeInUp}
               >
-                <MapPin className="h-4 w-4 text-[hsl(var(--iiv-gold))] mb-3" />
+                <MapPin className="h-4 w-4 text-[hsl(var(--iiv-gold-text))] mb-3" />
                 <p className="font-serif text-lg leading-tight">{e.nome}</p>
                 <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">{e.cidade}</p>
               </motion.div>

@@ -11,7 +11,7 @@ import { fadeInUp } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptLegislacao from "@/i18n/locales/pt/public/legislacao.json";
 import enLegislacao from "@/i18n/locales/en/public/legislacao.json";
-import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
+import legislacaoFallback from "@/assets/legislacao/legislacao-fallback.webp";
 
 // Namespace "legislacao" partilhado com Legislacao.tsx — registo idempotente
 // via hasResourceBundle, seguro de repetir aqui.
@@ -67,7 +67,7 @@ export default function LegislacaoDetalhe() {
         kicker={`${item.tipo} • ${item.ano}`}
         title={item.titulo}
         lead={item.descricao || undefined}
-        image={heroInvestigacao}
+        image={legislacaoFallback}
         breadcrumb={[{ label: t("hero.breadcrumb"), href: "/legislacao" }, { label: item.num }]}
       />
 
@@ -81,7 +81,7 @@ export default function LegislacaoDetalhe() {
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <span className="font-mono">{t("detail.numberPrefix")} {item.num}</span>
               <span>•</span>
-              <span className="kicker text-[hsl(var(--iiv-gold))]">{item.tipo}</span>
+              <span className="kicker text-[hsl(var(--iiv-gold-text))]">{item.tipo}</span>
               <span>•</span>
               <span>{item.ano}</span>
             </div>

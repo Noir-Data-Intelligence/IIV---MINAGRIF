@@ -12,6 +12,7 @@ import { UserPlus, ArrowLeft, ShieldCheck } from "lucide-react";
 import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import ptRegistar from "@/i18n/locales/pt/auth/registar.json";
 import enRegistar from "@/i18n/locales/en/auth/registar.json";
+import authRegisterImage from "@/assets/auth/auth-register-teamwork.webp";
 
 const AUTH_REGISTAR_NS = "auth-registar";
 if (!i18n.hasResourceBundle("pt", AUTH_REGISTAR_NS)) {
@@ -72,6 +73,7 @@ export default function Registar() {
     >
       {/* Left panel - branding */}
       <motion.div className="hidden lg:flex lg:w-1/2 relative overflow-hidden gradient-primary" variants={fadeIn}>
+        <img src={authRegisterImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-overlay" loading="lazy" />
         <div className="absolute inset-0">
           <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-secondary/10 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full bg-primary-foreground/5 blur-3xl" />

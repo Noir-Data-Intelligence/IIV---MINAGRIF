@@ -12,6 +12,7 @@ import { ArrowLeft, KeyRound, Lock } from "lucide-react";
 import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import ptRedefinirSenha from "@/i18n/locales/pt/auth/redefinir-senha.json";
 import enRedefinirSenha from "@/i18n/locales/en/auth/redefinir-senha.json";
+import authRecoverImage from "@/assets/auth/auth-recover-pattern.webp";
 
 const AUTH_REDEFINIR_SENHA_NS = "auth-redefinir-senha";
 if (!i18n.hasResourceBundle("pt", AUTH_REDEFINIR_SENHA_NS)) {
@@ -86,6 +87,7 @@ export default function RedefinirSenha() {
       animate="visible"
     >
       <motion.div className="hidden lg:flex lg:w-1/2 relative overflow-hidden gradient-primary" variants={fadeIn}>
+        <img src={authRecoverImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-overlay" loading="lazy" />
         <div className="absolute inset-0">
           <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-secondary/10 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full bg-primary-foreground/5 blur-3xl" />

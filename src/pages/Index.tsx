@@ -16,10 +16,12 @@ import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import homePt from "@/i18n/locales/pt/public/home.json";
 import homeEn from "@/i18n/locales/en/public/home.json";
-import heroCampo from "@/assets/hero/hero-campo.jpg";
-import heroLab from "@/assets/hero/hero-lab.jpg";
-import heroInvestigacao from "@/assets/hero/hero-investigacao.jpg";
-import heroVacinas from "@/assets/hero/hero-vacinas.jpg";
+import heroCampo from "@/assets/hero/hero-cattle-savanna.webp";
+import heroLab from "@/assets/hero/hero-lab-microscope.webp";
+import heroInvestigacao from "@/assets/hero/hero-stats-lab.webp";
+import heroVacinas from "@/assets/hero/hero-scientist-vaccine.webp";
+import heroCtaVet from "@/assets/hero/hero-cta-veterinarian.webp";
+import noticiaFallback from "@/assets/noticias/noticias-fallback-card-sm.webp";
 
 // Namespace "home" não faz parte do bundle central (src/i18n/index.ts, que só
 // regista "common"/"nav"). Registamo-lo aqui em runtime para manter esta página
@@ -30,7 +32,7 @@ if (!i18n.hasResourceBundle("en", "home")) i18n.addResourceBundle("en", "home", 
 const serviceIcons = [Microscope, Syringe, FlaskConical, BookOpen];
 const serviceImages = [heroLab, heroVacinas, heroInvestigacao, heroCampo];
 
-const fallbackImages = [heroVacinas, heroInvestigacao, heroLab];
+const fallbackImages = [noticiaFallback, heroVacinas, heroCampo];
 const noticiaImage = (path: string | null, i: number) =>
   path && /^https?:\/\//.test(path) ? path : fallbackImages[i % fallbackImages.length];
 const fmtData = (d: string) => new Date(d).toLocaleDateString("pt-AO", { day: "2-digit", month: "short", year: "numeric" });
@@ -100,7 +102,7 @@ export default function Index() {
         <div className="container">
           <div className="grid gap-12 md:grid-cols-12 items-start">
             <div className="md:col-span-5">
-              <p className="kicker text-[hsl(var(--iiv-gold))]">
+              <p className="kicker text-[hsl(var(--iiv-gold-text))]">
                 <span className="editorial-rule mr-3" /> {t("editorial.kicker")}
               </p>
               <h2 className="font-serif text-4xl md:text-5xl mt-6 leading-[1.05]">
@@ -127,7 +129,7 @@ export default function Index() {
         <div className="container">
           <div className="mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div className="max-w-xl">
-              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("services.kicker")}</p>
+              <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("services.kicker")}</p>
               <h2 className="font-serif text-4xl md:text-5xl mt-5">{t("services.title")}</h2>
             </div>
             <Link to="/servicos" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all">
@@ -144,7 +146,7 @@ export default function Index() {
                 </div>
                 <div className="p-7">
                   <div className="flex items-center gap-3 mb-3">
-                    <Microscope className="h-5 w-5 text-[hsl(var(--iiv-gold))]" />
+                    <Microscope className="h-5 w-5 text-[hsl(var(--iiv-gold-text))]" />
                     <span className="kicker text-muted-foreground">{t("services.featuredLabel")}</span>
                   </div>
                   <h3 className="font-serif text-2xl md:text-3xl mb-2">{services[0].title}</h3>
@@ -169,7 +171,7 @@ export default function Index() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <svc.icon className="h-4 w-4 text-[hsl(var(--iiv-gold))]" />
+                        <svc.icon className="h-4 w-4 text-[hsl(var(--iiv-gold-text))]" />
                         <span className="kicker text-muted-foreground">{t("services.itemLabel")}</span>
                       </div>
                       <h3 className="font-serif text-lg leading-tight">{svc.title}</h3>
@@ -189,11 +191,11 @@ export default function Index() {
         <div className="container">
           <div className="grid gap-10 lg:grid-cols-2 items-center">
             <div className="relative overflow-hidden rounded-2xl">
-              <img src={heroCampo} alt="Investigação no terreno em Angola" className="aspect-[4/5] w-full object-cover" loading="lazy" />
+              <img src={heroCtaVet} alt="Investigação no terreno em Angola" className="aspect-[4/5] w-full object-cover" loading="lazy" />
               <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--iiv-green-dark))]/40 to-transparent" />
             </div>
             <div className="lg:pl-10">
-              <Quote className="h-10 w-10 text-[hsl(var(--iiv-gold))] mb-6" strokeWidth={1} />
+              <Quote className="h-10 w-10 text-[hsl(var(--iiv-gold-text))] mb-6" strokeWidth={1} />
               <p className="font-serif text-2xl md:text-3xl leading-[1.3] tracking-tight">
                 {t("manifesto.quote")}
               </p>
@@ -217,7 +219,7 @@ export default function Index() {
         <div className="container">
           <div className="mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div>
-              <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3" /> {t("news.kicker")}</p>
+              <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("news.kicker")}</p>
               <h2 className="font-serif text-4xl md:text-5xl mt-5">{t("news.title")}</h2>
             </div>
             <Link to="/noticias" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all">
@@ -252,7 +254,7 @@ export default function Index() {
                       />
                     </div>
                     <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-3">
-                      <span className="text-[hsl(var(--iiv-gold))]">{n.categoria}</span>
+                      <span className="text-[hsl(var(--iiv-gold-text))]">{n.categoria}</span>
                       <span className="h-px w-4 bg-border" />
                       <time>{fmtData(n.published_at ?? n.created_at)}</time>
                     </div>
@@ -275,6 +277,7 @@ export default function Index() {
         <div className="container relative py-24 md:py-32">
           <div className="grid gap-10 md:grid-cols-2 items-center">
             <div>
+              {/* --iiv-gold (não -text): secção CTA usa gradient-green, fundo escuro. */}
               <p className="kicker text-[hsl(var(--iiv-gold))]"><span className="editorial-rule mr-3 bg-[hsl(var(--iiv-gold))]" /> {t("cta.kicker")}</p>
               <h2 className="font-serif text-4xl md:text-5xl mt-5 leading-[1.05]">
                 {t("cta.title")}

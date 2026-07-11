@@ -12,6 +12,7 @@ import { Eye, EyeOff, LogIn, ArrowLeft, ShieldCheck } from "lucide-react";
 import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import ptLogin from "@/i18n/locales/pt/auth/login.json";
 import enLogin from "@/i18n/locales/en/auth/login.json";
+import authLoginImage from "@/assets/auth/auth-login-microscope.webp";
 
 const AUTH_LOGIN_NS = "auth-login";
 if (!i18n.hasResourceBundle("pt", AUTH_LOGIN_NS)) {
@@ -72,6 +73,7 @@ export default function Login() {
     >
       {/* Left panel - branding */}
       <motion.div className="hidden lg:flex lg:w-1/2 relative overflow-hidden gradient-primary" variants={fadeIn}>
+        <img src={authLoginImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20 mix-blend-overlay" loading="lazy" />
         {/* Decorative pattern */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-secondary/10 blur-3xl" />
@@ -194,11 +196,11 @@ export default function Login() {
                     onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
                   >
                     <span className="font-medium">{t(`demo.roles.${acc.roleKey}`)}</span>
-                    <span className="opacity-60">{acc.email}</span>
+                    <span>{acc.email}</span>
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-muted-foreground/60 text-center">{t("demo.hint")}</p>
+              <p className="text-[10px] text-muted-foreground text-center">{t("demo.hint")}</p>
             </div>
           )}
         </div>
