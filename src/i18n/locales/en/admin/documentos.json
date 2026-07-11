@@ -1,0 +1,123 @@
+{
+  "page": {
+    "title": "Document Management",
+    "description": "Institutional repository with versions, permissions and approval."
+  },
+  "kpis": {
+    "total": "Total Documents",
+    "totalCaption": "In the institutional repository",
+    "pending": "Pending Approval",
+    "pendingCaption": "Submitted, awaiting decision",
+    "expiring": "Expiring Soon",
+    "expiringCaption": "Valid until the next 30 days"
+  },
+  "filters": {
+    "statusAll": "All statuses",
+    "categoryAll": "All categories",
+    "statusPlaceholder": "Status",
+    "categoryPlaceholder": "Category"
+  },
+  "status": {
+    "rascunho": "Draft",
+    "submetido": "Submitted",
+    "aprovado": "Approved",
+    "rejeitado": "Rejected",
+    "arquivado": "Archived"
+  },
+  "visibility": {
+    "publico": "Public",
+    "departamento": "Department",
+    "privado": "Private"
+  },
+  "actions": {
+    "new": "New Document",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "submit": "Submit for approval",
+    "approve": "Approve",
+    "reject": "Reject",
+    "archive": "Archive",
+    "download": "Download"
+  },
+  "form": {
+    "labels": {
+      "title": "Title",
+      "category": "Category",
+      "visibility": "Visibility",
+      "description": "Description",
+      "expiryDate": "Expiry date",
+      "tags": "Tags (comma separated)",
+      "file": "File",
+      "changeNotes": "Version notes"
+    },
+    "placeholders": {
+      "title": "e.g. Sample collection procedure",
+      "categorySelect": "Select category",
+      "description": "Document description",
+      "tags": "quality, iso, 2026",
+      "changeNotes": "Initial version"
+    },
+    "visibilityHints": {
+      "publico": "Public (all authenticated users after approval)",
+      "departamento": "Department",
+      "privado": "Private (author + permissions only)"
+    },
+    "submitCreate": "Create Document",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "New Document",
+    "editTitle": "Edit Document",
+    "detailsTitle": "Document Details"
+  },
+  "details": {
+    "category": "Category",
+    "status": "Status",
+    "visibility": "Visibility",
+    "expiry": "Validity",
+    "description": "Description",
+    "newVersion": "New version",
+    "versionNotesPlaceholder": "Version notes (optional)",
+    "uploadVersion": "Upload",
+    "uploadingVersion": "Uploading...",
+    "history": "Version history",
+    "noPreview": "Preview unavailable in this demo build. Use \"Download\"."
+  },
+  "versions": {
+    "version": "Version",
+    "notes": "Notes",
+    "date": "Date",
+    "size": "Size",
+    "action": "Action"
+  },
+  "table": {
+    "title": "Title",
+    "category": "Category",
+    "status": "Status",
+    "expiry": "Validity",
+    "updated": "Updated",
+    "empty": "No documents found.",
+    "searchPlaceholder": "Search by title, description or tag...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "titleShort": "Title too short",
+    "fileRequired": "Select a file"
+  },
+  "toast": {
+    "createSuccess": "Document created successfully",
+    "updateSuccess": "Document updated",
+    "deleteSuccess": "Document deleted",
+    "statusUpdated": "Status updated",
+    "versionUploaded": "New version uploaded",
+    "downloadSimulated": "Simulated download (no real storage in this demo).",
+    "error": "An error occurred. Please try again."
+  },
+  "delete": {
+    "title": "Delete document?",
+    "description": "This action is permanent and removes all versions, links and permissions."
+  }
+}

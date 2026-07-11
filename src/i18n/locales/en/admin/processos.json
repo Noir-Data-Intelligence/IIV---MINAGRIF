@@ -1,0 +1,96 @@
+{
+  "page": {
+    "title": "Process Management",
+    "description": "Administrative workflow with steps, owners and SLAs."
+  },
+  "kpis": {
+    "open": "Open",
+    "openCaption": "Awaiting start",
+    "inProgress": "In progress",
+    "inProgressCaption": "With an active step",
+    "completed": "Completed",
+    "completedCaption": "Closed successfully",
+    "overdue": "Overdue",
+    "overdueCaption": "Past the deadline"
+  },
+  "actions": {
+    "analytics": "Analytics",
+    "types": "Types",
+    "new": "New process",
+    "export": "Export",
+    "open": "Open",
+    "view": "View",
+    "delete": "Delete"
+  },
+  "filters": {
+    "allStatus": "All statuses",
+    "allTypes": "All types",
+    "scopeAll": "All",
+    "scopeMine": "Mine"
+  },
+  "status": {
+    "aberto": "Open",
+    "em_curso": "In progress",
+    "concluido": "Completed",
+    "cancelado": "Cancelled"
+  },
+  "priority": {
+    "baixa": "Low",
+    "normal": "Normal",
+    "alta": "High",
+    "urgente": "Urgent"
+  },
+  "table": {
+    "code": "Code",
+    "title": "Title",
+    "type": "Type",
+    "priority": "Priority",
+    "status": "Status",
+    "dueDate": "Due date",
+    "searchPlaceholder": "Search by code, title or description...",
+    "empty": "No processes found.",
+    "emptyCell": "—"
+  },
+  "dialog": {
+    "createTitle": "New process"
+  },
+  "form": {
+    "labels": {
+      "type": "Process type",
+      "title": "Title",
+      "description": "Description",
+      "priority": "Priority",
+      "dueDate": "Due date"
+    },
+    "placeholders": {
+      "type": "Select type",
+      "title": "Process title",
+      "description": "Request details (optional)"
+    },
+    "submitCreate": "Open process",
+    "submitting": "Creating...",
+    "cancel": "Cancel"
+  },
+  "validation": {
+    "typeRequired": "Select the process type",
+    "titleShort": "Title too short"
+  },
+  "export": {
+    "filename": "processes",
+    "headers": {
+      "code": "Code",
+      "title": "Title",
+      "type": "Type",
+      "priority": "Priority",
+      "status": "Status",
+      "dueDate": "Due date",
+      "openedAt": "Opened"
+    }
+  },
+  "toast": {
+    "createSuccess": "Process opened",
+    "deleteSuccess": "Process deleted",
+    "requiredFields": "Fill in the required fields",
+    "error": "An error occurred. Please try again."
+  }
+}

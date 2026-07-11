@@ -1,0 +1,31 @@
+{
+  "trigger": "Abrir processo",
+  "dialogTitle": "Abrir processo ligado",
+  "form": {
+    "labels": {
+      "type": "Tipo",
+      "title": "Título",
+      "description": "Descrição",
+      "priority": "Prioridade",
+      "dueDate": "Prazo"
+    },
+    "placeholders": {
+      "type": "Seleccionar tipo"
+    },
+    "submit": "Abrir processo",
+    "submitting": "A criar...",
+    "cancel": "Cancelar"
+  },
+  "priority": {
+    "baixa": "Baixa",
+    "normal": "Normal",
+    "alta": "Alta",
+    "urgente": "Urgente"
+  },
+  "toast": {
+    "requiredFields": "Preencha os campos obrigatórios",
+    "success": "Processo aberto",
+    "successDescription": "Ligado a {{entity}}",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

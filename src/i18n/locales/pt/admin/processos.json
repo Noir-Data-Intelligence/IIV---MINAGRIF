@@ -1,0 +1,96 @@
+{
+  "page": {
+    "title": "Gestão de Processos",
+    "description": "Workflow administrativo com etapas, responsáveis e SLAs."
+  },
+  "kpis": {
+    "open": "Abertos",
+    "openCaption": "Aguardam início",
+    "inProgress": "Em curso",
+    "inProgressCaption": "Com etapa activa",
+    "completed": "Concluídos",
+    "completedCaption": "Fechados com sucesso",
+    "overdue": "Em atraso",
+    "overdueCaption": "Prazo ultrapassado"
+  },
+  "actions": {
+    "analytics": "Analítica",
+    "types": "Tipos",
+    "new": "Novo processo",
+    "export": "Exportar",
+    "open": "Abrir",
+    "view": "Ver",
+    "delete": "Eliminar"
+  },
+  "filters": {
+    "allStatus": "Todos os estados",
+    "allTypes": "Todos os tipos",
+    "scopeAll": "Todos",
+    "scopeMine": "Os meus"
+  },
+  "status": {
+    "aberto": "Aberto",
+    "em_curso": "Em curso",
+    "concluido": "Concluído",
+    "cancelado": "Cancelado"
+  },
+  "priority": {
+    "baixa": "Baixa",
+    "normal": "Normal",
+    "alta": "Alta",
+    "urgente": "Urgente"
+  },
+  "table": {
+    "code": "Código",
+    "title": "Título",
+    "type": "Tipo",
+    "priority": "Prioridade",
+    "status": "Estado",
+    "dueDate": "Prazo",
+    "searchPlaceholder": "Pesquisar por código, título ou descrição...",
+    "empty": "Nenhum processo encontrado.",
+    "emptyCell": "—"
+  },
+  "dialog": {
+    "createTitle": "Novo processo"
+  },
+  "form": {
+    "labels": {
+      "type": "Tipo de processo",
+      "title": "Título",
+      "description": "Descrição",
+      "priority": "Prioridade",
+      "dueDate": "Prazo"
+    },
+    "placeholders": {
+      "type": "Seleccionar tipo",
+      "title": "Título do processo",
+      "description": "Detalhes do pedido (opcional)"
+    },
+    "submitCreate": "Abrir processo",
+    "submitting": "A criar...",
+    "cancel": "Cancelar"
+  },
+  "validation": {
+    "typeRequired": "Seleccione o tipo de processo",
+    "titleShort": "Título demasiado curto"
+  },
+  "export": {
+    "filename": "processos",
+    "headers": {
+      "code": "Código",
+      "title": "Título",
+      "type": "Tipo",
+      "priority": "Prioridade",
+      "status": "Estado",
+      "dueDate": "Prazo",
+      "openedAt": "Aberto"
+    }
+  },
+  "toast": {
+    "createSuccess": "Processo aberto",
+    "deleteSuccess": "Processo eliminado",
+    "requiredFields": "Preencha os campos obrigatórios",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

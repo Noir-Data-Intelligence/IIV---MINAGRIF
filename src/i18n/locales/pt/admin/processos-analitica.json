@@ -1,0 +1,36 @@
+{
+  "back": "Voltar a processos",
+  "page": {
+    "title": "Analítica de processos",
+    "description": "Indicadores de desempenho dos fluxos administrativos."
+  },
+  "kpi": {
+    "total": "Total de processos",
+    "totalCaption": "Registados no sistema",
+    "avgCycle": "Ciclo médio (dias)",
+    "avgCycleCaption": "Da abertura ao fecho",
+    "sla": "Cumprimento SLA",
+    "slaCaption": "Fechados dentro do prazo",
+    "overdue": "Em atraso",
+    "overdueCaption": "Prazo ultrapassado"
+  },
+  "status": {
+    "aberto": "Aberto",
+    "em_curso": "Em curso",
+    "concluido": "Concluído",
+    "cancelado": "Cancelado"
+  },
+  "charts": {
+    "byStatus": "Distribuição por estado",
+    "monthly": "Evolução mensal (últimos 12 meses)",
+    "byType": "Volume por tipo de processo",
+    "opened": "Abertos",
+    "completed": "Concluídos",
+    "empty": "Sem dados."
+  },
+  "overdue": {
+    "title": "Em atraso por tipo",
+    "none": "Sem processos em atraso."
+  },
+  "loading": "A carregar…"
+}

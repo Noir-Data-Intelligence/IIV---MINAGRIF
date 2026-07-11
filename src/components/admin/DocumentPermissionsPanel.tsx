@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -8,58 +7,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Plus, X } from "lucide-react";
 import type { AppRole } from "@/lib/permissions";
+import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
+import {
+  useDocumentPermissions,
+  useCreateDocumentPermission,
+  useDeleteDocumentPermission,
+} from "@/hooks/queries/useDocumentos";
 
 interface Props { documentId: string }
 
-interface Perm {
-  id: string; role: AppRole | null; department_id: string | null; can_edit: boolean;
-  department?: { name: string } | null;
-}
-
 const ROLES: AppRole[] = ["admin", "gestor", "tecnico", "diretor", "colaborador"];
 
+/**
+ * Painel de permissões granulares (por papel ou por departamento) de um
+ * documento. Migrado de Supabase para a camada mock (MSW): usa o recurso
+ * `document-permissions` (fixtures + handler próprio) e reutiliza a lista de
+ * `departamentos` já migrada para o selector de departamento.
+ */
 export function DocumentPermissionsPanel({ documentId }: Props) {
   const { toast } = useToast();
-  const [perms, setPerms] = useState<Perm[]>([]);
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<"role" | "department">("role");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [selectedDept, setSelectedDept] = useState<string>("");
   const [canEdit, setCanEdit] = useState(false);
 
-  const fetchAll = async () => {
-    setLoading(true);
-    const [{ data: p }, { data: d }] = await Promise.all([
-      supabase.from("document_permissions")
-        .select("*, department:departments(name)").eq("document_id", documentId),
-      supabase.from("departments").select("id, name").order("name"),
-    ]);
-    setPerms((p ?? []) as any);
-    setDepartments(d ?? []);
-    setLoading(false);
-  };
+  const { data: perms = [], isLoading: loading } = useDocumentPermissions(documentId);
+  const { data: deptPage } = useDepartamentosList({ page: 1, perPage: 100 });
+  const departments = deptPage?.data ?? [];
 
-  useEffect(() => { fetchAll(); /* eslint-disable-next-line */ }, [documentId]);
+  const createPerm = useCreateDocumentPermission();
+  const deletePerm = useDeleteDocumentPermission();
 
   const addPerm = async () => {
-    const payload: any = { document_id: documentId, can_edit: canEdit };
+    const payload: { documentId: string; role?: string | null; departmentId?: string | null; canEdit: boolean } = {
+      documentId,
+      canEdit,
+    };
     if (target === "role") {
       if (!selectedRole) return;
       payload.role = selectedRole;
     } else {
       if (!selectedDept) return;
-      payload.department_id = selectedDept;
+      payload.departmentId = selectedDept;
     }
-    const { error } = await supabase.from("document_permissions").insert(payload);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    setSelectedRole(""); setSelectedDept(""); setCanEdit(false);
-    fetchAll();
+    try {
+      await createPerm.mutateAsync(payload);
+      setSelectedRole("");
+      setSelectedDept("");
+      setCanEdit(false);
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: err instanceof Error ? err.message : "Não foi possível adicionar.",
+        variant: "destructive",
+      });
+    }
   };
 
   const removePerm = async (id: string) => {
-    await supabase.from("document_permissions").delete().eq("id", id);
-    fetchAll();
+    try {
+      await deletePerm.mutateAsync({ id, documentId });
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: err instanceof Error ? err.message : "Não foi possível remover.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -74,7 +88,7 @@ export function DocumentPermissionsPanel({ documentId }: Props) {
         <p className="text-xs text-muted-foreground italic">Sem permissões granulares — visibilidade aplica-se.</p>
       ) : (
         <ul className="space-y-1.5">
-          {perms.map(p => (
+          {perms.map((p) => (
             <li key={p.id} className="flex items-center justify-between gap-2 text-sm bg-muted/30 rounded px-2 py-1.5">
               <span className="flex items-center gap-2">
                 {p.role ? (
@@ -82,7 +96,7 @@ export function DocumentPermissionsPanel({ documentId }: Props) {
                 ) : (
                   <Badge variant="outline">Dept.: {p.department?.name ?? "—"}</Badge>
                 )}
-                {p.can_edit && <Badge variant="secondary">edição</Badge>}
+                {p.canEdit && <Badge variant="secondary">edição</Badge>}
               </span>
               <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removePerm(p.id)}>
                 <X className="h-3.5 w-3.5" />
@@ -108,7 +122,7 @@ export function DocumentPermissionsPanel({ documentId }: Props) {
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar papel" /></SelectTrigger>
                 <SelectContent>
-                  {ROLES.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}
+                  {ROLES.map((r) => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -118,7 +132,7 @@ export function DocumentPermissionsPanel({ documentId }: Props) {
               <Select value={selectedDept} onValueChange={setSelectedDept}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar departamento" /></SelectTrigger>
                 <SelectContent>
-                  {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

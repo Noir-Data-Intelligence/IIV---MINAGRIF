@@ -1,382 +1,459 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import {
+  Workflow,
+  Plus,
+  Eye,
+  AlertTriangle,
+  Settings,
+  Download,
+  BarChart3,
+  FolderOpen,
+  Loader2,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { useDebounce } from "@/hooks/useDebounce";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTableExport } from "@/hooks/useTableExport";
-import { Workflow, Plus, Eye, AlertTriangle, Settings, Download, User as UserIcon, BarChart3 } from "lucide-react";
-import type { AppRole } from "@/lib/permissions";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useProcessesList, useProcessStats, useCreateProcess } from "@/hooks/queries/useProcesses";
+import { useProcessTypesList } from "@/hooks/queries/useProcessTypes";
+import { PROCESS_PRIORITY, PROCESS_STATUS } from "@/lib/domain-enums";
+import { fadeIn } from "@/lib/motion";
+import type { ProcessDto, ProcessPriority, ProcessStatus } from "@/types/dto/process";
+import i18n from "@/i18n";
+import ptProcessos from "@/i18n/locales/pt/admin/processos.json";
+import enProcessos from "@/i18n/locales/en/admin/processos.json";
 
-interface ProcessType { id: string; name: string; description: string | null; sla_days: number | null }
-interface TypeStep { id: string; process_type_id: string; order_index: number; name: string; default_role: AppRole | null; sla_days: number | null }
-interface Process {
-  id: string; code: string; type_id: string; title: string; description: string | null;
-  requester_id: string; status: "aberto"|"em_curso"|"concluido"|"cancelado";
-  priority: "baixa"|"normal"|"alta"|"urgente"; due_date: string | null;
-  opened_at: string; closed_at: string | null;
+// Namespace autónomo registado em runtime (o bundle central só regista common/nav).
+if (!i18n.hasResourceBundle("pt", "admin-processos"))
+  i18n.addResourceBundle("pt", "admin-processos", ptProcessos, true, true);
+if (!i18n.hasResourceBundle("en", "admin-processos"))
+  i18n.addResourceBundle("en", "admin-processos", enProcessos, true, true);
+
+const STATUS_KEYS = Object.keys(PROCESS_STATUS);
+const PRIORITY_KEYS = Object.keys(PROCESS_PRIORITY);
+const ALL = "todos";
+
+function buildProcessSchema(t: TFunction) {
+  return z.object({
+    typeId: z.string().min(1, t("validation.typeRequired")),
+    title: z.string().trim().min(2, t("validation.titleShort")),
+    description: z.string().trim().optional(),
+    priority: z.string().min(1),
+    dueDate: z.string().optional(),
+  });
 }
-
-const statusVariant: Record<string, "default"|"secondary"|"destructive"|"outline"> = {
-  aberto: "secondary", em_curso: "default", concluido: "outline", cancelado: "destructive",
-};
-const statusLabel: Record<string, string> = {
-  aberto: "Aberto", em_curso: "Em curso", concluido: "Concluído", cancelado: "Cancelado",
-};
-const priorityVariant: Record<string, "default"|"secondary"|"destructive"|"outline"> = {
-  baixa: "outline", normal: "secondary", alta: "default", urgente: "destructive",
-};
+type ProcessFormValues = z.infer<ReturnType<typeof buildProcessSchema>>;
 
 export default function Processos() {
+  const { t } = useTranslation("admin-processos");
   const { user } = useAuth();
   const { toast } = useToast();
-  const pag = usePagination(20);
-
-  const [items, setItems] = useState<Process[]>([]);
-  const [types, setTypes] = useState<ProcessType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const dSearch = useDebounce(search, 300);
-  const [statusFilter, setStatusFilter] = useState("todos");
-  const [typeFilter, setTypeFilter] = useState("todos");
-  const [scope, setScope] = useState<"todos" | "meus">("todos");
-  const [stats, setStats] = useState({ abertos: 0, em_curso: 0, concluidos: 0, atrasados: 0 });
   const { isAdmin } = useUserRole();
   const { exportCSV } = useTableExport();
+  const navigate = useNavigate();
+  const prefersReduced = useReducedMotion();
 
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    type_id: "", title: "", description: "",
-    priority: "normal", due_date: "",
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState(ALL);
+  const [typeFilter, setTypeFilter] = useState(ALL);
+  const [scope, setScope] = useState<"todos" | "meus">("todos");
+  const [formOpen, setFormOpen] = useState(false);
+
+  const { data, isLoading } = useProcessesList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+    status: statusFilter !== ALL ? (statusFilter as ProcessStatus) : undefined,
+    typeId: typeFilter !== ALL ? typeFilter : undefined,
+    requesterId: scope === "meus" && user ? user.id : undefined,
   });
 
-  const fetchTypes = async () => {
-    const { data } = await supabase.from("process_types").select("*").eq("is_active", true).order("name");
-    setTypes(data ?? []);
-  };
+  const { data: stats } = useProcessStats();
+  const { data: typesData } = useProcessTypesList({ activeOnly: true, perPage: 100 });
+  const types = typesData?.data ?? [];
 
-  const fetchStats = async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    const [a, c, x, l] = await Promise.all([
-      supabase.from("processes").select("id", { count: "exact", head: true }).eq("status", "aberto"),
-      supabase.from("processes").select("id", { count: "exact", head: true }).eq("status", "em_curso"),
-      supabase.from("processes").select("id", { count: "exact", head: true }).eq("status", "concluido"),
-      supabase.from("processes").select("id", { count: "exact", head: true })
-        .in("status", ["aberto", "em_curso"]).lt("due_date", today),
-    ]);
-    setStats({
-      abertos: a.count ?? 0, em_curso: c.count ?? 0,
-      concluidos: x.count ?? 0, atrasados: l.count ?? 0,
-    });
-  };
+  const createProcess = useCreateProcess();
 
-  const fetchData = async () => {
-    setLoading(true);
-    let q = supabase.from("processes").select("*", { count: "exact" })
-      .order("opened_at", { ascending: false });
-    if (statusFilter !== "todos") q = q.eq("status", statusFilter as any);
-    if (typeFilter !== "todos") q = q.eq("type_id", typeFilter);
-    if (scope === "meus" && user) q = q.eq("requester_id", user.id);
-    if (dSearch.trim()) {
-      const s = `%${dSearch.trim()}%`;
-      q = q.or(`title.ilike.${s},code.ilike.${s},description.ilike.${s}`);
-    }
-    const { data, count, error } = await q.range(pag.from, pag.to);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    setItems((data ?? []) as Process[]);
-    pag.setTotal(count ?? 0);
-    setLoading(false);
-  };
+  const processSchema = useMemo(() => buildProcessSchema(t), [t]);
 
-  useEffect(() => { fetchTypes(); fetchStats(); }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchData(); }, [pag.page, pag.pageSize, dSearch, statusFilter, typeFilter, scope]);
+  const entityForm = useEntityForm({
+    schema: processSchema,
+    defaultValues: { typeId: "", title: "", description: "", priority: "normal", dueDate: "" },
+    open: formOpen,
+    onSubmit: async (values) => {
+      if (!user) {
+        toast({ title: t("toast.requiredFields"), variant: "destructive" });
+        throw new Error("no-user");
+      }
+      await createProcess.mutateAsync({
+        typeId: values.typeId,
+        title: values.title,
+        description: values.description?.trim() ? values.description.trim() : null,
+        priority: values.priority as ProcessPriority,
+        dueDate: values.dueDate || null,
+        requesterId: user.id,
+      });
+    },
+    successMessage: t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
 
-  // Realtime: refresh list and stats whenever processes change
-  useEffect(() => {
-    const channel = supabase
-      .channel("processes-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "processes" }, () => {
-        fetchData();
-        fetchStats();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dSearch, statusFilter, typeFilter, scope, pag.page, pag.pageSize]);
+  const rows = data?.data ?? [];
+  const typeName = (id: string) => types.find((ty) => ty.id === id)?.name ?? "—";
+
+  const statusLabel = (s: string) => (PROCESS_STATUS[s] ? t(`status.${s}`) : s);
+  const statusVariant = (s: string) => PROCESS_STATUS[s]?.variant ?? "outline";
+  const priorityLabel = (p: string) => (PROCESS_PRIORITY[p] ? t(`priority.${p}`) : p);
+  const priorityVariant = (p: string) => PROCESS_PRIORITY[p]?.variant ?? "outline";
+
+  const isOverdue = (p: ProcessDto) =>
+    !!p.dueDate &&
+    p.status !== "concluido" &&
+    p.status !== "cancelado" &&
+    new Date(p.dueDate).getTime() < Date.now();
+
+  const fmtDate = (value: string | null) =>
+    value ? new Date(value).toLocaleDateString("pt-PT") : t("table.emptyCell");
 
   const handleExport = () => {
     exportCSV(
-      items.map(p => ({
-        Codigo: p.code, Titulo: p.title, Tipo: types.find(t => t.id === p.type_id)?.name ?? "",
-        Prioridade: p.priority, Estado: statusLabel[p.status],
-        Prazo: p.due_date ?? "", Aberto: new Date(p.opened_at).toLocaleDateString("pt-PT"),
+      rows.map((p) => ({
+        code: p.code,
+        title: p.title,
+        type: typeName(p.typeId),
+        priority: priorityLabel(p.priority),
+        status: statusLabel(p.status),
+        dueDate: p.dueDate ?? "",
+        openedAt: new Date(p.openedAt).toLocaleDateString("pt-PT"),
       })),
-      "processos",
+      t("export.filename"),
+      {
+        headers: {
+          code: t("export.headers.code"),
+          title: t("export.headers.title"),
+          type: t("export.headers.type"),
+          priority: t("export.headers.priority"),
+          status: t("export.headers.status"),
+          dueDate: t("export.headers.dueDate"),
+          openedAt: t("export.headers.openedAt"),
+        },
+      },
     );
   };
 
-  const openCreate = () => {
-    setForm({ type_id: "", title: "", description: "", priority: "normal", due_date: "" });
-    setOpen(true);
-  };
+  const columns = useMemo<ColumnDef<ProcessDto>[]>(
+    () => [
+      {
+        accessorKey: "code",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.code")} />,
+        cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span>,
+      },
+      {
+        accessorKey: "title",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.title")} />,
+        cell: ({ row }) => (
+          <span className="font-medium max-w-[280px] truncate block">{row.original.title}</span>
+        ),
+      },
+      {
+        accessorKey: "typeId",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.type")} />,
+        cell: ({ row }) => <span className="text-sm text-muted-foreground">{typeName(row.original.typeId)}</span>,
+      },
+      {
+        accessorKey: "priority",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.priority")} />,
+        cell: ({ row }) => (
+          <Badge variant={priorityVariant(row.original.priority)}>{priorityLabel(row.original.priority)}</Badge>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) => (
+          <Badge variant={statusVariant(row.original.status)}>{statusLabel(row.original.status)}</Badge>
+        ),
+      },
+      {
+        accessorKey: "dueDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.dueDate")} />,
+        cell: ({ row }) => {
+          const p = row.original;
+          if (!p.dueDate) return t("table.emptyCell");
+          return (
+            <span className={isOverdue(p) ? "text-destructive flex items-center gap-1" : ""}>
+              {isOverdue(p) && <AlertTriangle className="h-3.5 w-3.5" />}
+              {fmtDate(p.dueDate)}
+            </span>
+          );
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, types],
+  );
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !form.type_id || !form.title.trim()) {
-      toast({ title: "Campos obrigatórios", variant: "destructive" });
-      return;
-    }
-    setSaving(true);
-    try {
-      // 1) Create process
-      const { data: proc, error: pErr } = await supabase.from("processes").insert({
-        type_id: form.type_id,
-        title: form.title.trim(),
-        description: form.description.trim() || null,
-        requester_id: user.id,
-        priority: form.priority as any,
-        due_date: form.due_date || null,
-        status: "aberto",
-        code: "", // trigger will generate
-      } as any).select().single();
-      if (pErr) throw pErr;
+  const renderRowActions = (row: ProcessDto) => (
+    <RowActions
+      primary={{ label: t("actions.open"), icon: Eye, onClick: () => navigate(`/admin/processos/${row.id}`) }}
+      actions={[]}
+    />
+  );
 
-      // 2) Instantiate steps from type
-      const { data: typeSteps } = await supabase.from("process_type_steps")
-        .select("*").eq("process_type_id", form.type_id).order("order_index");
-      if (typeSteps && typeSteps.length > 0) {
-        const rows = (typeSteps as TypeStep[]).map((s, i) => ({
-          process_id: proc.id,
-          type_step_id: s.id,
-          order_index: s.order_index,
-          name: s.name,
-          assignee_role: s.default_role,
-          status: i === 0 ? "em_curso" : "pendente" as any,
-          started_at: i === 0 ? new Date().toISOString() : null,
-          due_at: s.sla_days ? new Date(Date.now() + s.sla_days * 86400000).toISOString() : null,
-        }));
-        const { data: insertedSteps, error: sErr } = await supabase.from("process_steps").insert(rows).select();
-        if (sErr) throw sErr;
-        // Set current_step_id and status
-        const firstStep = (insertedSteps ?? []).sort((a: any, b: any) => a.order_index - b.order_index)[0];
-        if (firstStep) {
-          await supabase.from("processes").update({
-            current_step_id: firstStep.id,
-            status: "em_curso",
-          }).eq("id", proc.id);
-        }
-      }
-
-      // 3) Event
-      await supabase.from("process_events").insert({
-        process_id: proc.id, actor_id: user.id, event_type: "aberto",
-        payload: { title: form.title },
-      });
-
-      toast({ title: "Processo aberto", description: form.title });
-      setOpen(false);
-      fetchData();
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const typeName = (id: string) => types.find(t => t.id === id)?.name ?? "—";
-  const isOverdue = (p: Process) =>
-    p.due_date && p.status !== "concluido" && p.status !== "cancelado" &&
-    new Date(p.due_date).getTime() < Date.now();
+  const motionProps = prefersReduced
+    ? {}
+    : { initial: "hidden" as const, animate: "visible" as const, variants: fadeIn };
 
   return (
-    <div className="space-y-6">
-      <AdminPageHeader
-        icon={Workflow}
-        title="Gestão de Processos"
-        description="Workflow administrativo com etapas, responsáveis e SLAs."
-      >
+    <motion.div className="space-y-6" {...motionProps}>
+      <AdminPageHeader icon={Workflow} title={t("page.title")} description={t("page.description")}>
         <Button asChild variant="outline" className="gap-2">
-          <Link to="/admin/processos/analitica"><BarChart3 className="h-4 w-4" /> Analítica</Link>
+          <Link to="/admin/processos/analitica">
+            <BarChart3 className="h-4 w-4" /> {t("actions.analytics")}
+          </Link>
         </Button>
         {isAdmin && (
           <Button asChild variant="outline" className="gap-2">
-            <Link to="/admin/processos/tipos"><Settings className="h-4 w-4" /> Tipos</Link>
+            <Link to="/admin/processos/tipos">
+              <Settings className="h-4 w-4" /> {t("actions.types")}
+            </Link>
           </Button>
         )}
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="h-4 w-4" /> Novo processo
-        </Button>
+        <WriteGuard module="processos">
+          <Button onClick={() => setFormOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { k: "abertos", label: "Abertos", value: stats.abertos, tone: "text-secondary-foreground" },
-          { k: "em_curso", label: "Em curso", value: stats.em_curso, tone: "text-primary" },
-          { k: "concluidos", label: "Concluídos", value: stats.concluidos, tone: "text-emerald-600 dark:text-emerald-400" },
-          { k: "atrasados", label: "Em atraso", value: stats.atrasados, tone: "text-destructive" },
-        ].map(s => (
-          <div key={s.k} className="rounded-lg border border-border/40 bg-card p-3">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className={`text-2xl font-bold ${s.tone}`}>{s.value}</p>
-          </div>
-        ))}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <AdminCard
+          variant="gradient-green"
+          icon={FolderOpen}
+          metric={stats?.abertos ?? 0}
+          title={t("kpis.open")}
+          caption={t("kpis.openCaption")}
+          stagger={1}
+        />
+        <AdminCard
+          variant="gradient-teal"
+          icon={Loader2}
+          metric={stats?.emCurso ?? 0}
+          title={t("kpis.inProgress")}
+          caption={t("kpis.inProgressCaption")}
+          stagger={2}
+        />
+        <AdminCard
+          variant="gradient-green-gold"
+          icon={CheckCircle2}
+          metric={stats?.concluidos ?? 0}
+          title={t("kpis.completed")}
+          caption={t("kpis.completedCaption")}
+          stagger={3}
+        />
+        <AdminCard
+          variant="gradient-gold"
+          icon={Clock}
+          metric={stats?.atrasados ?? 0}
+          title={t("kpis.overdue")}
+          caption={t("kpis.overdueCaption")}
+          stagger={4}
+        />
       </div>
 
-      <AdminCard>
-        <div className="flex flex-col sm:flex-row gap-3 mb-4 flex-wrap">
-          <Input
-            placeholder="Pesquisar por código, título ou descrição…"
-            value={search} onChange={(e) => setSearch(e.target.value)}
-            className="sm:max-w-sm"
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="sm:w-[170px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os estados</SelectItem>
-              {Object.entries(statusLabel).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="sm:w-[200px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os tipos</SelectItem>
-              {types.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={scope} onValueChange={(v) => setScope(v as any)}>
-            <SelectTrigger className="sm:w-[160px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="meus">Os meus</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" className="gap-2 sm:ml-auto" onClick={handleExport} disabled={items.length === 0}>
-            <Download className="h-4 w-4" /> Exportar
-          </Button>
-        </div>
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="sm:w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>{t("filters.allStatus")}</SelectItem>
+            {STATUS_KEYS.map((k) => (
+              <SelectItem key={k} value={k}>
+                {t(`status.${k}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="sm:w-[210px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>{t("filters.allTypes")}</SelectItem>
+            {types.map((ty) => (
+              <SelectItem key={ty.id} value={ty.id}>
+                {ty.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={scope} onValueChange={(v) => setScope(v as "todos" | "meus")}>
+          <SelectTrigger className="sm:w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">{t("filters.scopeAll")}</SelectItem>
+            <SelectItem value="meus">{t("filters.scopeMine")}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          className="gap-2 sm:ml-auto"
+          onClick={handleExport}
+          disabled={rows.length === 0}
+        >
+          <Download className="h-4 w-4" /> {t("actions.export")}
+        </Button>
+      </div>
 
-        {loading ? (
-          <AdminCard loading />
-        ) : items.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            Nenhum processo encontrado.
-          </div>
-        ) : (
-          <div className="rounded-lg border border-border/40 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40">
-                  <TableHead>Código</TableHead>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Prazo</TableHead>
-                  <TableHead className="text-right">Acções</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map(p => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono text-xs">{p.code}</TableCell>
-                    <TableCell className="font-medium max-w-[280px] truncate">{p.title}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{typeName(p.type_id)}</TableCell>
-                    <TableCell>
-                      <Badge variant={priorityVariant[p.priority]} className="capitalize">{p.priority}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant[p.status]}>{statusLabel[p.status]}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {p.due_date ? (
-                        <span className={isOverdue(p) ? "text-destructive flex items-center gap-1" : ""}>
-                          {isOverdue(p) && <AlertTriangle className="h-3.5 w-3.5" />}
-                          {new Date(p.due_date).toLocaleDateString("pt-PT")}
-                        </span>
-                      ) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild size="sm" variant="ghost" className="gap-1">
-                        <Link to={`/admin/processos/${p.id}`}>
-                          <Eye className="h-4 w-4" /> Abrir
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
 
-        <TablePagination
-          page={pag.page} pageSize={pag.pageSize} total={pag.total} totalPages={pag.totalPages}
-          canPrev={pag.canPrev} canNext={pag.canNext}
-          onPageChange={pag.setPage} onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader><DialogTitle>Novo processo</DialogTitle></DialogHeader>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <Label>Tipo de processo *</Label>
-              <Select value={form.type_id} onValueChange={(v) => setForm({ ...form, type_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
-                <SelectContent>
-                  {types.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Título *</Label>
-              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
-            </div>
-            <div>
-              <Label>Descrição</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
-            </div>
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="typeId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.type")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("form.placeholders.type")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {types.map((ty) => (
+                        <SelectItem key={ty.id} value={ty.id}>
+                          {ty.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.title")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.title")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.description")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      rows={3}
+                      placeholder={t("form.placeholders.description")}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Prioridade</Label>
-                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="baixa">Baixa</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="alta">Alta</SelectItem>
-                    <SelectItem value="urgente">Urgente</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Prazo</Label>
-                <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-              </div>
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.priority")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {PRIORITY_KEYS.map((k) => (
+                          <SelectItem key={k} value={k}>
+                            {t(`priority.${k}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.dueDate")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={saving}>{saving ? "A criar…" : "Abrir processo"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </>
+        )}
+      </EntityFormDialog>
+    </motion.div>
   );
 }

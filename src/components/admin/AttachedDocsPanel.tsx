@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,87 +7,83 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { FileText, Paperclip, Download, X, Plus } from "lucide-react";
+import {
+  useDocumentLinks,
+  useDocumentosList,
+  useCreateDocumentLink,
+  useDeleteDocumentLink,
+} from "@/hooks/queries/useDocumentos";
+import type { DocumentLinkDto } from "@/types/dto/documento";
 
 interface Props {
   entityType: string;
   entityId: string;
 }
 
-interface LinkedDoc {
-  id: string; // link id
-  document_id: string;
-  document?: { id: string; title: string; current_version_id: string | null } | null;
-}
-
-interface DocOption {
-  id: string;
-  title: string;
-  current_version_id: string | null;
-}
-
+/**
+ * Painel de documentos anexados a uma entidade genérica (auditoria, lote, etc).
+ * Assinatura pública inalterada (`entityType`/`entityId`) — usado sem alterações
+ * por Auditorias, Lotes, NaoConformidades e Resultados.
+ *
+ * Migrado de Supabase para a camada mock (MSW): usa o recurso `document-links`
+ * (fixtures + handler próprio) e reutiliza a lista de `documentos` para o
+ * selector de anexação. O download é simulado (sem storage real).
+ */
 export function AttachedDocsPanel({ entityType, entityId }: Props) {
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [items, setItems] = useState<LinkedDoc[]>([]);
-  const [loading, setLoading] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dSearch = useDebounce(search, 300);
-  const [options, setOptions] = useState<DocOption[]>([]);
   const [selected, setSelected] = useState<string>("");
-  const [saving, setSaving] = useState(false);
 
-  const fetchLinks = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("document_links")
-      .select("id, document_id, document:documents(id, title, current_version_id)")
-      .eq("entity_type", entityType)
-      .eq("entity_id", entityId)
-      .order("created_at", { ascending: false });
-    setItems((data ?? []) as any);
-    setLoading(false);
-  };
+  const { data: items = [], isLoading: loading } = useDocumentLinks(entityType, entityId);
+  const { data: docsPage } = useDocumentosList({
+    page: 1,
+    perPage: 50,
+    search: pickerOpen && dSearch.trim() ? dSearch.trim() : undefined,
+  });
+  const options = useMemo(() => docsPage?.data ?? [], [docsPage]);
 
-  const fetchOptions = async () => {
-    let q = supabase.from("documents").select("id, title, current_version_id").order("title").limit(50);
-    if (dSearch.trim()) q = q.ilike("title", `%${dSearch.trim()}%`);
-    const { data } = await q;
-    setOptions((data ?? []) as DocOption[]);
-  };
-
-  useEffect(() => { fetchLinks(); /* eslint-disable-next-line */ }, [entityType, entityId]);
-  useEffect(() => { if (pickerOpen) fetchOptions(); /* eslint-disable-next-line */ }, [pickerOpen, dSearch]);
+  const createLink = useCreateDocumentLink();
+  const deleteLink = useDeleteDocumentLink();
+  const saving = createLink.isPending;
 
   const handleAttach = async () => {
-    if (!selected || !user) return;
-    setSaving(true);
-    const { error } = await supabase.from("document_links").insert({
-      document_id: selected, entity_type: entityType, entity_id: entityId, created_by: user.id,
-    });
-    setSaving(false);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Documento anexado" });
-    setSelected(""); setSearch(""); setPickerOpen(false);
-    fetchLinks();
+    if (!selected) return;
+    try {
+      await createLink.mutateAsync({ documentId: selected, entityType, entityId });
+      toast({ title: "Documento anexado" });
+      setSelected("");
+      setSearch("");
+      setPickerOpen(false);
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: err instanceof Error ? err.message : "Não foi possível anexar.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRemove = async (linkId: string) => {
-    const { error } = await supabase.from("document_links").delete().eq("id", linkId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    fetchLinks();
+    try {
+      await deleteLink.mutateAsync({ id: linkId, entityType, entityId });
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: err instanceof Error ? err.message : "Não foi possível remover.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDownload = async (doc: LinkedDoc["document"]) => {
-    if (!doc?.current_version_id) {
+  const handleDownload = (doc: DocumentLinkDto["document"]) => {
+    if (!doc?.currentVersionId) {
       toast({ title: "Sem versão", description: "Documento sem ficheiro disponível.", variant: "destructive" });
       return;
     }
-    const { data: ver } = await supabase
-      .from("document_versions").select("file_path").eq("id", doc.current_version_id).maybeSingle();
-    if (!ver?.file_path) return;
-    const { data: signed } = await supabase.storage.from("documents").createSignedUrl(ver.file_path, 60);
-    if (signed?.signedUrl) window.open(signed.signedUrl, "_blank");
+    // Simulação — não há storage real nesta demonstração.
+    toast({ title: "Download simulado", description: doc.title });
   };
 
   return (
@@ -109,7 +103,7 @@ export function AttachedDocsPanel({ entityType, entityId }: Props) {
         <p className="text-xs text-muted-foreground italic">Sem documentos anexados.</p>
       ) : (
         <ul className="space-y-1.5">
-          {items.map(l => (
+          {items.map((l) => (
             <li key={l.id} className="flex items-center justify-between gap-2 text-sm bg-muted/30 rounded px-2 py-1.5">
               <span className="flex items-center gap-2 truncate">
                 <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -143,7 +137,7 @@ export function AttachedDocsPanel({ entityType, entityId }: Props) {
                 <SelectContent>
                   {options.length === 0 ? (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">Sem resultados</div>
-                  ) : options.map(o => <SelectItem key={o.id} value={o.id}>{o.title}</SelectItem>)}
+                  ) : options.map((o) => <SelectItem key={o.id} value={o.id}>{o.title}</SelectItem>)}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">

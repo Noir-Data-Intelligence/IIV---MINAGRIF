@@ -1,0 +1,110 @@
+{
+  "back": "Back",
+  "loading": "Loading…",
+  "notFound": {
+    "title": "Process not found"
+  },
+  "status": {
+    "aberto": "Open",
+    "em_curso": "In progress",
+    "concluido": "Completed",
+    "cancelado": "Cancelled"
+  },
+  "priority": {
+    "baixa": "Low",
+    "normal": "Normal",
+    "alta": "High",
+    "urgente": "Urgent"
+  },
+  "stepStatus": {
+    "pendente": "Pending",
+    "em_curso": "In progress",
+    "concluida": "Completed",
+    "rejeitada": "Rejected",
+    "devolvida": "Returned"
+  },
+  "sections": {
+    "description": "Description",
+    "steps": "Process steps",
+    "timeline": "Timeline",
+    "info": "Information",
+    "progress": "Progress",
+    "attachments": "Attachments"
+  },
+  "steps": {
+    "role": "Role: {{role}}",
+    "completedOn": "Completed {{date}}",
+    "current": "Current step: {{name}}",
+    "notesPlaceholder": "Step notes / opinion…",
+    "advance": "Complete and advance",
+    "return": "Return to previous",
+    "edit": "Edit",
+    "cancel": "Cancel process"
+  },
+  "timeline": {
+    "empty": "No events recorded.",
+    "commentPlaceholder": "Add a comment…",
+    "comment": "Comment"
+  },
+  "info": {
+    "code": "Code",
+    "type": "Type",
+    "openedAt": "Opened on",
+    "dueDate": "Due date",
+    "closedAt": "Closed on"
+  },
+  "progress": {
+    "completedSteps": "Completed steps"
+  },
+  "cancelDialog": {
+    "title": "Cancel process",
+    "reasonLabel": "Justification",
+    "reasonPlaceholder": "Reason for cancellation…",
+    "back": "Back",
+    "confirm": "Cancel process"
+  },
+  "editDialog": {
+    "title": "Edit process",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "priorityLabel": "Priority",
+    "dueDateLabel": "Due date",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "attachments": {
+    "title": "Process attachments",
+    "add": "Attach",
+    "loading": "Loading…",
+    "empty": "No attachments.",
+    "fromDocs": "(from Document Management)",
+    "dialogTitle": "Add attachment",
+    "modeDocument": "Existing document",
+    "modeUpload": "Upload file",
+    "documentLabel": "Document",
+    "documentPlaceholder": "Select document",
+    "noResults": "No results",
+    "fileLabel": "File",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "e.g. Technical opinion",
+    "cancel": "Cancel",
+    "submit": "Attach",
+    "submitting": "Saving…"
+  },
+  "toast": {
+    "advanced": "Step completed",
+    "advancedTo": "Advanced to \"{{name}}\"",
+    "completed": "Process completed",
+    "returned": "Step returned",
+    "returnedTo": "To \"{{name}}\"",
+    "noPrevStep": "No previous step",
+    "cancelled": "Process cancelled",
+    "updated": "Process updated",
+    "attachmentAdded": "Attachment added",
+    "attachmentRemoved": "Attachment removed",
+    "downloadSimulated": "Simulated download",
+    "selectDocument": "Select a document",
+    "fileRequired": "File and description are required",
+    "error": "An error occurred. Please try again."
+  }
+}

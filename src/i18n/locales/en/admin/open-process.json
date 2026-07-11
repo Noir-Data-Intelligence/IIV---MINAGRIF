@@ -1,0 +1,31 @@
+{
+  "trigger": "Open process",
+  "dialogTitle": "Open linked process",
+  "form": {
+    "labels": {
+      "type": "Type",
+      "title": "Title",
+      "description": "Description",
+      "priority": "Priority",
+      "dueDate": "Due date"
+    },
+    "placeholders": {
+      "type": "Select type"
+    },
+    "submit": "Open process",
+    "submitting": "Creating...",
+    "cancel": "Cancel"
+  },
+  "priority": {
+    "baixa": "Low",
+    "normal": "Normal",
+    "alta": "High",
+    "urgente": "Urgent"
+  },
+  "toast": {
+    "requiredFields": "Fill in the required fields",
+    "success": "Process opened",
+    "successDescription": "Linked to {{entity}}",
+    "error": "An error occurred. Please try again."
+  }
+}

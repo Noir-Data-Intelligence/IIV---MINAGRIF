@@ -1,0 +1,36 @@
+{
+  "back": "Back to processes",
+  "page": {
+    "title": "Process analytics",
+    "description": "Performance indicators for administrative workflows."
+  },
+  "kpi": {
+    "total": "Total processes",
+    "totalCaption": "Recorded in the system",
+    "avgCycle": "Avg. cycle (days)",
+    "avgCycleCaption": "From opening to closing",
+    "sla": "SLA compliance",
+    "slaCaption": "Closed within the deadline",
+    "overdue": "Overdue",
+    "overdueCaption": "Past the deadline"
+  },
+  "status": {
+    "aberto": "Open",
+    "em_curso": "In progress",
+    "concluido": "Completed",
+    "cancelado": "Cancelled"
+  },
+  "charts": {
+    "byStatus": "Distribution by status",
+    "monthly": "Monthly evolution (last 12 months)",
+    "byType": "Volume by process type",
+    "opened": "Opened",
+    "completed": "Completed",
+    "empty": "No data."
+  },
+  "overdue": {
+    "title": "Overdue by type",
+    "none": "No overdue processes."
+  },
+  "loading": "Loading…"
+}

@@ -1,0 +1,123 @@
+{
+  "page": {
+    "title": "Gestão Documental",
+    "description": "Repositório institucional com versões, permissões e aprovação."
+  },
+  "kpis": {
+    "total": "Total de Documentos",
+    "totalCaption": "No repositório institucional",
+    "pending": "Pendentes de Aprovação",
+    "pendingCaption": "Submetidos a aguardar decisão",
+    "expiring": "A Expirar em Breve",
+    "expiringCaption": "Validade nos próximos 30 dias"
+  },
+  "filters": {
+    "statusAll": "Todos os estados",
+    "categoryAll": "Todas as categorias",
+    "statusPlaceholder": "Estado",
+    "categoryPlaceholder": "Categoria"
+  },
+  "status": {
+    "rascunho": "Rascunho",
+    "submetido": "Submetido",
+    "aprovado": "Aprovado",
+    "rejeitado": "Rejeitado",
+    "arquivado": "Arquivado"
+  },
+  "visibility": {
+    "publico": "Público",
+    "departamento": "Departamento",
+    "privado": "Privado"
+  },
+  "actions": {
+    "new": "Novo Documento",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "submit": "Submeter para aprovação",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "archive": "Arquivar",
+    "download": "Descarregar"
+  },
+  "form": {
+    "labels": {
+      "title": "Título",
+      "category": "Categoria",
+      "visibility": "Visibilidade",
+      "description": "Descrição",
+      "expiryDate": "Data de validade",
+      "tags": "Tags (separadas por vírgula)",
+      "file": "Ficheiro",
+      "changeNotes": "Notas da versão"
+    },
+    "placeholders": {
+      "title": "Ex: Procedimento de colheita de amostras",
+      "categorySelect": "Seleccionar categoria",
+      "description": "Descrição do documento",
+      "tags": "qualidade, iso, 2026",
+      "changeNotes": "Versão inicial"
+    },
+    "visibilityHints": {
+      "publico": "Público (todos autenticados após aprovação)",
+      "departamento": "Departamento",
+      "privado": "Privado (apenas autor + permissões)"
+    },
+    "submitCreate": "Criar Documento",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Novo Documento",
+    "editTitle": "Editar Documento",
+    "detailsTitle": "Detalhes do Documento"
+  },
+  "details": {
+    "category": "Categoria",
+    "status": "Estado",
+    "visibility": "Visibilidade",
+    "expiry": "Validade",
+    "description": "Descrição",
+    "newVersion": "Nova versão",
+    "versionNotesPlaceholder": "Notas da versão (opcional)",
+    "uploadVersion": "Carregar",
+    "uploadingVersion": "A carregar...",
+    "history": "Histórico de versões",
+    "noPreview": "Pré-visualização indisponível na versão de demonstração. Use \"Descarregar\"."
+  },
+  "versions": {
+    "version": "Versão",
+    "notes": "Notas",
+    "date": "Data",
+    "size": "Tamanho",
+    "action": "Acção"
+  },
+  "table": {
+    "title": "Título",
+    "category": "Categoria",
+    "status": "Estado",
+    "expiry": "Validade",
+    "updated": "Actualizado",
+    "empty": "Nenhum documento encontrado.",
+    "searchPlaceholder": "Pesquisar por título, descrição ou tag...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "titleShort": "Título demasiado curto",
+    "fileRequired": "Seleccione um ficheiro"
+  },
+  "toast": {
+    "createSuccess": "Documento criado com sucesso",
+    "updateSuccess": "Documento actualizado",
+    "deleteSuccess": "Documento eliminado",
+    "statusUpdated": "Estado actualizado",
+    "versionUploaded": "Nova versão carregada",
+    "downloadSimulated": "Download simulado (sem storage real nesta demonstração).",
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "delete": {
+    "title": "Eliminar documento?",
+    "description": "Esta acção é permanente e remove todas as versões, ligações e permissões."
+  }
+}

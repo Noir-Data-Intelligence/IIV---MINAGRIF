@@ -1,0 +1,93 @@
+{
+  "page": {
+    "title": "Tipos de Processo",
+    "description": "Configurar workflows: tipos, etapas, responsáveis e SLAs."
+  },
+  "back": "Voltar aos processos",
+  "kpis": {
+    "total": "Total de Tipos",
+    "totalCaption": "Configurados no sistema",
+    "active": "Tipos Activos",
+    "activeCaption": "Disponíveis para abertura",
+    "inactive": "Tipos Inactivos",
+    "inactiveCaption": "Ocultos da abertura"
+  },
+  "validation": {
+    "nameShort": "Nome demasiado curto",
+    "stepNameShort": "Nome da etapa demasiado curto"
+  },
+  "actions": {
+    "new": "Novo tipo",
+    "editType": "Editar tipo",
+    "delete": "Eliminar",
+    "addStep": "Adicionar etapa"
+  },
+  "list": {
+    "empty": "Sem tipos configurados.",
+    "stepsCount_one": "{{count}} etapa",
+    "stepsCount_other": "{{count}} etapas",
+    "inactive": "Inactivo",
+    "sla": "SLA {{days}}d",
+    "noSteps": "Sem etapas. Adicione a primeira.",
+    "stepRole": "Papel: {{role}}",
+    "stepNoRole": "Sem papel",
+    "stepSla": " · SLA {{days}}d"
+  },
+  "typeForm": {
+    "createTitle": "Novo tipo de processo",
+    "editTitle": "Editar tipo",
+    "labels": {
+      "name": "Nome",
+      "description": "Descrição",
+      "slaDays": "SLA (dias)",
+      "isActive": "Activo"
+    },
+    "placeholders": {
+      "name": "Ex: Parecer Técnico",
+      "description": "Descreva o âmbito deste tipo de processo"
+    }
+  },
+  "stepForm": {
+    "createTitle": "Nova etapa",
+    "editTitle": "Editar etapa",
+    "labels": {
+      "name": "Nome",
+      "role": "Papel responsável",
+      "slaDays": "SLA (dias)"
+    },
+    "placeholders": {
+      "name": "Ex: Análise técnica"
+    },
+    "noRole": "Sem papel definido"
+  },
+  "form": {
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "roles": {
+    "admin": "Administrador",
+    "gestor": "Gestor",
+    "tecnico": "Técnico",
+    "diretor": "Director",
+    "colaborador": "Colaborador"
+  },
+  "deleteType": {
+    "title": "Eliminar tipo?",
+    "description": "Remove o tipo e todas as etapas-padrão associadas."
+  },
+  "deleteStep": {
+    "title": "Eliminar etapa?",
+    "description": "A etapa-padrão será removida deste tipo."
+  },
+  "toast": {
+    "typeCreated": "Tipo criado",
+    "typeUpdated": "Tipo actualizado",
+    "typeDeleted": "Tipo eliminado",
+    "stepCreated": "Etapa adicionada",
+    "stepUpdated": "Etapa actualizada",
+    "stepDeleted": "Etapa eliminada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

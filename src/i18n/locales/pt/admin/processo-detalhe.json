@@ -1,0 +1,110 @@
+{
+  "back": "Voltar",
+  "loading": "A carregar…",
+  "notFound": {
+    "title": "Processo não encontrado"
+  },
+  "status": {
+    "aberto": "Aberto",
+    "em_curso": "Em curso",
+    "concluido": "Concluído",
+    "cancelado": "Cancelado"
+  },
+  "priority": {
+    "baixa": "Baixa",
+    "normal": "Normal",
+    "alta": "Alta",
+    "urgente": "Urgente"
+  },
+  "stepStatus": {
+    "pendente": "Pendente",
+    "em_curso": "Em curso",
+    "concluida": "Concluída",
+    "rejeitada": "Rejeitada",
+    "devolvida": "Devolvida"
+  },
+  "sections": {
+    "description": "Descrição",
+    "steps": "Etapas do processo",
+    "timeline": "Cronologia",
+    "info": "Informação",
+    "progress": "Progresso",
+    "attachments": "Anexos"
+  },
+  "steps": {
+    "role": "Papel: {{role}}",
+    "completedOn": "Concluída {{date}}",
+    "current": "Etapa actual: {{name}}",
+    "notesPlaceholder": "Notas / parecer da etapa…",
+    "advance": "Concluir e avançar",
+    "return": "Devolver à anterior",
+    "edit": "Editar",
+    "cancel": "Cancelar processo"
+  },
+  "timeline": {
+    "empty": "Sem eventos registados.",
+    "commentPlaceholder": "Adicionar comentário…",
+    "comment": "Comentar"
+  },
+  "info": {
+    "code": "Código",
+    "type": "Tipo",
+    "openedAt": "Aberto em",
+    "dueDate": "Prazo",
+    "closedAt": "Fechado em"
+  },
+  "progress": {
+    "completedSteps": "Etapas concluídas"
+  },
+  "cancelDialog": {
+    "title": "Cancelar processo",
+    "reasonLabel": "Justificação",
+    "reasonPlaceholder": "Motivo do cancelamento…",
+    "back": "Voltar",
+    "confirm": "Cancelar processo"
+  },
+  "editDialog": {
+    "title": "Editar processo",
+    "titleLabel": "Título",
+    "descriptionLabel": "Descrição",
+    "priorityLabel": "Prioridade",
+    "dueDateLabel": "Prazo",
+    "cancel": "Cancelar",
+    "save": "Guardar"
+  },
+  "attachments": {
+    "title": "Anexos do processo",
+    "add": "Anexar",
+    "loading": "A carregar…",
+    "empty": "Sem anexos.",
+    "fromDocs": "(da Gestão Documental)",
+    "dialogTitle": "Adicionar anexo",
+    "modeDocument": "Documento existente",
+    "modeUpload": "Carregar ficheiro",
+    "documentLabel": "Documento",
+    "documentPlaceholder": "Seleccionar documento",
+    "noResults": "Sem resultados",
+    "fileLabel": "Ficheiro",
+    "descriptionLabel": "Descrição",
+    "descriptionPlaceholder": "Ex.: Parecer técnico",
+    "cancel": "Cancelar",
+    "submit": "Anexar",
+    "submitting": "A guardar…"
+  },
+  "toast": {
+    "advanced": "Etapa concluída",
+    "advancedTo": "Avançou para \"{{name}}\"",
+    "completed": "Processo concluído",
+    "returned": "Etapa devolvida",
+    "returnedTo": "Para \"{{name}}\"",
+    "noPrevStep": "Sem etapa anterior",
+    "cancelled": "Processo cancelado",
+    "updated": "Processo actualizado",
+    "attachmentAdded": "Anexo adicionado",
+    "attachmentRemoved": "Anexo removido",
+    "downloadSimulated": "Download simulado",
+    "selectDocument": "Seleccione um documento",
+    "fileRequired": "Ficheiro e descrição obrigatórios",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

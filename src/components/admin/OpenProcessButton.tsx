@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -10,6 +10,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Workflow } from "lucide-react";
+import { useProcessTypesList } from "@/hooks/queries/useProcessTypes";
+import { useCreateProcess } from "@/hooks/queries/useProcesses";
+import type { ProcessPriority } from "@/types/dto/process";
+import i18n from "@/i18n";
+import ptOpenProcess from "@/i18n/locales/pt/admin/open-process.json";
+import enOpenProcess from "@/i18n/locales/en/admin/open-process.json";
+
+// Namespace autónomo registado em runtime (o bundle central só regista common/nav).
+if (!i18n.hasResourceBundle("pt", "admin-open-process"))
+  i18n.addResourceBundle("pt", "admin-open-process", ptOpenProcess, true, true);
+if (!i18n.hasResourceBundle("en", "admin-open-process"))
+  i18n.addResourceBundle("en", "admin-open-process", enOpenProcess, true, true);
 
 interface Props {
   entityType: string;
@@ -20,140 +32,111 @@ interface Props {
   variant?: "default" | "outline" | "ghost";
 }
 
-interface PType { id: string; name: string }
+const PRIORITY_KEYS: ProcessPriority[] = ["baixa", "normal", "alta", "urgente"];
 
 export function OpenProcessButton({
   entityType, entityId, defaultTitle = "", defaultTypeHint, size = "sm", variant = "outline",
 }: Props) {
+  const { t } = useTranslation("admin-open-process");
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [types, setTypes] = useState<PType[]>([]);
   const [form, setForm] = useState({
-    type_id: "", title: defaultTitle, description: "",
-    priority: "normal", due_date: "",
+    typeId: "", title: defaultTitle, description: "",
+    priority: "normal" as ProcessPriority, dueDate: "",
   });
-  const [saving, setSaving] = useState(false);
+
+  const { data: typesData } = useProcessTypesList({ activeOnly: true, perPage: 100 });
+  const types = typesData?.data ?? [];
+  const createProcess = useCreateProcess();
 
   useEffect(() => {
-    if (!open) return;
-    (async () => {
-      const { data } = await supabase.from("process_types").select("id, name").eq("is_active", true).order("name");
-      const list = (data ?? []) as PType[];
-      setTypes(list);
-      let pre = "";
-      if (defaultTypeHint) {
-        const m = list.find(t => t.name.toLowerCase().includes(defaultTypeHint.toLowerCase()));
-        if (m) pre = m.id;
-      }
-      setForm(f => ({ ...f, type_id: pre, title: defaultTitle || f.title }));
-    })();
-    // eslint-disable-next-line
-  }, [open]);
+    if (!open || types.length === 0) return;
+    let pre = "";
+    if (defaultTypeHint) {
+      const m = types.find((t) => t.name.toLowerCase().includes(defaultTypeHint.toLowerCase()));
+      if (m) pre = m.id;
+    }
+    setForm((f) => ({ ...f, typeId: f.typeId || pre, title: defaultTitle || f.title }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, types.length]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !form.type_id || !form.title.trim()) {
-      toast({ title: "Campos obrigatórios", variant: "destructive" }); return;
+    if (!user || !form.typeId || !form.title.trim()) {
+      toast({ title: t("toast.requiredFields"), variant: "destructive" });
+      return;
     }
-    setSaving(true);
     try {
-      const { data: proc, error: pErr } = await supabase.from("processes").insert({
-        type_id: form.type_id,
+      const created = await createProcess.mutateAsync({
+        typeId: form.typeId,
         title: form.title.trim(),
         description: form.description.trim() || null,
-        requester_id: user.id,
-        priority: form.priority as any,
-        due_date: form.due_date || null,
-        status: "aberto",
-        code: "",
-        linked_entity_type: entityType,
-        linked_entity_id: entityId,
-      } as any).select().single();
-      if (pErr) throw pErr;
-
-      const { data: typeSteps } = await supabase.from("process_type_steps")
-        .select("*").eq("process_type_id", form.type_id).order("order_index");
-      if (typeSteps && typeSteps.length > 0) {
-        const rows = typeSteps.map((s: any, i: number) => ({
-          process_id: proc.id, type_step_id: s.id, order_index: s.order_index, name: s.name,
-          assignee_role: s.default_role,
-          status: (i === 0 ? "em_curso" : "pendente") as "em_curso" | "pendente",
-          started_at: i === 0 ? new Date().toISOString() : null,
-          due_at: s.sla_days ? new Date(Date.now() + s.sla_days * 86400000).toISOString() : null,
-        }));
-        const { data: inserted } = await supabase.from("process_steps").insert(rows).select();
-        const first = (inserted ?? []).sort((a: any, b: any) => a.order_index - b.order_index)[0];
-        if (first) {
-          await supabase.from("processes").update({
-            current_step_id: first.id, status: "em_curso",
-          }).eq("id", proc.id);
-        }
-      }
-      await supabase.from("process_events").insert({
-        process_id: proc.id, actor_id: user.id, event_type: "aberto",
-        payload: { title: form.title, source: entityType },
+        priority: form.priority,
+        dueDate: form.dueDate || null,
+        requesterId: user.id,
+        linkedEntityType: entityType,
+        linkedEntityId: entityId,
       });
 
-      toast({ title: "Processo aberto", description: `Ligado a ${entityType}` });
+      toast({ title: t("toast.success"), description: t("toast.successDescription", { entity: entityType }) });
       setOpen(false);
-      navigate(`/admin/processos/${proc.id}`);
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
+      navigate(`/admin/processos/${created.id}`);
+    } catch (err) {
+      toast({ title: t("toast.error"), description: err instanceof Error ? err.message : undefined, variant: "destructive" });
     }
   };
 
   return (
     <>
       <Button size={size} variant={variant} className="gap-1.5" onClick={() => setOpen(true)}>
-        <Workflow className="h-3.5 w-3.5" /> Abrir processo
+        <Workflow className="h-3.5 w-3.5" /> {t("trigger")}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Abrir processo ligado</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("dialogTitle")}</DialogTitle></DialogHeader>
           <form onSubmit={handleCreate} className="space-y-3">
             <div>
-              <Label>Tipo *</Label>
-              <Select value={form.type_id} onValueChange={(v) => setForm({ ...form, type_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+              <Label>{t("form.labels.type")} *</Label>
+              <Select value={form.typeId} onValueChange={(v) => setForm({ ...form, typeId: v })}>
+                <SelectTrigger><SelectValue placeholder={t("form.placeholders.type")} /></SelectTrigger>
                 <SelectContent>
-                  {types.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                  {types.map((pt) => <SelectItem key={pt.id} value={pt.id}>{pt.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Título *</Label>
+              <Label>{t("form.labels.title")} *</Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
             </div>
             <div>
-              <Label>Descrição</Label>
+              <Label>{t("form.labels.description")}</Label>
               <Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Prioridade</Label>
-                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
+                <Label>{t("form.labels.priority")}</Label>
+                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as ProcessPriority })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="baixa">Baixa</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="alta">Alta</SelectItem>
-                    <SelectItem value="urgente">Urgente</SelectItem>
+                    {PRIORITY_KEYS.map((p) => (
+                      <SelectItem key={p} value={p}>{t(`priority.${p}`)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Prazo</Label>
-                <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+                <Label>{t("form.labels.dueDate")}</Label>
+                <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={saving}>{saving ? "A criar…" : "Abrir processo"}</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("form.cancel")}</Button>
+              <Button type="submit" disabled={createProcess.isPending}>
+                {createProcess.isPending ? t("form.submitting") : t("form.submit")}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

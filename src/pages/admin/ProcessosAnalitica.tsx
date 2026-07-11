@@ -1,224 +1,251 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, XAxis, YAxis,
+} from "recharts";
+import { ChevronLeft, BarChart3, Timer, Workflow, FolderOpen, CheckCircle2, Clock } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, BarChart3, Timer, Workflow } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, LineChart, Line,
-} from "recharts";
+  ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  axisTickStyle, buildChartConfig, chartColors, formatAxisNumber, getChartColor, NoDataOverlay,
+} from "@/components/charts";
+import { useProcessesList } from "@/hooks/queries/useProcesses";
+import { useProcessTypesList } from "@/hooks/queries/useProcessTypes";
+import { formatNumber } from "@/lib/format";
+import { fadeIn } from "@/lib/motion";
+import i18n from "@/i18n";
+import ptAnalitica from "@/i18n/locales/pt/admin/processos-analitica.json";
+import enAnalitica from "@/i18n/locales/en/admin/processos-analitica.json";
 
-interface ProcessRow {
-  id: string; type_id: string; status: string; priority: string;
-  opened_at: string; closed_at: string | null; due_date: string | null;
-}
-interface TypeRow { id: string; name: string }
+// Namespace autónomo registado em runtime (o bundle central só regista common/nav).
+if (!i18n.hasResourceBundle("pt", "admin-processos-analitica"))
+  i18n.addResourceBundle("pt", "admin-processos-analitica", ptAnalitica, true, true);
+if (!i18n.hasResourceBundle("en", "admin-processos-analitica"))
+  i18n.addResourceBundle("en", "admin-processos-analitica", enAnalitica, true, true);
 
-const STATUS_COLORS: Record<string, string> = {
-  aberto: "hsl(48 96% 53%)",
-  em_curso: "hsl(var(--primary))",
-  concluido: "hsl(142 71% 45%)",
-  cancelado: "hsl(var(--destructive))",
-};
-const STATUS_LABEL: Record<string, string> = {
-  aberto: "Aberto", em_curso: "Em curso", concluido: "Concluído", cancelado: "Cancelado",
-};
+const STATUS_KEYS = ["aberto", "em_curso", "concluido", "cancelado"] as const;
 
 export default function ProcessosAnalitica() {
-  const [rows, setRows] = useState<ProcessRow[]>([]);
-  const [types, setTypes] = useState<TypeRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { t } = useTranslation("admin-processos-analitica");
+  const prefersReduced = useReducedMotion();
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const [{ data: p }, { data: t }] = await Promise.all([
-        supabase.from("processes").select("id, type_id, status, priority, opened_at, closed_at, due_date"),
-        supabase.from("process_types").select("id, name"),
-      ]);
-      setRows((p ?? []) as ProcessRow[]);
-      setTypes((t ?? []) as TypeRow[]);
-      setLoading(false);
-    })();
-  }, []);
+  // perPage alto: obtemos todos os processos/tipos para agregação client-side.
+  const { data: processesPage, isLoading } = useProcessesList({ page: 1, perPage: 1000 });
+  const { data: typesPage } = useProcessTypesList({ perPage: 200 });
 
-  const typeName = (id: string) => types.find(t => t.id === id)?.name ?? "—";
+  const rows = useMemo(() => processesPage?.data ?? [], [processesPage]);
+  const typeName = (id: string) => typesPage?.data.find((ty) => ty.id === id)?.name ?? "—";
+
+  const today = new Date().toISOString().slice(0, 10);
 
   const statusData = useMemo(() => {
     const map = new Map<string, number>();
-    rows.forEach(r => map.set(r.status, (map.get(r.status) ?? 0) + 1));
-    return Array.from(map.entries()).map(([k, v]) => ({ name: STATUS_LABEL[k] ?? k, value: v, key: k }));
-  }, [rows]);
+    rows.forEach((r) => map.set(r.status, (map.get(r.status) ?? 0) + 1));
+    return STATUS_KEYS.filter((k) => map.has(k)).map((k) => ({
+      name: t(`status.${k}`),
+      value: map.get(k) ?? 0,
+    }));
+  }, [rows, t]);
 
   const byTypeData = useMemo(() => {
-    const map = new Map<string, { name: string; abertos: number; em_curso: number; concluidos: number; cancelados: number }>();
-    rows.forEach(r => {
-      const key = r.type_id;
-      if (!map.has(key)) map.set(key, { name: typeName(key), abertos: 0, em_curso: 0, concluidos: 0, cancelados: 0 });
-      const row = map.get(key)!;
-      if (r.status === "aberto") row.abertos++;
-      else if (r.status === "em_curso") row.em_curso++;
-      else if (r.status === "concluido") row.concluidos++;
-      else if (r.status === "cancelado") row.cancelados++;
+    const map = new Map<string, { name: string; aberto: number; em_curso: number; concluido: number; cancelado: number }>();
+    rows.forEach((r) => {
+      if (!map.has(r.typeId)) {
+        map.set(r.typeId, { name: typeName(r.typeId), aberto: 0, em_curso: 0, concluido: 0, cancelado: 0 });
+      }
+      const row = map.get(r.typeId)!;
+      if (r.status in row) (row as unknown as Record<string, number>)[r.status]++;
     });
     return Array.from(map.values());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, types]);
+  }, [rows, typesPage]);
 
   const monthlyData = useMemo(() => {
-    const map = new Map<string, { month: string; abertos: number; concluidos: number }>();
-    rows.forEach(r => {
-      const m = r.opened_at.slice(0, 7);
-      if (!map.has(m)) map.set(m, { month: m, abertos: 0, concluidos: 0 });
-      map.get(m)!.abertos++;
-    });
-    rows.filter(r => r.closed_at && r.status === "concluido").forEach(r => {
-      const m = r.closed_at!.slice(0, 7);
-      if (!map.has(m)) map.set(m, { month: m, abertos: 0, concluidos: 0 });
-      map.get(m)!.concluidos++;
-    });
+    const map = new Map<string, { month: string; opened: number; completed: number }>();
+    const ensure = (m: string) => {
+      if (!map.has(m)) map.set(m, { month: m, opened: 0, completed: 0 });
+      return map.get(m)!;
+    };
+    rows.forEach((r) => ensure(r.openedAt.slice(0, 7)).opened++);
+    rows
+      .filter((r) => r.closedAt && r.status === "concluido")
+      .forEach((r) => ensure(r.closedAt!.slice(0, 7)).completed++);
     return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(-12);
   }, [rows]);
 
   const avgCycleDays = useMemo(() => {
-    const closed = rows.filter(r => r.closed_at && r.status === "concluido");
+    const closed = rows.filter((r) => r.closedAt && r.status === "concluido");
     if (closed.length === 0) return 0;
     const total = closed.reduce((sum, r) => {
-      const ms = new Date(r.closed_at!).getTime() - new Date(r.opened_at).getTime();
-      return sum + ms / (1000 * 60 * 60 * 24);
+      const ms = new Date(r.closedAt!).getTime() - new Date(r.openedAt).getTime();
+      return sum + ms / 86_400_000;
     }, 0);
     return Math.round((total / closed.length) * 10) / 10;
   }, [rows]);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const overdue = rows.filter(r => r.due_date && r.due_date < today && (r.status === "aberto" || r.status === "em_curso")).length;
+  const overdue = rows.filter(
+    (r) => r.dueDate && r.dueDate < today && (r.status === "aberto" || r.status === "em_curso"),
+  ).length;
+
   const slaCompliance = useMemo(() => {
-    const closed = rows.filter(r => r.status === "concluido" && r.due_date && r.closed_at);
+    const closed = rows.filter((r) => r.status === "concluido" && r.dueDate && r.closedAt);
     if (closed.length === 0) return null;
-    const ok = closed.filter(r => r.closed_at!.slice(0, 10) <= r.due_date!).length;
+    const ok = closed.filter((r) => r.closedAt!.slice(0, 10) <= r.dueDate!).length;
     return Math.round((ok / closed.length) * 100);
   }, [rows]);
 
-  if (loading) {
+  const overdueByType = useMemo(() => {
+    const map = new Map<string, number>();
+    rows
+      .filter((r) => r.dueDate && r.dueDate < today && (r.status === "aberto" || r.status === "em_curso"))
+      .forEach((r) => map.set(r.typeId, (map.get(r.typeId) ?? 0) + 1));
+    return Array.from(map.entries()).map(([k, v]) => ({ name: typeName(k), value: v }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, typesPage, today]);
+
+  const statusConfig = useMemo(() => buildChartConfig(statusData.map((d) => d.name)), [statusData]);
+  const byTypeConfig = useMemo(
+    () =>
+      buildChartConfig([...STATUS_KEYS], {
+        aberto: t("status.aberto"),
+        em_curso: t("status.em_curso"),
+        concluido: t("status.concluido"),
+        cancelado: t("status.cancelado"),
+      }),
+    [t],
+  );
+  const monthlyConfig = useMemo(
+    () => buildChartConfig(["opened", "completed"], { opened: t("charts.opened"), completed: t("charts.completed") }),
+    [t],
+  );
+
+  const kpiCards = [
+    { key: "total", icon: FolderOpen, label: t("kpi.total"), value: formatNumber(rows.length), caption: t("kpi.totalCaption"), variant: "gradient-green" as const },
+    { key: "cycle", icon: Clock, label: t("kpi.avgCycle"), value: formatNumber(avgCycleDays), caption: t("kpi.avgCycleCaption"), variant: "gradient-teal" as const },
+    { key: "sla", icon: CheckCircle2, label: t("kpi.sla"), value: slaCompliance === null ? "—" : `${slaCompliance}%`, caption: t("kpi.slaCaption"), variant: "gradient-green-gold" as const },
+    { key: "overdue", icon: Timer, label: t("kpi.overdue"), value: formatNumber(overdue), caption: t("kpi.overdueCaption"), variant: "gradient-gold" as const },
+  ];
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
-        <AdminPageHeader icon={BarChart3} title="Analítica de processos" />
+        <AdminPageHeader icon={BarChart3} title={t("page.title")} />
         <AdminCard loading />
       </div>
     );
   }
 
+  const motionProps = prefersReduced
+    ? {}
+    : { initial: "hidden" as const, animate: "visible" as const, variants: fadeIn };
+
   return (
-    <div className="space-y-6">
+    <motion.div className="space-y-6" {...motionProps}>
       <div>
-        <Button asChild size="sm" variant="ghost" className="mb-2">
-          <Link to="/admin/processos"><ChevronLeft className="h-4 w-4" /> Voltar a processos</Link>
+        <Button asChild size="sm" variant="ghost" className="mb-2 gap-1">
+          <Link to="/admin/processos"><ChevronLeft className="h-4 w-4" /> {t("back")}</Link>
         </Button>
       </div>
 
-      <AdminPageHeader
-        icon={BarChart3}
-        title="Analítica de processos"
-        description="Indicadores de desempenho dos fluxos administrativos."
-      />
+      <AdminPageHeader icon={BarChart3} title={t("page.title")} description={t("page.description")} />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: "Total de processos", value: rows.length, tone: "text-primary" },
-          { label: "Ciclo médio (dias)", value: avgCycleDays, tone: "text-secondary-foreground" },
-          { label: "Cumprimento SLA", value: slaCompliance === null ? "—" : `${slaCompliance}%`, tone: "text-emerald-600 dark:text-emerald-400" },
-          { label: "Em atraso", value: overdue, tone: "text-destructive" },
-        ].map(s => (
-          <div key={s.label} className="rounded-lg border border-border/40 bg-card p-3">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className={`text-2xl font-bold ${s.tone}`}>{s.value}</p>
-          </div>
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {kpiCards.map((c, i) => (
+          <AdminCard
+            key={c.key}
+            title={c.label}
+            icon={c.icon}
+            metric={c.value}
+            caption={c.caption}
+            variant={c.variant}
+            stagger={(i + 1) as 1 | 2 | 3 | 4}
+          />
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AdminCard title="Distribuição por estado">
-          {statusData.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Sem dados.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
+        <AdminCard title={t("charts.byStatus")}>
+          {statusData.length > 0 ? (
+            <ChartContainer config={statusConfig} className="h-[280px] w-full">
               <PieChart>
-                <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={90} label>
-                  {statusData.map((d, i) => (
-                    <Cell key={i} fill={STATUS_COLORS[d.key] ?? "hsl(var(--muted))"} />
+                <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={95} innerRadius={55} paddingAngle={2}>
+                  {statusData.map((_, i) => (
+                    <Cell key={i} fill={getChartColor(i)} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend />
+                <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                <ChartLegend content={<ChartLegendContent nameKey="name" />} />
               </PieChart>
-            </ResponsiveContainer>
+            </ChartContainer>
+          ) : (
+            <NoDataOverlay message={t("charts.empty")} height={280} />
           )}
         </AdminCard>
 
-        <AdminCard title="Evolução mensal (últimos 12 meses)">
-          {monthlyData.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Sem dados.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={monthlyData}>
+        <AdminCard title={t("charts.monthly")}>
+          {monthlyData.length > 0 ? (
+            <ChartContainer config={monthlyConfig} className="h-[280px] w-full">
+              <LineChart data={monthlyData} margin={{ left: 4, right: 12 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="abertos" stroke="hsl(var(--primary))" name="Abertos" />
-                <Line type="monotone" dataKey="concluidos" stroke="hsl(142 71% 45%)" name="Concluídos" />
+                <XAxis dataKey="month" tick={axisTickStyle} />
+                <YAxis allowDecimals={false} tick={axisTickStyle} tickFormatter={formatAxisNumber} width={32} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Line type="monotone" dataKey="opened" name={t("charts.opened")} stroke={chartColors[0]} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="completed" name={t("charts.completed")} stroke={chartColors[1]} strokeWidth={2} dot={false} />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartContainer>
+          ) : (
+            <NoDataOverlay message={t("charts.empty")} height={280} />
           )}
         </AdminCard>
 
-        <AdminCard title="Volume por tipo de processo" className="lg:col-span-2">
-          {byTypeData.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Sem dados.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={byTypeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="abertos" stackId="a" fill={STATUS_COLORS.aberto} name="Abertos" />
-                <Bar dataKey="em_curso" stackId="a" fill={STATUS_COLORS.em_curso} name="Em curso" />
-                <Bar dataKey="concluidos" stackId="a" fill={STATUS_COLORS.concluido} name="Concluídos" />
-                <Bar dataKey="cancelados" stackId="a" fill={STATUS_COLORS.cancelado} name="Cancelados" />
+        <AdminCard title={t("charts.byType")} className="lg:col-span-2">
+          {byTypeData.length > 0 ? (
+            <ChartContainer config={byTypeConfig} className="h-[320px] w-full">
+              <BarChart data={byTypeData} margin={{ left: 4, right: 12 }}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={axisTickStyle} interval={0} />
+                <YAxis allowDecimals={false} tick={axisTickStyle} tickFormatter={formatAxisNumber} width={32} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                {STATUS_KEYS.map((k, i) => (
+                  <Bar key={k} dataKey={k} name={t(`status.${k}`)} stackId="a" fill={getChartColor(i)} radius={i === STATUS_KEYS.length - 1 ? [4, 4, 0, 0] : undefined} />
+                ))}
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
+          ) : (
+            <NoDataOverlay message={t("charts.empty")} height={320} />
           )}
         </AdminCard>
       </div>
 
-      <AdminCard title="Em atraso por tipo">
-        {(() => {
-          const map = new Map<string, number>();
-          rows.filter(r => r.due_date && r.due_date < today && (r.status === "aberto" || r.status === "em_curso"))
-            .forEach(r => map.set(r.type_id, (map.get(r.type_id) ?? 0) + 1));
-          const list = Array.from(map.entries()).map(([k, v]) => ({ name: typeName(k), value: v }));
-          return list.length === 0 ? (
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Timer className="h-4 w-4" /> Sem processos em atraso.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {list.map(l => (
-                <li key={l.name} className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2"><Workflow className="h-4 w-4 text-muted-foreground" /> {l.name}</span>
-                  <Badge variant="destructive">{l.value}</Badge>
-                </li>
-              ))}
-            </ul>
-          );
-        })()}
+      <AdminCard title={t("overdue.title")}>
+        {overdueByType.length === 0 ? (
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <Timer className="h-4 w-4" /> {t("overdue.none")}
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {overdueByType.map((l) => (
+              <li key={l.name} className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2">
+                  <Workflow className="h-4 w-4 text-muted-foreground" /> {l.name}
+                </span>
+                <Badge variant="destructive">{l.value}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
       </AdminCard>
-    </div>
+    </motion.div>
   );
 }

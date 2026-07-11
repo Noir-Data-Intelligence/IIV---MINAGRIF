@@ -1,0 +1,93 @@
+{
+  "page": {
+    "title": "Process Types",
+    "description": "Configure workflows: types, steps, owners and SLAs."
+  },
+  "back": "Back to processes",
+  "kpis": {
+    "total": "Total Types",
+    "totalCaption": "Configured in the system",
+    "active": "Active Types",
+    "activeCaption": "Available for opening",
+    "inactive": "Inactive Types",
+    "inactiveCaption": "Hidden from opening"
+  },
+  "validation": {
+    "nameShort": "Name too short",
+    "stepNameShort": "Step name too short"
+  },
+  "actions": {
+    "new": "New type",
+    "editType": "Edit type",
+    "delete": "Delete",
+    "addStep": "Add step"
+  },
+  "list": {
+    "empty": "No types configured.",
+    "stepsCount_one": "{{count}} step",
+    "stepsCount_other": "{{count}} steps",
+    "inactive": "Inactive",
+    "sla": "SLA {{days}}d",
+    "noSteps": "No steps. Add the first one.",
+    "stepRole": "Role: {{role}}",
+    "stepNoRole": "No role",
+    "stepSla": " · SLA {{days}}d"
+  },
+  "typeForm": {
+    "createTitle": "New process type",
+    "editTitle": "Edit type",
+    "labels": {
+      "name": "Name",
+      "description": "Description",
+      "slaDays": "SLA (days)",
+      "isActive": "Active"
+    },
+    "placeholders": {
+      "name": "e.g. Technical Opinion",
+      "description": "Describe the scope of this process type"
+    }
+  },
+  "stepForm": {
+    "createTitle": "New step",
+    "editTitle": "Edit step",
+    "labels": {
+      "name": "Name",
+      "role": "Responsible role",
+      "slaDays": "SLA (days)"
+    },
+    "placeholders": {
+      "name": "e.g. Technical analysis"
+    },
+    "noRole": "No role set"
+  },
+  "form": {
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "gestor": "Manager",
+    "tecnico": "Technician",
+    "diretor": "Director",
+    "colaborador": "Collaborator"
+  },
+  "deleteType": {
+    "title": "Delete type?",
+    "description": "Removes the type and all associated default steps."
+  },
+  "deleteStep": {
+    "title": "Delete step?",
+    "description": "The default step will be removed from this type."
+  },
+  "toast": {
+    "typeCreated": "Type created",
+    "typeUpdated": "Type updated",
+    "typeDeleted": "Type deleted",
+    "stepCreated": "Step added",
+    "stepUpdated": "Step updated",
+    "stepDeleted": "Step deleted",
+    "error": "An error occurred. Please try again."
+  }
+}
