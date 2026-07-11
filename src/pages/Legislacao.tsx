@@ -128,7 +128,11 @@ export default function Legislacao() {
                 >
                   <div className="col-span-2">
                     <Link to={`/legislacao/${l.slug}`} className="block">
-                      <p className="font-serif text-4xl md:text-5xl text-primary/30 group-hover:text-[hsl(var(--iiv-gold-text))] tracking-tight transition-colors">
+                      {/* text-primary/60 (light) e /85 (dark) em vez de /30: a /30 só atinge
+                          1.63:1 mesmo sendo texto grande (mínimo exigido 3:1). --primary muda
+                          de tom entre temas, por isso precisa de opacidades distintas para
+                          ambos atingirem >= 3:1 (/60 ~3.0:1 claro, /85 ~3.4:1 escuro). */}
+                      <p className="font-serif text-4xl md:text-5xl text-primary/60 dark:text-primary/85 group-hover:text-[hsl(var(--iiv-gold-text))] tracking-tight transition-colors">
                         {l.num}
                       </p>
                     </Link>

@@ -79,6 +79,18 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      // Escala de elevação única, de dupla camada suave (em vez das sombras cinzas
+      // duras por omissão do Tailwind) — substitui os valores nativos de shadow-sm .. shadow-2xl
+      // em todo o projecto, incluindo dentro das primitivas shadcn/ui (dialog, popover,
+      // dropdown-menu, etc.), sem precisar de editar cada ficheiro individualmente.
+      boxShadow: {
+        sm: "0 1px 2px 0 rgb(0 0 0 / 0.04)",
+        DEFAULT: "0 1px 3px 0 rgb(0 0 0 / 0.04), 0 4px 12px -2px rgb(0 0 0 / 0.05)",
+        md: "0 2px 4px -1px rgb(0 0 0 / 0.05), 0 8px 20px -4px rgb(0 0 0 / 0.06)",
+        lg: "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 16px 40px -8px rgb(0 0 0 / 0.08)",
+        xl: "0 8px 12px -2px rgb(0 0 0 / 0.06), 0 24px 56px -12px rgb(0 0 0 / 0.10)",
+        "2xl": "0 12px 20px -4px rgb(0 0 0 / 0.08), 0 32px 72px -16px rgb(0 0 0 / 0.14)",
+      },
       keyframes: {
         "accordion-down": {
           from: {

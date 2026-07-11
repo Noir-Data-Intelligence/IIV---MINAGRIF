@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ROLE_LABEL, type ModuleKey } from "@/lib/permissions";
+import { pageTransition } from "@/lib/motion";
 import {
   LayoutDashboard, Users, Building2, LogOut, ChevronLeft, FlaskConical, TestTubes,
   ClipboardList, Package, Pill, Boxes, CalendarRange, Truck, MapPin,
@@ -149,6 +151,7 @@ export function AdminLayout() {
   const { role, loading: roleLoading, canView } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
+  const prefersReducedMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [navigating, setNavigating] = useState(false);
@@ -555,7 +558,17 @@ export function AdminLayout() {
         </header>
 
         <main className="flex-1 p-5 lg:p-8">
-          <Outlet />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              variants={prefersReducedMotion ? undefined : pageTransition}
+              initial={prefersReducedMotion ? undefined : "hidden"}
+              animate={prefersReducedMotion ? undefined : "visible"}
+              exit={prefersReducedMotion ? undefined : "exit"}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         <footer className="h-10 flex items-center justify-center border-t border-border/40 bg-card/60 text-[11px] text-muted-foreground shrink-0">

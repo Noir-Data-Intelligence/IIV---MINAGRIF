@@ -6,6 +6,7 @@ import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 
 /** Variant local (não exportado) para o menu mobile: expande/recolhe altura + fade, curto e subtil. */
 const mobileNavVariants: Variants = {
@@ -65,22 +66,29 @@ export function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-0.5">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  location.pathname === item.path
-                    ? "text-primary bg-accent"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                }`}
-              >
-                {t(item.key)}
-                {location.pathname === item.path && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-primary" />
-                )}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const active = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                    active
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="header-nav-indicator"
+                      className="absolute inset-0 rounded-lg bg-accent"
+                      transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative">{t(item.key)}</span>
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="hidden lg:flex items-center gap-1">
@@ -114,22 +122,28 @@ export function Header() {
             variants={navVariants}
             className="lg:hidden glass-strong border-t shadow-elevated overflow-hidden"
           >
-            <div className="container flex flex-col gap-1 py-3">
+            <motion.div
+              className="container flex flex-col gap-1 py-3"
+              variants={prefersReducedMotion ? undefined : staggerContainer}
+              initial={prefersReducedMotion ? undefined : "hidden"}
+              animate={prefersReducedMotion ? undefined : "visible"}
+            >
               {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    location.pathname === item.path
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  }`}
-                >
-                  {t(item.key)}
-                </Link>
+                <motion.div key={item.path} variants={prefersReducedMotion ? undefined : fadeInUp}>
+                  <Link
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      location.pathname === item.path
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {t(item.key)}
+                  </Link>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </motion.nav>
         )}
       </AnimatePresence>
