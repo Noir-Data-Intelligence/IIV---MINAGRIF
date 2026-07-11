@@ -1,441 +1,1010 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+  Wallet, TrendingUp, TrendingDown, Scale, Target, Receipt, FolderTree,
+  Plus, Eye, Pencil, Trash2,
+} from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Wallet, TrendingUp, TrendingDown, Pencil, Trash2, Receipt, FolderTree, Target } from "lucide-react";
-import { useClientPagination } from "@/hooks/useClientPagination";
-import { usePagination } from "@/hooks/usePagination";
-import { TablePagination } from "@/components/admin/TablePagination";
+import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { axisTickStyle, buildChartConfig, chartColors, formatCompactNumber, NoDataOverlay } from "@/components/charts";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import { formatDate, formatKwanza } from "@/lib/format";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
+import {
+  useAccountsList, useCreateAccount, useUpdateAccount, useDeleteAccount,
+  useTransactionsList, useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
+  useBudgetsList, useCreateBudget, useUpdateBudget, useDeleteBudget,
+} from "@/hooks/queries/useFinanceiro";
+import type {
+  AccountDto, AccountType, BudgetDto, TransactionDto, TransactionStatus,
+} from "@/types/dto/financeiro";
+import i18n from "@/i18n";
+import ptFinanceiro from "@/i18n/locales/pt/admin/financeiro.json";
+import enFinanceiro from "@/i18n/locales/en/admin/financeiro.json";
 
-type AccountType = "receita" | "despesa";
-type TxStatus = "pendente" | "pago" | "cancelado";
+// Namespace autónomo registado em runtime, seguindo o padrão de Planeamento.tsx.
+if (!i18n.hasResourceBundle("pt", "financeiro"))
+  i18n.addResourceBundle("pt", "financeiro", ptFinanceiro, true, true);
+if (!i18n.hasResourceBundle("en", "financeiro"))
+  i18n.addResourceBundle("en", "financeiro", enFinanceiro, true, true);
 
-interface Account { id: string; code: string; name: string; type: AccountType; description: string | null; is_active: boolean }
-interface Transaction {
-  id: string; account_id: string; department_id: string | null; type: AccountType;
-  amount: number; currency: string; transaction_date: string; description: string;
-  reference: string | null; status: TxStatus; notes: string | null;
+const ACCOUNT_TYPES: AccountType[] = ["receita", "despesa"];
+const TX_STATUSES: TransactionStatus[] = ["pendente", "pago", "cancelado"];
+
+const statusVariant: Record<TransactionStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  pago: "default",
+  pendente: "secondary",
+  cancelado: "destructive",
+};
+
+const NONE = "none";
+
+// --- Schemas (mensagens i18n reconstruídas via useMemo dependente de t) ------
+
+function buildAccountSchema(t: TFunction) {
+  return z.object({
+    code: z.string().trim().min(1, t("accounts.validation.code")),
+    name: z.string().trim().min(2, t("accounts.validation.name")),
+    type: z.enum(["receita", "despesa"]),
+    description: z.string().trim().optional(),
+    isActive: z.enum(["true", "false"]),
+  });
 }
-interface Budget { id: string; year: number; account_id: string; department_id: string | null; planned_amount: number; notes: string | null }
-interface Dept { id: string; name: string }
+type AccountFormValues = z.infer<ReturnType<typeof buildAccountSchema>>;
 
-const STATUS_OPTIONS: { value: TxStatus; label: string }[] = [
-  { value: "pago", label: "Pago" }, { value: "pendente", label: "Pendente" }, { value: "cancelado", label: "Cancelado" },
-];
+function buildTransactionSchema(t: TFunction) {
+  return z.object({
+    accountId: z.string().min(1, t("transactions.validation.account")),
+    type: z.enum(["receita", "despesa"]),
+    amount: z
+      .string()
+      .trim()
+      .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, t("transactions.validation.amount")),
+    currency: z.string().trim().min(1),
+    transactionDate: z.string().min(1, t("transactions.validation.date")),
+    departmentId: z.string().optional(),
+    status: z.enum(["pendente", "pago", "cancelado"]),
+    description: z.string().trim().min(2, t("transactions.validation.description")),
+    reference: z.string().trim().optional(),
+    notes: z.string().trim().optional(),
+  });
+}
+type TransactionFormValues = z.infer<ReturnType<typeof buildTransactionSchema>>;
+
+function buildBudgetSchema(t: TFunction) {
+  return z.object({
+    year: z.string().trim().refine((v) => /^\d{4}$/.test(v), t("budgets.validation.year")),
+    accountId: z.string().min(1, t("budgets.validation.account")),
+    departmentId: z.string().optional(),
+    plannedAmount: z
+      .string()
+      .trim()
+      .refine((v) => Number.isFinite(Number(v)) && Number(v) > 0, t("budgets.validation.planned")),
+    notes: z.string().trim().optional(),
+  });
+}
+type BudgetFormValues = z.infer<ReturnType<typeof buildBudgetSchema>>;
+
+const BIG_PAGE = { page: 1, perPage: 1000 } as const;
 
 export default function Financeiro() {
-  const { user } = useAuth();
+  const { t, i18n: i18nInstance } = useTranslation("financeiro");
   const { canWrite } = useUserRole();
-  const { toast } = useToast();
   const canEdit = canWrite("financeiro");
+  const prefersReduced = useReducedMotion();
+  const locale = i18nInstance.language === "en" ? "en-GB" : "pt-AO";
+  const currentYear = new Date().getFullYear();
 
-  const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [txs, setTxs] = useState<Transaction[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [depts, setDepts] = useState<Dept[]>([]);
-  const [kpis, setKpis] = useState({ receitas: 0, despesas: 0, saldo: 0, pendentes: 0 });
-  // Para % de execução orçamental, mantemos um snapshot leve (só montantes pagos por conta/depto/ano)
-  const [paidTxs, setPaidTxs] = useState<Pick<Transaction, "account_id" | "department_id" | "amount" | "transaction_date">[]>([]);
+  // --- Pagination / search por separador ---
+  const [accPage, setAccPage] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [accSearch, setAccSearch] = useState("");
+  const [txPage, setTxPage] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [txSearch, setTxSearch] = useState("");
+  const [txStatusFilter, setTxStatusFilter] = useState<string>("todos");
+  const [txTypeFilter, setTxTypeFilter] = useState<string>("todos");
+  const [budPage, setBudPage] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [budSearch, setBudSearch] = useState("");
 
-  const [accountOpen, setAccountOpen] = useState(false);
-  const [accountEdit, setAccountEdit] = useState<Account | null>(null);
-  const [txOpen, setTxOpen] = useState(false);
-  const [txEdit, setTxEdit] = useState<Transaction | null>(null);
-  const [budgetOpen, setBudgetOpen] = useState(false);
-  const [budgetEdit, setBudgetEdit] = useState<Budget | null>(null);
-  const [deleteId, setDeleteId] = useState<{ table: string; id: string } | null>(null);
+  // --- Dialog state por entidade ---
+  const [accForm, setAccForm] = useState(false);
+  const [accEdit, setAccEdit] = useState<AccountDto | null>(null);
+  const [accView, setAccView] = useState<AccountDto | null>(null);
+  const [txForm, setTxForm] = useState(false);
+  const [txEdit, setTxEdit] = useState<TransactionDto | null>(null);
+  const [txView, setTxView] = useState<TransactionDto | null>(null);
+  const [budForm, setBudForm] = useState(false);
+  const [budEdit, setBudEdit] = useState<BudgetDto | null>(null);
+  const [budView, setBudView] = useState<BudgetDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ kind: "account" | "transaction" | "budget"; id: string } | null>(null);
 
-  const txsPag = usePagination(20);
+  // --- Queries: tabela paginada + dataset completo p/ lookups, KPIs e gráfico ---
+  const accountsQuery = useAccountsList({
+    page: accPage.pageIndex + 1, perPage: accPage.pageSize, search: accSearch || undefined,
+  });
+  const accountsAll = useAccountsList(BIG_PAGE);
 
-  const loadAll = async () => {
-    setLoading(true);
-    const [a, b, d] = await Promise.all([
-      supabase.from("financial_accounts").select("*").order("code"),
-      supabase.from("budgets").select("*").order("year", { ascending: false }),
-      supabase.from("departments").select("id,name").order("name"),
-    ]);
-    if (a.data) setAccounts(a.data as Account[]);
-    if (b.data) setBudgets(b.data as Budget[]);
-    if (d.data) setDepts(d.data as Dept[]);
-    setLoading(false);
-  };
+  const transactionsQuery = useTransactionsList({
+    page: txPage.pageIndex + 1,
+    perPage: txPage.pageSize,
+    search: txSearch || undefined,
+    status: txStatusFilter !== "todos" ? (txStatusFilter as TransactionStatus) : undefined,
+    type: txTypeFilter !== "todos" ? (txTypeFilter as AccountType) : undefined,
+  });
+  const transactionsAll = useTransactionsList(BIG_PAGE);
 
-  const loadTxs = async () => {
-    const { data, count } = await supabase
-      .from("financial_transactions")
-      .select("*", { count: "exact" })
-      .order("transaction_date", { ascending: false })
-      .range(txsPag.from, txsPag.to);
-    setTxs((data as Transaction[]) ?? []);
-    txsPag.setTotal(count ?? 0);
-  };
+  const budgetsQuery = useBudgetsList({
+    page: budPage.pageIndex + 1, perPage: budPage.pageSize, search: budSearch || undefined,
+  });
+  const budgetsAll = useBudgetsList(BIG_PAGE);
 
-  const loadKpisAndPaid = async () => {
-    // Carrega APENAS colunas leves para calcular KPIs e execução orçamental.
-    const { data: kpiRows } = await supabase
-      .from("financial_transactions")
-      .select("amount,type,status");
-    const rows = (kpiRows ?? []) as { amount: number; type: AccountType; status: TxStatus }[];
-    const paid = rows.filter((t) => t.status === "pago");
-    const receitas = paid.filter((t) => t.type === "receita").reduce((s, t) => s + Number(t.amount), 0);
-    const despesas = paid.filter((t) => t.type === "despesa").reduce((s, t) => s + Number(t.amount), 0);
-    const pendentes = rows.filter((t) => t.status === "pendente").reduce((s, t) => s + Number(t.amount), 0);
-    setKpis({ receitas, despesas, saldo: receitas - despesas, pendentes });
+  const departamentosQuery = useDepartamentosList(BIG_PAGE);
 
-    const { data: paidRows } = await supabase
-      .from("financial_transactions")
-      .select("account_id,department_id,amount,transaction_date")
-      .eq("status", "pago");
-    setPaidTxs((paidRows as any) ?? []);
-  };
+  const createAccount = useCreateAccount();
+  const updateAccount = useUpdateAccount();
+  const deleteAccount = useDeleteAccount();
+  const createTransaction = useCreateTransaction();
+  const updateTransaction = useUpdateTransaction();
+  const deleteTransaction = useDeleteTransaction();
+  const createBudget = useCreateBudget();
+  const updateBudget = useUpdateBudget();
+  const deleteBudget = useDeleteBudget();
 
-  useEffect(() => { loadAll(); loadKpisAndPaid(); }, []);
-  useEffect(() => { loadTxs(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [txsPag.page, txsPag.pageSize]);
-
-  const accountsPag = useClientPagination(accounts, 20);
-  const budgetsPag = useClientPagination(budgets, 20);
-
+  // --- Lookups ---
+  const accounts = useMemo(() => accountsAll.data?.data ?? [], [accountsAll.data]);
+  const departamentos = useMemo(() => departamentosQuery.data?.data ?? [], [departamentosQuery.data]);
+  const accountMap = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
+  const deptMap = useMemo(() => new Map(departamentos.map((d) => [d.id, d])), [departamentos]);
   const accountLabel = (id: string) => {
-    const a = accounts.find((x) => x.id === id);
-    return a ? `${a.code} — ${a.name}` : "—";
+    const a = accountMap.get(id);
+    return a ? `${a.code} — ${a.name}` : t("common.emptyCell");
   };
-  const deptName = (id: string | null) => id ? (depts.find((d) => d.id === id)?.name ?? "—") : "—";
-  const fmt = (n: number) => new Intl.NumberFormat("pt-AO", { style: "currency", currency: "AOA", maximumFractionDigits: 0 }).format(n);
+  const deptName = (id: string | null) => (id ? deptMap.get(id)?.name ?? t("common.emptyCell") : t("common.emptyCell"));
 
-  const saveAccount = async (form: Partial<Account>) => {
-    if (!form.code || !form.name || !form.type) return toast({ title: "Código, nome e tipo obrigatórios", variant: "destructive" });
-    const payload = { code: form.code, name: form.name, type: form.type, description: form.description || null, is_active: form.is_active ?? true };
-    const { error } = accountEdit
-      ? await supabase.from("financial_accounts").update(payload).eq("id", accountEdit.id)
-      : await supabase.from("financial_accounts").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: accountEdit ? "Conta actualizada" : "Conta criada" });
-    setAccountOpen(false); setAccountEdit(null); loadAll();
-  };
+  // --- KPIs + execução orçamental (dataset completo, ano corrente) ---
+  const allTx = useMemo(() => transactionsAll.data?.data ?? [], [transactionsAll.data]);
+  const allBudgets = useMemo(() => budgetsAll.data?.data ?? [], [budgetsAll.data]);
+  const paidTx = useMemo(() => allTx.filter((tx) => tx.status === "pago"), [allTx]);
 
-  const saveTx = async (form: Partial<Transaction>) => {
-    if (!form.account_id || !form.amount || !form.description) return toast({ title: "Conta, montante e descrição obrigatórios", variant: "destructive" });
-    const acc = accounts.find((a) => a.id === form.account_id);
-    const payload: any = {
-      account_id: form.account_id, department_id: form.department_id || null,
-      type: form.type || acc?.type || "despesa",
-      amount: Number(form.amount), currency: form.currency || "AOA",
-      transaction_date: form.transaction_date || new Date().toISOString().slice(0, 10),
-      description: form.description, reference: form.reference || null,
-      status: form.status || "pago", notes: form.notes || null,
-    };
-    if (!txEdit) payload.recorded_by = user?.id;
-    const { error } = txEdit
-      ? await supabase.from("financial_transactions").update(payload).eq("id", txEdit.id)
-      : await supabase.from("financial_transactions").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: txEdit ? "Movimento actualizado" : "Movimento registado" });
-    setTxOpen(false); setTxEdit(null); loadTxs(); loadKpisAndPaid();
-  };
+  const executedFor = useMemo(
+    () => (b: BudgetDto) =>
+      paidTx
+        .filter(
+          (tx) =>
+            tx.accountId === b.accountId &&
+            (b.departmentId ? tx.departmentId === b.departmentId : true) &&
+            new Date(tx.transactionDate).getFullYear() === b.year,
+        )
+        .reduce((s, tx) => s + tx.amount, 0),
+    [paidTx],
+  );
 
-  const saveBudget = async (form: Partial<Budget>) => {
-    if (!form.year || !form.account_id || form.planned_amount == null) return toast({ title: "Ano, conta e valor obrigatórios", variant: "destructive" });
-    const payload = { year: Number(form.year), account_id: form.account_id, department_id: form.department_id || null, planned_amount: Number(form.planned_amount), notes: form.notes || null };
-    const { error } = budgetEdit
-      ? await supabase.from("budgets").update(payload).eq("id", budgetEdit.id)
-      : await supabase.from("budgets").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: budgetEdit ? "Orçamento actualizado" : "Orçamento criado" });
-    setBudgetOpen(false); setBudgetEdit(null); loadAll();
-  };
+  const kpis = useMemo(() => {
+    const paidYear = paidTx.filter((tx) => new Date(tx.transactionDate).getFullYear() === currentYear);
+    const revenue = paidYear.filter((tx) => tx.type === "receita").reduce((s, tx) => s + tx.amount, 0);
+    const expense = paidYear.filter((tx) => tx.type === "despesa").reduce((s, tx) => s + tx.amount, 0);
+    const yearBudgets = allBudgets.filter((b) => b.year === currentYear);
+    const planned = yearBudgets.reduce((s, b) => s + b.plannedAmount, 0);
+    const executed = yearBudgets.reduce((s, b) => s + executedFor(b), 0);
+    const executionPct = planned > 0 ? Math.round((executed / planned) * 100) : 0;
+    return { revenue, expense, balance: revenue - expense, executionPct };
+  }, [paidTx, allBudgets, executedFor, currentYear]);
+
+  // --- Gráfico receita vs despesa por mês (movimentos pagos do ano corrente) ---
+  const chartData = useMemo(() => {
+    const buckets = new Map<number, { monthIdx: number; receita: number; despesa: number }>();
+    for (const tx of paidTx) {
+      const d = new Date(tx.transactionDate);
+      if (d.getFullYear() !== currentYear) continue;
+      const m = d.getMonth();
+      const entry = buckets.get(m) ?? { monthIdx: m, receita: 0, despesa: 0 };
+      if (tx.type === "receita") entry.receita += tx.amount;
+      else entry.despesa += tx.amount;
+      buckets.set(m, entry);
+    }
+    return Array.from(buckets.values())
+      .sort((a, b) => a.monthIdx - b.monthIdx)
+      .map((e) => ({
+        month: new Date(currentYear, e.monthIdx, 1).toLocaleDateString(locale, { month: "short" }),
+        receita: e.receita,
+        despesa: e.despesa,
+      }));
+  }, [paidTx, currentYear, locale]);
+
+  const chartConfig = useMemo(
+    () => buildChartConfig(["receita", "despesa"], { receita: t("chart.revenue"), despesa: t("chart.expense") }),
+    [t],
+  );
+
+  // --- Forms ---
+  const accountSchema = useMemo(() => buildAccountSchema(t), [t]);
+  const accountInitial = useMemo<Partial<AccountFormValues> | undefined>(
+    () =>
+      accEdit
+        ? {
+            code: accEdit.code,
+            name: accEdit.name,
+            type: accEdit.type,
+            description: accEdit.description ?? "",
+            isActive: accEdit.isActive ? "true" : "false",
+          }
+        : undefined,
+    [accEdit],
+  );
+  const accountForm = useEntityForm({
+    schema: accountSchema,
+    initialValues: accountInitial,
+    defaultValues: { code: "", name: "", type: "despesa", description: "", isActive: "true" },
+    open: accForm,
+    onSubmit: async (values) => {
+      const payload = {
+        code: values.code,
+        name: values.name,
+        type: values.type,
+        description: values.description?.trim() ? values.description.trim() : null,
+        isActive: values.isActive === "true",
+      };
+      if (accEdit) await updateAccount.mutateAsync({ id: accEdit.id, payload });
+      else await createAccount.mutateAsync(payload);
+    },
+    successMessage: accEdit ? t("accounts.toast.updateSuccess") : t("accounts.toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setAccForm(false),
+  });
+
+  const transactionSchema = useMemo(() => buildTransactionSchema(t), [t]);
+  const transactionInitial = useMemo<Partial<TransactionFormValues> | undefined>(
+    () =>
+      txEdit
+        ? {
+            accountId: txEdit.accountId,
+            type: txEdit.type,
+            amount: String(txEdit.amount),
+            currency: txEdit.currency,
+            transactionDate: txEdit.transactionDate,
+            departmentId: txEdit.departmentId ?? "",
+            status: txEdit.status,
+            description: txEdit.description,
+            reference: txEdit.reference ?? "",
+            notes: txEdit.notes ?? "",
+          }
+        : undefined,
+    [txEdit],
+  );
+  const transactionForm = useEntityForm({
+    schema: transactionSchema,
+    initialValues: transactionInitial,
+    defaultValues: {
+      accountId: "", type: "despesa", amount: "", currency: "AOA",
+      transactionDate: new Date().toISOString().slice(0, 10),
+      departmentId: "", status: "pago", description: "", reference: "", notes: "",
+    },
+    open: txForm,
+    onSubmit: async (values) => {
+      const payload = {
+        accountId: values.accountId,
+        departmentId: values.departmentId && values.departmentId !== NONE ? values.departmentId : null,
+        type: values.type,
+        amount: Number(values.amount),
+        currency: values.currency,
+        transactionDate: values.transactionDate,
+        description: values.description,
+        reference: values.reference?.trim() ? values.reference.trim() : null,
+        status: values.status,
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      };
+      if (txEdit) await updateTransaction.mutateAsync({ id: txEdit.id, payload });
+      else await createTransaction.mutateAsync(payload);
+    },
+    successMessage: txEdit ? t("transactions.toast.updateSuccess") : t("transactions.toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setTxForm(false),
+  });
+
+  const budgetSchema = useMemo(() => buildBudgetSchema(t), [t]);
+  const budgetInitial = useMemo<Partial<BudgetFormValues> | undefined>(
+    () =>
+      budEdit
+        ? {
+            year: String(budEdit.year),
+            accountId: budEdit.accountId,
+            departmentId: budEdit.departmentId ?? "",
+            plannedAmount: String(budEdit.plannedAmount),
+            notes: budEdit.notes ?? "",
+          }
+        : undefined,
+    [budEdit],
+  );
+  const budgetForm = useEntityForm({
+    schema: budgetSchema,
+    initialValues: budgetInitial,
+    defaultValues: { year: String(currentYear), accountId: "", departmentId: "", plannedAmount: "", notes: "" },
+    open: budForm,
+    onSubmit: async (values) => {
+      const payload = {
+        year: Number(values.year),
+        accountId: values.accountId,
+        departmentId: values.departmentId && values.departmentId !== NONE ? values.departmentId : null,
+        plannedAmount: Number(values.plannedAmount),
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      };
+      if (budEdit) await updateBudget.mutateAsync({ id: budEdit.id, payload });
+      else await createBudget.mutateAsync(payload);
+    },
+    successMessage: budEdit ? t("budgets.toast.updateSuccess") : t("budgets.toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setBudForm(false),
+  });
+
+  // --- Open helpers ---
+  const openAccCreate = () => { setAccEdit(null); setAccForm(true); };
+  const openAccEdit = (a: AccountDto) => { setAccEdit(a); setAccForm(true); };
+  const openTxCreate = () => { setTxEdit(null); setTxForm(true); };
+  const openTxEdit = (tx: TransactionDto) => { setTxEdit(tx); setTxForm(true); };
+  const openBudCreate = () => { setBudEdit(null); setBudForm(true); };
+  const openBudEdit = (b: BudgetDto) => { setBudEdit(b); setBudForm(true); };
 
   const confirmDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from(deleteId.table as any).delete().eq("id", deleteId.id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else toast({ title: "Registo apagado" });
-    setDeleteId(null);
-    loadAll();
-    if (deleteId.table === "financial_transactions") { loadTxs(); loadKpisAndPaid(); }
+    if (!deleteTarget) return;
+    if (deleteTarget.kind === "account") await deleteAccount.mutateAsync(deleteTarget.id);
+    else if (deleteTarget.kind === "transaction") await deleteTransaction.mutateAsync(deleteTarget.id);
+    else await deleteBudget.mutateAsync(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
-  // Budget execution (sum tx by year+account+dept) — usa paidTxs (snapshot leve).
-  const executedFor = (b: Budget) => {
-    return paidTxs
-      .filter((t) => t.account_id === b.account_id && (b.department_id ? t.department_id === b.department_id : true) && new Date(t.transaction_date).getFullYear() === b.year)
-      .reduce((s, t) => s + Number(t.amount), 0);
+  // --- Columns ---
+  const accountColumns = useMemo<ColumnDef<AccountDto>[]>(
+    () => [
+      {
+        accessorKey: "code",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("accounts.table.code")} />,
+        cell: ({ row }) => <span className="font-medium">{row.original.code}</span>,
+      },
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("accounts.table.name")} />,
+      },
+      {
+        accessorKey: "type",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("accounts.table.type")} />,
+        cell: ({ row }) => (
+          <Badge variant={row.original.type === "receita" ? "default" : "outline"}>{t(`type.${row.original.type}`)}</Badge>
+        ),
+      },
+      {
+        accessorKey: "isActive",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("accounts.table.active")} />,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.isActive ? t("accounts.active.yes") : t("accounts.active.no")}
+          </span>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  const transactionColumns = useMemo<ColumnDef<TransactionDto>[]>(
+    () => [
+      {
+        accessorKey: "transactionDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("transactions.table.date")} />,
+        cell: ({ row }) => <span className="text-sm">{formatDate(row.original.transactionDate)}</span>,
+      },
+      {
+        id: "account",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("transactions.table.account")} />,
+        cell: ({ row }) => <span className="text-xs text-muted-foreground">{accountLabel(row.original.accountId)}</span>,
+      },
+      {
+        id: "department",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("transactions.table.department")} />,
+        cell: ({ row }) => <span className="text-sm">{deptName(row.original.departmentId)}</span>,
+      },
+      {
+        accessorKey: "amount",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("transactions.table.amount")} />,
+        cell: ({ row }) => (
+          <span className={row.original.type === "receita" ? "text-primary font-medium" : "text-destructive font-medium"}>
+            {formatKwanza(row.original.amount)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "description",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("transactions.table.description")} />,
+        cell: ({ row }) => (
+          <span className="block max-w-[240px] truncate" title={row.original.description}>{row.original.description}</span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("transactions.table.status")} />,
+        cell: ({ row }) => <Badge variant={statusVariant[row.original.status]}>{t(`status.${row.original.status}`)}</Badge>,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, accountMap, deptMap],
+  );
+
+  const budgetColumns = useMemo<ColumnDef<BudgetDto>[]>(
+    () => [
+      {
+        accessorKey: "year",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.table.year")} />,
+        cell: ({ row }) => <span className="font-medium">{row.original.year}</span>,
+      },
+      {
+        id: "account",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.table.account")} />,
+        cell: ({ row }) => <span className="text-xs text-muted-foreground">{accountLabel(row.original.accountId)}</span>,
+      },
+      {
+        id: "department",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.table.department")} />,
+        cell: ({ row }) => <span className="text-sm">{deptName(row.original.departmentId)}</span>,
+      },
+      {
+        accessorKey: "plannedAmount",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.table.planned")} />,
+        cell: ({ row }) => formatKwanza(row.original.plannedAmount),
+      },
+      {
+        id: "executed",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.table.executed")} />,
+        cell: ({ row }) => formatKwanza(executedFor(row.original)),
+      },
+      {
+        id: "execution",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("budgets.table.execution")} />,
+        cell: ({ row }) => {
+          const pct = row.original.plannedAmount > 0 ? Math.round((executedFor(row.original) / row.original.plannedAmount) * 100) : 0;
+          return <Badge variant={pct > 100 ? "destructive" : "outline"}>{pct}%</Badge>;
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, accountMap, executedFor],
+  );
+
+  // --- Row actions ---
+  const accountActions = (row: AccountDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setAccView(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openAccEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteTarget({ kind: "account", id: row.id }) });
+    }
+    return <RowActions actions={actions} />;
   };
+  const transactionActions = (row: TransactionDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setTxView(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openTxEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteTarget({ kind: "transaction", id: row.id }) });
+    }
+    return <RowActions actions={actions} />;
+  };
+  const budgetActions = (row: BudgetDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setBudView(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openBudEdit(row) });
+      actions.push({ label: t("actions.delete"), icon: Trash2, destructive: true, onClick: () => setDeleteTarget({ kind: "budget", id: row.id }) });
+    }
+    return <RowActions actions={actions} />;
+  };
+
+  const motionSection = prefersReduced
+    ? {}
+    : { initial: "hidden" as const, animate: "visible" as const, variants: fadeInUp };
+
+  const kpiCards = [
+    { key: "revenue", icon: TrendingUp, label: t("kpis.revenue"), value: formatKwanza(kpis.revenue), caption: t("kpis.revenueCaption"), variant: "gradient-green" as const },
+    { key: "expense", icon: TrendingDown, label: t("kpis.expense"), value: formatKwanza(kpis.expense), caption: t("kpis.expenseCaption"), variant: "gradient-gold" as const },
+    { key: "balance", icon: Scale, label: t("kpis.balance"), value: formatKwanza(kpis.balance), caption: t("kpis.balanceCaption"), variant: "gradient-teal" as const },
+    { key: "execution", icon: Target, label: t("kpis.execution"), value: `${kpis.executionPct}%`, caption: t("kpis.executionCaption"), variant: "gradient-green-gold" as const },
+  ];
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={Wallet} title="Financeiro" description="Receitas, despesas, contas e orçamentos institucionais." />
+      <AdminPageHeader icon={Wallet} title={t("page.title")} description={t("page.description")} />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <AdminCard variant="gradient-green-gold" icon={TrendingUp} title="Receitas" metric={fmt(kpis.receitas)} stagger={1} />
-        <AdminCard variant="glass" icon={TrendingDown} title="Despesas" metric={fmt(kpis.despesas)} stagger={2} />
-        <AdminCard variant="glass" icon={Wallet} title="Saldo" metric={fmt(kpis.saldo)} stagger={3} />
-        <AdminCard variant="glass" icon={Receipt} title="Pendentes" metric={fmt(kpis.pendentes)} stagger={4} />
-      </div>
+      {/* KPIs */}
+      <motion.div
+        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        {kpiCards.map((c, i) => (
+          <motion.div key={c.key} variants={prefersReduced ? undefined : fadeInUp}>
+            <AdminCard
+              title={c.label}
+              icon={c.icon}
+              metric={c.value}
+              caption={c.caption}
+              variant={c.variant}
+              stagger={(i + 1) as 1 | 2 | 3 | 4}
+            />
+          </motion.div>
+        ))}
+      </motion.div>
 
-      <Tabs defaultValue="movimentos" className="space-y-4">
+      {/* Gráfico receita vs despesa por mês */}
+      <motion.div {...motionSection}>
+        <Card className="glass-card shadow-elegant rounded-xl hover-lift">
+          <CardHeader className="pb-2 p-6">
+            <CardTitle className="text-base font-semibold font-serif">{t("chart.title")}</CardTitle>
+            <p className="text-xs text-muted-foreground">{t("chart.subtitle")}</p>
+          </CardHeader>
+          <CardContent className="p-6 pt-2">
+            {chartData.length > 0 ? (
+              <ChartContainer config={chartConfig} className="h-[320px] w-full">
+                <BarChart data={chartData} margin={{ left: 12, right: 16, top: 8 }}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" tick={axisTickStyle} tickLine={false} axisLine={false} />
+                  <YAxis tick={axisTickStyle} tickFormatter={formatCompactNumber} tickLine={false} axisLine={false} width={70} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <Bar dataKey="receita" name={t("chart.revenue")} fill={chartColors[0]} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="despesa" name={t("chart.expense")} fill={chartColors[1]} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <NoDataOverlay message={t("chart.empty")} height={320} />
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Separadores */}
+      <Tabs defaultValue="transactions" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="movimentos"><Receipt className="h-4 w-4 mr-1" /> Movimentos</TabsTrigger>
-          <TabsTrigger value="contas"><FolderTree className="h-4 w-4 mr-1" /> Contas</TabsTrigger>
-          <TabsTrigger value="orcamentos"><Target className="h-4 w-4 mr-1" /> Orçamentos</TabsTrigger>
+          <TabsTrigger value="transactions"><Receipt className="h-4 w-4 mr-1" /> {t("tabs.transactions")}</TabsTrigger>
+          <TabsTrigger value="accounts"><FolderTree className="h-4 w-4 mr-1" /> {t("tabs.accounts")}</TabsTrigger>
+          <TabsTrigger value="budgets"><Target className="h-4 w-4 mr-1" /> {t("tabs.budgets")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="movimentos">
-          <AdminCard title="Movimentos financeiros" loading={loading} isEmpty={!loading && txsPag.total === 0} emptyMessage="Sem movimentos registados.">
-            <div className="flex justify-end mb-3">
-              {canEdit && <Button size="sm" onClick={() => { setTxEdit(null); setTxOpen(true); }} disabled={accounts.length === 0}><Plus className="h-4 w-4 mr-1" /> Novo Movimento</Button>}
-            </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Data</TableHead><TableHead>Conta</TableHead><TableHead>Departamento</TableHead>
-                <TableHead>Tipo</TableHead><TableHead>Montante</TableHead><TableHead>Descrição</TableHead><TableHead>Estado</TableHead>
-                {canEdit && <TableHead className="w-24">Acções</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {txs.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell>{t.transaction_date}</TableCell>
-                    <TableCell className="text-xs">{accountLabel(t.account_id)}</TableCell>
-                    <TableCell>{deptName(t.department_id)}</TableCell>
-                    <TableCell>
-                      <Badge variant={t.type === "receita" ? "default" : "outline"}>
-                        {t.type === "receita" ? "Receita" : "Despesa"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className={t.type === "receita" ? "text-primary font-medium" : "text-destructive font-medium"}>{fmt(Number(t.amount))}</TableCell>
-                    <TableCell className="max-w-[260px] truncate" title={t.description}>{t.description}</TableCell>
-                    <TableCell><Badge variant="outline">{STATUS_OPTIONS.find((s) => s.value === t.status)?.label}</Badge></TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setTxEdit(t); setTxOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteId({ table: "financial_transactions", id: t.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <TablePagination page={txsPag.page} pageSize={txsPag.pageSize} total={txsPag.total} totalPages={txsPag.totalPages} canPrev={txsPag.canPrev} canNext={txsPag.canNext} onPageChange={txsPag.setPage} onPageSizeChange={txsPag.setPageSize} />
-          </AdminCard>
-        </TabsContent>
-
-        <TabsContent value="contas">
-          <AdminCard title="Plano de contas" loading={loading} isEmpty={!loading && accounts.length === 0} emptyMessage="Sem contas registadas.">
-            <div className="flex justify-end mb-3">
-              {canEdit && <Button size="sm" onClick={() => { setAccountEdit(null); setAccountOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Nova Conta</Button>}
-            </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Código</TableHead><TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Activa</TableHead>
-                {canEdit && <TableHead className="w-24">Acções</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {accountsPag.pageItems.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="font-medium">{a.code}</TableCell>
-                    <TableCell>{a.name}</TableCell>
-                    <TableCell><Badge variant={a.type === "receita" ? "default" : "outline"}>{a.type}</Badge></TableCell>
-                    <TableCell>{a.is_active ? "Sim" : "Não"}</TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setAccountEdit(a); setAccountOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteId({ table: "financial_accounts", id: a.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <TablePagination page={accountsPag.page} pageSize={accountsPag.pageSize} total={accountsPag.total} totalPages={accountsPag.totalPages} canPrev={accountsPag.canPrev} canNext={accountsPag.canNext} onPageChange={accountsPag.setPage} onPageSizeChange={accountsPag.setPageSize} />
-          </AdminCard>
-        </TabsContent>
-
-        <TabsContent value="orcamentos">
-          <AdminCard title="Orçamentos" loading={loading} isEmpty={!loading && budgets.length === 0} emptyMessage="Sem orçamentos registados.">
-            <div className="flex justify-end mb-3">
-              {canEdit && <Button size="sm" onClick={() => { setBudgetEdit(null); setBudgetOpen(true); }} disabled={accounts.length === 0}><Plus className="h-4 w-4 mr-1" /> Novo Orçamento</Button>}
-            </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Ano</TableHead><TableHead>Conta</TableHead><TableHead>Departamento</TableHead>
-                <TableHead>Planeado</TableHead><TableHead>Executado</TableHead><TableHead>% Execução</TableHead>
-                {canEdit && <TableHead className="w-24">Acções</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {budgetsPag.pageItems.map((b) => {
-                  const exec = executedFor(b);
-                  const pct = Number(b.planned_amount) > 0 ? Math.round((exec / Number(b.planned_amount)) * 100) : 0;
-                  return (
-                    <TableRow key={b.id}>
-                      <TableCell className="font-medium">{b.year}</TableCell>
-                      <TableCell className="text-xs">{accountLabel(b.account_id)}</TableCell>
-                      <TableCell>{deptName(b.department_id)}</TableCell>
-                      <TableCell>{fmt(Number(b.planned_amount))}</TableCell>
-                      <TableCell>{fmt(exec)}</TableCell>
-                      <TableCell><Badge variant={pct > 100 ? "destructive" : "outline"}>{pct}%</Badge></TableCell>
-                      {canEdit && (
-                        <TableCell>
-                          <Button size="icon" variant="ghost" onClick={() => { setBudgetEdit(b); setBudgetOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => setDeleteId({ table: "budgets", id: b.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            <TablePagination page={budgetsPag.page} pageSize={budgetsPag.pageSize} total={budgetsPag.total} totalPages={budgetsPag.totalPages} canPrev={budgetsPag.canPrev} canNext={budgetsPag.canNext} onPageChange={budgetsPag.setPage} onPageSizeChange={budgetsPag.setPageSize} />
-          </AdminCard>
-        </TabsContent>
-      </Tabs>
-
-      <AccountDialog open={accountOpen} onOpenChange={(v) => { setAccountOpen(v); if (!v) setAccountEdit(null); }} account={accountEdit} onSave={saveAccount} />
-      <TxDialog open={txOpen} onOpenChange={(v) => { setTxOpen(v); if (!v) setTxEdit(null); }} tx={txEdit} accounts={accounts} depts={depts} onSave={saveTx} />
-      <BudgetDialog open={budgetOpen} onOpenChange={(v) => { setBudgetOpen(v); if (!v) setBudgetEdit(null); }} budget={budgetEdit} accounts={accounts} depts={depts} onSave={saveBudget} />
-
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}
-        title="Apagar registo?" description="Esta acção é permanente." onConfirm={confirmDelete} />
-    </div>
-  );
-}
-
-function AccountDialog({ open, onOpenChange, account, onSave }: { open: boolean; onOpenChange: (v: boolean) => void; account: Account | null; onSave: (f: Partial<Account>) => void }) {
-  const [form, setForm] = useState<Partial<Account>>({});
-  useEffect(() => { setForm(account ?? { type: "despesa", is_active: true }); }, [account, open]);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>{account ? "Editar Conta" : "Nova Conta"}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Código *</Label><Input value={form.code || ""} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Ex.: 6.01" /></div>
-            <div><Label>Tipo *</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as AccountType })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+        {/* --- Movimentos --- */}
+        <TabsContent value="transactions" className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Select value={txTypeFilter} onValueChange={(v) => { setTxTypeFilter(v); setTxPage((p) => ({ ...p, pageIndex: 0 })); }}>
+                <SelectTrigger className="sm:w-[180px]"><SelectValue placeholder={t("filters.typePlaceholder")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="receita">Receita</SelectItem>
-                  <SelectItem value="despesa">Despesa</SelectItem>
+                  <SelectItem value="todos">{t("filters.allTypes")}</SelectItem>
+                  {ACCOUNT_TYPES.map((ty) => <SelectItem key={ty} value={ty}>{t(`type.${ty}`)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={txStatusFilter} onValueChange={(v) => { setTxStatusFilter(v); setTxPage((p) => ({ ...p, pageIndex: 0 })); }}>
+                <SelectTrigger className="sm:w-[180px]"><SelectValue placeholder={t("filters.statusPlaceholder")} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">{t("filters.allStatus")}</SelectItem>
+                  {TX_STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
+            <WriteGuard module="financeiro">
+              <Button onClick={openTxCreate} disabled={accounts.length === 0}>
+                <Plus className="mr-2 h-4 w-4" /> {t("transactions.new")}
+              </Button>
+            </WriteGuard>
           </div>
-          <div><Label>Nome *</Label><Input value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div><Label>Descrição</Label><Textarea value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Guardar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+          <DataTable
+            columns={transactionColumns}
+            data={transactionsQuery.data?.data ?? []}
+            loading={transactionsQuery.isLoading}
+            pageCount={transactionsQuery.data?.meta.lastPage ?? 0}
+            pagination={txPage}
+            onPaginationChange={setTxPage}
+            rowCount={transactionsQuery.data?.meta.total}
+            globalFilter={txSearch}
+            onGlobalFilterChange={setTxSearch}
+            searchPlaceholder={t("transactions.table.searchPlaceholder")}
+            emptyMessage={t("transactions.table.empty")}
+            renderRowActions={transactionActions}
+          />
+        </TabsContent>
 
-function TxDialog({ open, onOpenChange, tx, accounts, depts, onSave }: { open: boolean; onOpenChange: (v: boolean) => void; tx: Transaction | null; accounts: Account[]; depts: Dept[]; onSave: (f: Partial<Transaction>) => void }) {
-  const [form, setForm] = useState<Partial<Transaction>>({});
-  useEffect(() => { setForm(tx ?? { status: "pago", currency: "AOA", transaction_date: new Date().toISOString().slice(0, 10) }); }, [tx, open]);
-  const acc = accounts.find((a) => a.id === form.account_id);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader><DialogTitle>{tx ? "Editar Movimento" : "Novo Movimento"}</DialogTitle></DialogHeader>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2"><Label>Conta *</Label>
-            <Select value={form.account_id} onValueChange={(v) => {
-              const a = accounts.find((x) => x.id === v);
-              setForm({ ...form, account_id: v, type: a?.type ?? form.type });
-            }}>
-              <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
-              <SelectContent>{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>)}</SelectContent>
-            </Select>
+        {/* --- Contas --- */}
+        <TabsContent value="accounts" className="space-y-4">
+          <div className="flex justify-end">
+            <WriteGuard module="financeiro">
+              <Button onClick={openAccCreate}>
+                <Plus className="mr-2 h-4 w-4" /> {t("accounts.new")}
+              </Button>
+            </WriteGuard>
           </div>
-          <div><Label>Tipo</Label>
-            <Select value={form.type ?? acc?.type} onValueChange={(v) => setForm({ ...form, type: v as AccountType })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="receita">Receita</SelectItem>
-                <SelectItem value="despesa">Despesa</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div><Label>Data</Label><Input type="date" value={form.transaction_date || ""} onChange={(e) => setForm({ ...form, transaction_date: e.target.value })} /></div>
-          <div><Label>Montante *</Label><Input type="number" step="0.01" value={form.amount ?? ""} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></div>
-          <div><Label>Moeda</Label><Input value={form.currency || "AOA"} onChange={(e) => setForm({ ...form, currency: e.target.value })} /></div>
-          <div><Label>Departamento</Label>
-            <Select value={form.department_id ?? "none"} onValueChange={(v) => setForm({ ...form, department_id: v === "none" ? null : v })}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">—</SelectItem>
-                {depts.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div><Label>Estado</Label>
-            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as TxStatus })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{STATUS_OPTIONS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-2"><Label>Descrição *</Label><Input value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-          <div className="col-span-2"><Label>Referência</Label><Input value={form.reference || ""} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder="Nº de factura, recibo, etc." /></div>
-          <div className="col-span-2"><Label>Notas</Label><Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Guardar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+          <DataTable
+            columns={accountColumns}
+            data={accountsQuery.data?.data ?? []}
+            loading={accountsQuery.isLoading}
+            pageCount={accountsQuery.data?.meta.lastPage ?? 0}
+            pagination={accPage}
+            onPaginationChange={setAccPage}
+            rowCount={accountsQuery.data?.meta.total}
+            globalFilter={accSearch}
+            onGlobalFilterChange={setAccSearch}
+            searchPlaceholder={t("accounts.table.searchPlaceholder")}
+            emptyMessage={t("accounts.table.empty")}
+            renderRowActions={accountActions}
+          />
+        </TabsContent>
 
-function BudgetDialog({ open, onOpenChange, budget, accounts, depts, onSave }: { open: boolean; onOpenChange: (v: boolean) => void; budget: Budget | null; accounts: Account[]; depts: Dept[]; onSave: (f: Partial<Budget>) => void }) {
-  const [form, setForm] = useState<Partial<Budget>>({});
-  useEffect(() => { setForm(budget ?? { year: new Date().getFullYear(), planned_amount: 0 }); }, [budget, open]);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>{budget ? "Editar Orçamento" : "Novo Orçamento"}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Ano *</Label><Input type="number" value={form.year ?? ""} onChange={(e) => setForm({ ...form, year: Number(e.target.value) })} /></div>
-            <div><Label>Valor planeado *</Label><Input type="number" step="0.01" value={form.planned_amount ?? 0} onChange={(e) => setForm({ ...form, planned_amount: Number(e.target.value) })} /></div>
+        {/* --- Orçamentos --- */}
+        <TabsContent value="budgets" className="space-y-4">
+          <div className="flex justify-end">
+            <WriteGuard module="financeiro">
+              <Button onClick={openBudCreate} disabled={accounts.length === 0}>
+                <Plus className="mr-2 h-4 w-4" /> {t("budgets.new")}
+              </Button>
+            </WriteGuard>
           </div>
-          <div><Label>Conta *</Label>
-            <Select value={form.account_id} onValueChange={(v) => setForm({ ...form, account_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
-              <SelectContent>{accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div><Label>Departamento</Label>
-            <Select value={form.department_id ?? "none"} onValueChange={(v) => setForm({ ...form, department_id: v === "none" ? null : v })}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">—</SelectItem>
-                {depts.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div><Label>Notas</Label><Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Guardar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          <DataTable
+            columns={budgetColumns}
+            data={budgetsQuery.data?.data ?? []}
+            loading={budgetsQuery.isLoading}
+            pageCount={budgetsQuery.data?.meta.lastPage ?? 0}
+            pagination={budPage}
+            onPaginationChange={setBudPage}
+            rowCount={budgetsQuery.data?.meta.total}
+            globalFilter={budSearch}
+            onGlobalFilterChange={setBudSearch}
+            searchPlaceholder={t("budgets.table.searchPlaceholder")}
+            emptyMessage={t("budgets.table.empty")}
+            renderRowActions={budgetActions}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* ===================== Dialogs de conta ===================== */}
+      <EntityFormDialog
+        open={accForm}
+        onOpenChange={setAccForm}
+        title={accEdit ? t("accounts.dialog.editTitle") : t("accounts.dialog.createTitle")}
+        form={accountForm}
+        submitLabel={accEdit ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="code" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("accounts.form.code")}</FormLabel>
+                  <FormControl><Input placeholder={t("accounts.form.codePlaceholder")} {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="type" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("accounts.form.type")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {ACCOUNT_TYPES.map((ty) => <SelectItem key={ty} value={ty}>{t(`type.${ty}`)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("accounts.form.name")}</FormLabel>
+                <FormControl><Input {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="isActive" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("accounts.form.status")}</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="true">{t("accounts.form.activeOption")}</SelectItem>
+                    <SelectItem value="false">{t("accounts.form.inactiveOption")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("accounts.form.description")}</FormLabel>
+                <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* ===================== Dialogs de lançamento ===================== */}
+      <EntityFormDialog
+        open={txForm}
+        onOpenChange={setTxForm}
+        title={txEdit ? t("transactions.dialog.editTitle") : t("transactions.dialog.createTitle")}
+        form={transactionForm}
+        submitLabel={txEdit ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField control={form.control} name="accountId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("transactions.form.account")}</FormLabel>
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => {
+                    field.onChange(v);
+                    const acc = accountMap.get(v);
+                    if (acc) form.setValue("type", acc.type);
+                  }}
+                >
+                  <FormControl><SelectTrigger><SelectValue placeholder={t("common.selectPlaceholder")} /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="type" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("transactions.form.type")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {ACCOUNT_TYPES.map((ty) => <SelectItem key={ty} value={ty}>{t(`type.${ty}`)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("transactions.form.status")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {TX_STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <FormField control={form.control} name="amount" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("transactions.form.amount")}</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="currency" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("transactions.form.currency")}</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="transactionDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("transactions.form.date")}</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="departmentId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("transactions.form.department")}</FormLabel>
+                <Select value={field.value || NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)}>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value={NONE}>{t("common.none")}</SelectItem>
+                    {departamentos.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("transactions.form.description")}</FormLabel>
+                <FormControl><Input {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="reference" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("transactions.form.reference")}</FormLabel>
+                <FormControl><Input placeholder={t("transactions.form.referencePlaceholder")} {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("transactions.form.notes")}</FormLabel>
+                <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* ===================== Dialogs de orçamento ===================== */}
+      <EntityFormDialog
+        open={budForm}
+        onOpenChange={setBudForm}
+        title={budEdit ? t("budgets.dialog.editTitle") : t("budgets.dialog.createTitle")}
+        form={budgetForm}
+        submitLabel={budEdit ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="year" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("budgets.form.year")}</FormLabel>
+                  <FormControl><Input type="number" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="plannedAmount" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("budgets.form.planned")}</FormLabel>
+                  <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="accountId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("budgets.form.account")}</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl><SelectTrigger><SelectValue placeholder={t("common.selectPlaceholder")} /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="departmentId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("budgets.form.department")}</FormLabel>
+                <Select value={field.value || NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)}>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value={NONE}>{t("common.none")}</SelectItem>
+                    {departamentos.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("budgets.form.notes")}</FormLabel>
+                <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* ===================== Delete ===================== */}
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title={t("delete.title")}
+        description={t("delete.description")}
+      />
+
+      {/* ===================== Detalhes: conta ===================== */}
+      <Dialog open={!!accView} onOpenChange={(o) => !o && setAccView(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">{t("accounts.dialog.detailsTitle")}</DialogTitle></DialogHeader>
+          {accView && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">{t("accounts.details.code")}:</span><p className="font-medium">{accView.code}</p></div>
+                <div><span className="text-muted-foreground">{t("accounts.details.type")}:</span><p><Badge variant={accView.type === "receita" ? "default" : "outline"}>{t(`type.${accView.type}`)}</Badge></p></div>
+                <div><span className="text-muted-foreground">{t("accounts.details.name")}:</span><p className="font-medium">{accView.name}</p></div>
+                <div><span className="text-muted-foreground">{t("accounts.details.status")}:</span><p className="font-medium">{accView.isActive ? t("accounts.active.yes") : t("accounts.active.no")}</p></div>
+                <div><span className="text-muted-foreground">{t("accounts.details.createdAt")}:</span><p className="font-medium">{formatDate(accView.createdAt)}</p></div>
+              </div>
+              {accView.description && (
+                <div><span className="text-muted-foreground">{t("accounts.details.description")}:</span><p className="font-medium mt-1">{accView.description}</p></div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===================== Detalhes: lançamento ===================== */}
+      <Dialog open={!!txView} onOpenChange={(o) => !o && setTxView(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="font-serif">{t("transactions.dialog.detailsTitle")}</DialogTitle></DialogHeader>
+          {txView && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">{t("transactions.details.account")}:</span><p className="font-medium">{accountLabel(txView.accountId)}</p></div>
+                <div><span className="text-muted-foreground">{t("transactions.details.department")}:</span><p className="font-medium">{deptName(txView.departmentId)}</p></div>
+                <div><span className="text-muted-foreground">{t("transactions.details.type")}:</span><p><Badge variant={txView.type === "receita" ? "default" : "outline"}>{t(`type.${txView.type}`)}</Badge></p></div>
+                <div><span className="text-muted-foreground">{t("transactions.details.status")}:</span><p><Badge variant={statusVariant[txView.status]}>{t(`status.${txView.status}`)}</Badge></p></div>
+                <div><span className="text-muted-foreground">{t("transactions.details.amount")}:</span><p className={txView.type === "receita" ? "text-primary font-medium" : "text-destructive font-medium"}>{formatKwanza(txView.amount)}</p></div>
+                <div><span className="text-muted-foreground">{t("transactions.details.date")}:</span><p className="font-medium">{formatDate(txView.transactionDate)}</p></div>
+                {txView.reference && (
+                  <div><span className="text-muted-foreground">{t("transactions.details.reference")}:</span><p className="font-medium">{txView.reference}</p></div>
+                )}
+              </div>
+              <div><span className="text-muted-foreground">{t("transactions.details.description")}:</span><p className="font-medium mt-1">{txView.description}</p></div>
+              {txView.notes && (
+                <div><span className="text-muted-foreground">{t("transactions.details.notes")}:</span><p className="font-medium mt-1">{txView.notes}</p></div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===================== Detalhes: orçamento ===================== */}
+      <Dialog open={!!budView} onOpenChange={(o) => !o && setBudView(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-serif">{t("budgets.dialog.detailsTitle")}</DialogTitle></DialogHeader>
+          {budView && (() => {
+            const executed = executedFor(budView);
+            const pct = budView.plannedAmount > 0 ? Math.round((executed / budView.plannedAmount) * 100) : 0;
+            return (
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-muted-foreground">{t("budgets.details.year")}:</span><p className="font-medium">{budView.year}</p></div>
+                  <div><span className="text-muted-foreground">{t("budgets.details.account")}:</span><p className="font-medium">{accountLabel(budView.accountId)}</p></div>
+                  <div><span className="text-muted-foreground">{t("budgets.details.department")}:</span><p className="font-medium">{deptName(budView.departmentId)}</p></div>
+                  <div><span className="text-muted-foreground">{t("budgets.details.execution")}:</span><p><Badge variant={pct > 100 ? "destructive" : "outline"}>{pct}%</Badge></p></div>
+                  <div><span className="text-muted-foreground">{t("budgets.details.planned")}:</span><p className="font-medium">{formatKwanza(budView.plannedAmount)}</p></div>
+                  <div><span className="text-muted-foreground">{t("budgets.details.executed")}:</span><p className="font-medium">{formatKwanza(executed)}</p></div>
+                </div>
+                {budView.notes && (
+                  <div><span className="text-muted-foreground">{t("budgets.details.notes")}:</span><p className="font-medium mt-1">{budView.notes}</p></div>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

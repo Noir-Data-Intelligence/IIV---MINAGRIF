@@ -1,0 +1,181 @@
+{
+  "page": {
+    "title": "Assets",
+    "description": "Inventory of goods, assets and maintenance history."
+  },
+  "kpis": {
+    "totalAssets": "Total assets",
+    "totalAssetsCaption": "Items registered in inventory",
+    "totalValue": "Asset value",
+    "totalValueCaption": "Current estimated value",
+    "needsAttention": "Under maintenance / faulty",
+    "needsAttentionCaption": "Assets requiring attention",
+    "upcoming": "Upcoming maintenance",
+    "upcomingCaption": "Scheduled interventions pending"
+  },
+  "tabs": {
+    "assets": "Assets",
+    "maintenances": "Maintenance"
+  },
+  "status": {
+    "activo": "Active",
+    "em_manutencao": "Under maintenance",
+    "avariado": "Faulty",
+    "abatido": "Written off",
+    "reservado": "Reserved"
+  },
+  "category": {
+    "equipamento_laboratorio": "Laboratory equipment",
+    "viatura": "Vehicle",
+    "energia": "Power",
+    "refrigeracao": "Refrigeration",
+    "informatica": "IT",
+    "mobiliario": "Furniture",
+    "outros": "Other"
+  },
+  "maintType": {
+    "preventiva": "Preventive",
+    "correctiva": "Corrective",
+    "inspeccao": "Inspection",
+    "calibracao": "Calibration"
+  },
+  "filters": {
+    "statusPlaceholder": "Status",
+    "statusAll": "All statuses",
+    "categoryPlaceholder": "Category",
+    "categoryAll": "All categories",
+    "typePlaceholder": "Type",
+    "typeAll": "All types"
+  },
+  "assets": {
+    "actions": {
+      "new": "New Asset",
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "table": {
+      "code": "Code",
+      "name": "Name",
+      "category": "Category",
+      "location": "Location",
+      "acquisition": "Acquisition",
+      "value": "Current value",
+      "status": "Status",
+      "searchPlaceholder": "Search by code, name, serial...",
+      "empty": "No assets found.",
+      "emptyCell": "—"
+    },
+    "form": {
+      "labels": {
+        "code": "Code",
+        "name": "Name",
+        "category": "Category",
+        "description": "Description",
+        "location": "Location",
+        "station": "Station",
+        "department": "Department",
+        "responsibleUser": "Responsible",
+        "acquisitionDate": "Acquisition date",
+        "acquisitionCost": "Acquisition cost (AOA)",
+        "currentValue": "Current value (AOA)",
+        "serialNumber": "Serial number",
+        "status": "Status",
+        "notes": "Notes"
+      },
+      "placeholders": {
+        "code": "e.g. PAT-0014",
+        "name": "e.g. Refrigerated centrifuge",
+        "description": "Asset description",
+        "location": "e.g. Virology Lab — Bench 3",
+        "responsibleUser": "Responsible technician name",
+        "serialNumber": "e.g. EP5810R-2021-0453",
+        "notes": "Internal notes",
+        "none": "—"
+      }
+    },
+    "dialog": {
+      "createTitle": "New Asset",
+      "editTitle": "Edit Asset",
+      "detailsTitle": "Asset Details"
+    },
+    "details": {
+      "category": "Category",
+      "status": "Status",
+      "location": "Location",
+      "responsibleUser": "Responsible",
+      "acquisitionDate": "Acquisition date",
+      "acquisitionCost": "Acquisition cost",
+      "currentValue": "Current value",
+      "serialNumber": "Serial number",
+      "description": "Description",
+      "notes": "Notes"
+    }
+  },
+  "maintenances": {
+    "actions": {
+      "new": "Log Maintenance",
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "table": {
+      "date": "Date",
+      "asset": "Asset",
+      "type": "Type",
+      "description": "Description",
+      "cost": "Cost",
+      "provider": "Provider",
+      "nextDue": "Next",
+      "searchPlaceholder": "Search by description or provider...",
+      "empty": "No maintenance records.",
+      "emptyCell": "—"
+    },
+    "form": {
+      "labels": {
+        "asset": "Asset",
+        "date": "Date",
+        "type": "Type",
+        "description": "Description",
+        "cost": "Cost (AOA)",
+        "provider": "Provider",
+        "nextDueDate": "Next scheduled maintenance",
+        "notes": "Notes"
+      },
+      "placeholders": {
+        "assetSelect": "Choose asset",
+        "description": "e.g. Annual calibration and temperature check",
+        "provider": "e.g. Angolab Technical Support, Ltd.",
+        "notes": "Intervention notes"
+      }
+    },
+    "dialog": {
+      "createTitle": "Log Maintenance",
+      "editTitle": "Edit Maintenance"
+    }
+  },
+  "validation": {
+    "codeShort": "Code too short",
+    "nameShort": "Name too short",
+    "descriptionShort": "Description too short",
+    "assetRequired": "Select an asset",
+    "costInvalid": "Invalid value"
+  },
+  "form": {
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "delete": {
+    "title": "Delete record?",
+    "description": "This action is permanent and cannot be undone."
+  },
+  "toast": {
+    "assetCreateSuccess": "Asset created successfully",
+    "assetUpdateSuccess": "Asset updated",
+    "maintCreateSuccess": "Maintenance logged",
+    "maintUpdateSuccess": "Maintenance updated",
+    "error": "An error occurred. Please try again."
+  }
+}

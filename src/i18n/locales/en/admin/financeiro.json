@@ -1,0 +1,213 @@
+{
+  "page": {
+    "title": "Finance",
+    "description": "Revenue, expenses, chart of accounts and institutional budgets."
+  },
+  "kpis": {
+    "revenue": "Total Revenue",
+    "revenueCaption": "Received in the current year",
+    "expense": "Total Expense",
+    "expenseCaption": "Paid in the current year",
+    "balance": "Balance",
+    "balanceCaption": "Revenue minus expense",
+    "execution": "Budget Execution",
+    "executionCaption": "Executed vs planned"
+  },
+  "chart": {
+    "title": "Revenue vs Expense",
+    "subtitle": "Paid transactions per month (current year)",
+    "revenue": "Revenue",
+    "expense": "Expense",
+    "empty": "No paid transactions to display for this year."
+  },
+  "tabs": {
+    "transactions": "Transactions",
+    "accounts": "Accounts",
+    "budgets": "Budgets"
+  },
+  "type": {
+    "receita": "Revenue",
+    "despesa": "Expense"
+  },
+  "status": {
+    "pendente": "Pending",
+    "pago": "Paid",
+    "cancelado": "Cancelled"
+  },
+  "actions": {
+    "view": "View details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "common": {
+    "emptyCell": "—",
+    "none": "— None —",
+    "selectPlaceholder": "Select"
+  },
+  "filters": {
+    "allTypes": "All types",
+    "allStatus": "All statuses",
+    "typePlaceholder": "Type",
+    "statusPlaceholder": "Status"
+  },
+  "delete": {
+    "title": "Delete record?",
+    "description": "This action is permanent and cannot be undone."
+  },
+  "toast": {
+    "error": "An error occurred. Please try again."
+  },
+  "accounts": {
+    "new": "New Account",
+    "table": {
+      "code": "Code",
+      "name": "Name",
+      "type": "Type",
+      "active": "Active",
+      "searchPlaceholder": "Search accounts...",
+      "empty": "No accounts registered."
+    },
+    "active": {
+      "yes": "Yes",
+      "no": "No"
+    },
+    "dialog": {
+      "createTitle": "New Account",
+      "editTitle": "Edit Account",
+      "detailsTitle": "Account Details"
+    },
+    "form": {
+      "code": "Code",
+      "name": "Name",
+      "type": "Type",
+      "description": "Description",
+      "status": "Status",
+      "codePlaceholder": "e.g. 6.01",
+      "activeOption": "Active",
+      "inactiveOption": "Inactive"
+    },
+    "details": {
+      "code": "Code",
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "description": "Description",
+      "createdAt": "Created on"
+    },
+    "validation": {
+      "code": "Code is required",
+      "name": "Name is too short"
+    },
+    "toast": {
+      "createSuccess": "Account created",
+      "updateSuccess": "Account updated",
+      "deleteSuccess": "Account deleted"
+    }
+  },
+  "transactions": {
+    "new": "New Transaction",
+    "emptyAccountsHint": "Create an account first in the Accounts tab.",
+    "table": {
+      "date": "Date",
+      "account": "Account",
+      "department": "Department",
+      "type": "Type",
+      "amount": "Amount",
+      "description": "Description",
+      "status": "Status",
+      "searchPlaceholder": "Search transactions...",
+      "empty": "No transactions registered."
+    },
+    "dialog": {
+      "createTitle": "New Transaction",
+      "editTitle": "Edit Transaction",
+      "detailsTitle": "Transaction Details"
+    },
+    "form": {
+      "account": "Account",
+      "type": "Type",
+      "amount": "Amount",
+      "currency": "Currency",
+      "date": "Date",
+      "department": "Department",
+      "status": "Status",
+      "description": "Description",
+      "reference": "Reference",
+      "notes": "Notes",
+      "referencePlaceholder": "Invoice no., receipt, etc."
+    },
+    "details": {
+      "account": "Account",
+      "department": "Department",
+      "type": "Type",
+      "amount": "Amount",
+      "date": "Date",
+      "status": "Status",
+      "reference": "Reference",
+      "description": "Description",
+      "notes": "Notes"
+    },
+    "validation": {
+      "account": "Select an account",
+      "amount": "Amount must be greater than zero",
+      "date": "Date is required",
+      "description": "Description is too short"
+    },
+    "toast": {
+      "createSuccess": "Transaction recorded",
+      "updateSuccess": "Transaction updated",
+      "deleteSuccess": "Transaction deleted"
+    }
+  },
+  "budgets": {
+    "new": "New Budget",
+    "emptyAccountsHint": "Create an account first in the Accounts tab.",
+    "table": {
+      "year": "Year",
+      "account": "Account",
+      "department": "Department",
+      "planned": "Planned",
+      "executed": "Executed",
+      "execution": "% Execution",
+      "searchPlaceholder": "Search budgets...",
+      "empty": "No budgets registered."
+    },
+    "dialog": {
+      "createTitle": "New Budget",
+      "editTitle": "Edit Budget",
+      "detailsTitle": "Budget Details"
+    },
+    "form": {
+      "year": "Year",
+      "account": "Account",
+      "department": "Department",
+      "planned": "Planned Amount",
+      "notes": "Notes"
+    },
+    "details": {
+      "year": "Year",
+      "account": "Account",
+      "department": "Department",
+      "planned": "Planned",
+      "executed": "Executed",
+      "execution": "% Execution",
+      "notes": "Notes"
+    },
+    "validation": {
+      "year": "Invalid year",
+      "account": "Select an account",
+      "planned": "Amount must be positive"
+    },
+    "toast": {
+      "createSuccess": "Budget created",
+      "updateSuccess": "Budget updated",
+      "deleteSuccess": "Budget deleted"
+    }
+  }
+}

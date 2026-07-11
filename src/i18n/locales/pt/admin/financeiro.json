@@ -1,0 +1,213 @@
+{
+  "page": {
+    "title": "Financeiro",
+    "description": "Receitas, despesas, plano de contas e orçamentos institucionais."
+  },
+  "kpis": {
+    "revenue": "Receita Total",
+    "revenueCaption": "Recebido no ano corrente",
+    "expense": "Despesa Total",
+    "expenseCaption": "Pago no ano corrente",
+    "balance": "Saldo",
+    "balanceCaption": "Receita menos despesa",
+    "execution": "Execução Orçamental",
+    "executionCaption": "Executado vs planeado"
+  },
+  "chart": {
+    "title": "Receita vs Despesa",
+    "subtitle": "Movimentos pagos por mês (ano corrente)",
+    "revenue": "Receita",
+    "expense": "Despesa",
+    "empty": "Sem movimentos pagos para apresentar neste ano."
+  },
+  "tabs": {
+    "transactions": "Movimentos",
+    "accounts": "Contas",
+    "budgets": "Orçamentos"
+  },
+  "type": {
+    "receita": "Receita",
+    "despesa": "Despesa"
+  },
+  "status": {
+    "pendente": "Pendente",
+    "pago": "Pago",
+    "cancelado": "Cancelado"
+  },
+  "actions": {
+    "view": "Ver detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "form": {
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "common": {
+    "emptyCell": "—",
+    "none": "— Nenhum —",
+    "selectPlaceholder": "Seleccionar"
+  },
+  "filters": {
+    "allTypes": "Todos os tipos",
+    "allStatus": "Todos os estados",
+    "typePlaceholder": "Tipo",
+    "statusPlaceholder": "Estado"
+  },
+  "delete": {
+    "title": "Eliminar registo?",
+    "description": "Esta acção é permanente e não pode ser revertida."
+  },
+  "toast": {
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "accounts": {
+    "new": "Nova Conta",
+    "table": {
+      "code": "Código",
+      "name": "Nome",
+      "type": "Tipo",
+      "active": "Activa",
+      "searchPlaceholder": "Pesquisar contas...",
+      "empty": "Sem contas registadas."
+    },
+    "active": {
+      "yes": "Sim",
+      "no": "Não"
+    },
+    "dialog": {
+      "createTitle": "Nova Conta",
+      "editTitle": "Editar Conta",
+      "detailsTitle": "Detalhes da Conta"
+    },
+    "form": {
+      "code": "Código",
+      "name": "Nome",
+      "type": "Tipo",
+      "description": "Descrição",
+      "status": "Estado",
+      "codePlaceholder": "Ex.: 6.01",
+      "activeOption": "Activa",
+      "inactiveOption": "Inactiva"
+    },
+    "details": {
+      "code": "Código",
+      "name": "Nome",
+      "type": "Tipo",
+      "status": "Estado",
+      "description": "Descrição",
+      "createdAt": "Criada em"
+    },
+    "validation": {
+      "code": "Código obrigatório",
+      "name": "Nome demasiado curto"
+    },
+    "toast": {
+      "createSuccess": "Conta criada",
+      "updateSuccess": "Conta actualizada",
+      "deleteSuccess": "Conta eliminada"
+    }
+  },
+  "transactions": {
+    "new": "Novo Lançamento",
+    "emptyAccountsHint": "Crie primeiro uma conta no separador Contas.",
+    "table": {
+      "date": "Data",
+      "account": "Conta",
+      "department": "Departamento",
+      "type": "Tipo",
+      "amount": "Montante",
+      "description": "Descrição",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar lançamentos...",
+      "empty": "Sem lançamentos registados."
+    },
+    "dialog": {
+      "createTitle": "Novo Lançamento",
+      "editTitle": "Editar Lançamento",
+      "detailsTitle": "Detalhes do Lançamento"
+    },
+    "form": {
+      "account": "Conta",
+      "type": "Tipo",
+      "amount": "Montante",
+      "currency": "Moeda",
+      "date": "Data",
+      "department": "Departamento",
+      "status": "Estado",
+      "description": "Descrição",
+      "reference": "Referência",
+      "notes": "Notas",
+      "referencePlaceholder": "Nº de factura, recibo, etc."
+    },
+    "details": {
+      "account": "Conta",
+      "department": "Departamento",
+      "type": "Tipo",
+      "amount": "Montante",
+      "date": "Data",
+      "status": "Estado",
+      "reference": "Referência",
+      "description": "Descrição",
+      "notes": "Notas"
+    },
+    "validation": {
+      "account": "Seleccione uma conta",
+      "amount": "Montante deve ser maior que zero",
+      "date": "Data obrigatória",
+      "description": "Descrição demasiado curta"
+    },
+    "toast": {
+      "createSuccess": "Lançamento registado",
+      "updateSuccess": "Lançamento actualizado",
+      "deleteSuccess": "Lançamento eliminado"
+    }
+  },
+  "budgets": {
+    "new": "Novo Orçamento",
+    "emptyAccountsHint": "Crie primeiro uma conta no separador Contas.",
+    "table": {
+      "year": "Ano",
+      "account": "Conta",
+      "department": "Departamento",
+      "planned": "Planeado",
+      "executed": "Executado",
+      "execution": "% Execução",
+      "searchPlaceholder": "Pesquisar orçamentos...",
+      "empty": "Sem orçamentos registados."
+    },
+    "dialog": {
+      "createTitle": "Novo Orçamento",
+      "editTitle": "Editar Orçamento",
+      "detailsTitle": "Detalhes do Orçamento"
+    },
+    "form": {
+      "year": "Ano",
+      "account": "Conta",
+      "department": "Departamento",
+      "planned": "Valor Planeado",
+      "notes": "Notas"
+    },
+    "details": {
+      "year": "Ano",
+      "account": "Conta",
+      "department": "Departamento",
+      "planned": "Planeado",
+      "executed": "Executado",
+      "execution": "% Execução",
+      "notes": "Notas"
+    },
+    "validation": {
+      "year": "Ano inválido",
+      "account": "Seleccione uma conta",
+      "planned": "Valor deve ser positivo"
+    },
+    "toast": {
+      "createSuccess": "Orçamento criado",
+      "updateSuccess": "Orçamento actualizado",
+      "deleteSuccess": "Orçamento eliminado"
+    }
+  }
+}

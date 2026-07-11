@@ -1,344 +1,878 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import {
+  Package, Boxes, Wrench, CircleDollarSign, AlertTriangle, CalendarClock,
+  Plus, Eye, Pencil, Trash2,
+} from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Package, Wrench, Pencil, Trash2, Boxes, AlertTriangle, CircleDollarSign } from "lucide-react";
-import { useClientPagination } from "@/hooks/useClientPagination";
-import { usePagination } from "@/hooks/usePagination";
-import { TablePagination } from "@/components/admin/TablePagination";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import { formatDate, formatKwanza } from "@/lib/format";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import {
+  useAssetsList,
+  useCreateAsset,
+  useUpdateAsset,
+  useDeleteAsset,
+  useMaintenancesList,
+  useCreateMaintenance,
+  useUpdateMaintenance,
+  useDeleteMaintenance,
+} from "@/hooks/queries/usePatrimonio";
+import { useEstacoesList } from "@/hooks/queries/useEstacoes";
+import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
+import type {
+  AssetDto,
+  AssetCategory,
+  AssetStatus,
+  MaintenanceDto,
+  MaintenanceType,
+} from "@/types/dto/patrimonio";
+import i18n from "@/i18n";
+import ptPatrimonio from "@/i18n/locales/pt/admin/patrimonio.json";
+import enPatrimonio from "@/i18n/locales/en/admin/patrimonio.json";
 
-type AssetStatus = "activo" | "em_manutencao" | "avariado" | "abatido" | "reservado";
-type MaintType = "preventiva" | "correctiva" | "inspeccao" | "calibracao";
+// Namespace autónomo registado em runtime, seguindo o padrão de Documentos.tsx.
+if (!i18n.hasResourceBundle("pt", "admin-patrimonio"))
+  i18n.addResourceBundle("pt", "admin-patrimonio", ptPatrimonio, true, true);
+if (!i18n.hasResourceBundle("en", "admin-patrimonio"))
+  i18n.addResourceBundle("en", "admin-patrimonio", enPatrimonio, true, true);
 
-interface Asset {
-  id: string; code: string; name: string; category: string; description: string | null;
-  location: string | null; station_id: string | null; department_id: string | null;
-  responsible_user_id: string | null; acquisition_date: string | null;
-  acquisition_cost: number; current_value: number | null; serial_number: string | null;
-  status: AssetStatus; notes: string | null;
-}
-interface Maintenance {
-  id: string; asset_id: string; maintenance_date: string; type: MaintType;
-  description: string; cost: number; provider: string | null; next_due_date: string | null; notes: string | null;
-}
-interface Station { id: string; name: string }
-interface Dept { id: string; name: string }
-
-const STATUS: { value: AssetStatus; label: string }[] = [
-  { value: "activo", label: "Activo" },
-  { value: "em_manutencao", label: "Em manutenção" },
-  { value: "avariado", label: "Avariado" },
-  { value: "abatido", label: "Abatido" },
-  { value: "reservado", label: "Reservado" },
+const ASSET_STATUSES: AssetStatus[] = [
+  "activo", "em_manutencao", "avariado", "abatido", "reservado",
+];
+const ASSET_CATEGORIES: AssetCategory[] = [
+  "equipamento_laboratorio", "viatura", "energia", "refrigeracao",
+  "informatica", "mobiliario", "outros",
+];
+const MAINT_TYPES: MaintenanceType[] = [
+  "preventiva", "correctiva", "inspeccao", "calibracao",
 ];
 
-const MAINT: { value: MaintType; label: string }[] = [
-  { value: "preventiva", label: "Preventiva" },
-  { value: "correctiva", label: "Correctiva" },
-  { value: "inspeccao", label: "Inspecção" },
-  { value: "calibracao", label: "Calibração" },
-];
+const statusVariant: Record<AssetStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  activo: "default",
+  em_manutencao: "secondary",
+  avariado: "destructive",
+  abatido: "outline",
+  reservado: "outline",
+};
+
+/** Sentinela usado nos Selects opcionais (o SelectItem não aceita valor ""). */
+const NONE = "__none__";
+
+// --- Schemas ---------------------------------------------------------------
+
+function buildAssetSchema(t: TFunction) {
+  const cost = (msg: string) =>
+    z.string().trim().refine((v) => v !== "" && !Number.isNaN(Number(v)) && Number(v) >= 0, msg);
+  const optionalCost = (msg: string) =>
+    z.string().trim().optional().refine((v) => !v || (!Number.isNaN(Number(v)) && Number(v) >= 0), msg);
+
+  return z.object({
+    code: z.string().trim().min(2, t("validation.codeShort")),
+    name: z.string().trim().min(2, t("validation.nameShort")),
+    category: z.enum([
+      "equipamento_laboratorio", "viatura", "energia", "refrigeracao",
+      "informatica", "mobiliario", "outros",
+    ]),
+    description: z.string().trim().optional(),
+    location: z.string().trim().optional(),
+    stationId: z.string().optional(),
+    departmentId: z.string().optional(),
+    responsibleUser: z.string().trim().optional(),
+    acquisitionDate: z.string().optional(),
+    acquisitionCost: cost(t("validation.costInvalid")),
+    currentValue: optionalCost(t("validation.costInvalid")),
+    serialNumber: z.string().trim().optional(),
+    status: z.enum(["activo", "em_manutencao", "avariado", "abatido", "reservado"]),
+    notes: z.string().trim().optional(),
+  });
+}
+type AssetFormValues = z.infer<ReturnType<typeof buildAssetSchema>>;
+
+function buildMaintenanceSchema(t: TFunction) {
+  return z.object({
+    assetId: z.string().min(1, t("validation.assetRequired")),
+    date: z.string().min(1),
+    type: z.enum(["preventiva", "correctiva", "inspeccao", "calibracao"]),
+    description: z.string().trim().min(3, t("validation.descriptionShort")),
+    cost: z.string().trim().refine(
+      (v) => v === "" || (!Number.isNaN(Number(v)) && Number(v) >= 0),
+      t("validation.costInvalid"),
+    ),
+    provider: z.string().trim().optional(),
+    nextDueDate: z.string().optional(),
+    notes: z.string().trim().optional(),
+  });
+}
+type MaintenanceFormValues = z.infer<ReturnType<typeof buildMaintenanceSchema>>;
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export default function Patrimonio() {
-  const { user } = useAuth();
+  const { t } = useTranslation("admin-patrimonio");
   const { canWrite } = useUserRole();
-  const { toast } = useToast();
   const canEdit = canWrite("patrimonio");
+  const reduceMotion = useReducedMotion();
 
-  const [loading, setLoading] = useState(true);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [maints, setMaints] = useState<Maintenance[]>([]);
-  const [stations, setStations] = useState<Station[]>([]);
-  const [depts, setDepts] = useState<Dept[]>([]);
+  // --- Activos: estado de tabela ---
+  const [assetPagination, setAssetPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [assetSearch, setAssetSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [categoryFilter, setCategoryFilter] = useState<string>("todas");
+  const [assetFormOpen, setAssetFormOpen] = useState(false);
+  const [assetEdit, setAssetEdit] = useState<AssetDto | null>(null);
+  const [assetView, setAssetView] = useState<AssetDto | null>(null);
+  const [assetDeleteId, setAssetDeleteId] = useState<string | null>(null);
 
-  const [assetOpen, setAssetOpen] = useState(false);
-  const [assetEdit, setAssetEdit] = useState<Asset | null>(null);
-  const [maintOpen, setMaintOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<{ table: string; id: string } | null>(null);
+  // --- Manutenções: estado de tabela ---
+  const [maintPagination, setMaintPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [maintSearch, setMaintSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("todos");
+  const [maintFormOpen, setMaintFormOpen] = useState(false);
+  const [maintEdit, setMaintEdit] = useState<MaintenanceDto | null>(null);
+  const [maintDeleteId, setMaintDeleteId] = useState<string | null>(null);
 
-  const maintsPag = usePagination(20);
+  const { data: assetsData, isLoading: assetsLoading } = useAssetsList({
+    page: assetPagination.pageIndex + 1,
+    perPage: assetPagination.pageSize,
+    search: assetSearch || undefined,
+    status: statusFilter !== "todos" ? statusFilter : undefined,
+    category: categoryFilter !== "todas" ? categoryFilter : undefined,
+  });
+  const { data: maintData, isLoading: maintLoading } = useMaintenancesList({
+    page: maintPagination.pageIndex + 1,
+    perPage: maintPagination.pageSize,
+    search: maintSearch || undefined,
+    type: typeFilter !== "todos" ? typeFilter : undefined,
+  });
 
-  const loadAll = async () => {
-    setLoading(true);
-    const [a, s, d] = await Promise.all([
-      supabase.from("assets").select("*").order("code"),
-      supabase.from("stations").select("id,name").order("name"),
-      supabase.from("departments").select("id,name").order("name"),
-    ]);
-    if (a.data) setAssets(a.data as Asset[]);
-    if (s.data) setStations(s.data as Station[]);
-    if (d.data) setDepts(d.data as Dept[]);
-    setLoading(false);
-  };
+  // Datasets completos (sem filtros) para KPIs precisos e para popular Selects/lookup.
+  const assetsStats = useAssetsList({ page: 1, perPage: 1000 });
+  const maintStats = useMaintenancesList({ page: 1, perPage: 1000 });
+  const allAssets = useMemo(() => assetsStats.data?.data ?? [], [assetsStats.data]);
+  const allMaints = useMemo(() => maintStats.data?.data ?? [], [maintStats.data]);
 
-  const loadMaints = async () => {
-    const { data, count } = await supabase
-      .from("asset_maintenance")
-      .select("*", { count: "exact" })
-      .order("maintenance_date", { ascending: false })
-      .range(maintsPag.from, maintsPag.to);
-    setMaints((data as Maintenance[]) ?? []);
-    maintsPag.setTotal(count ?? 0);
-  };
+  const { data: estacoesData } = useEstacoesList({ page: 1, perPage: 1000 });
+  const { data: departamentosData } = useDepartamentosList({ page: 1, perPage: 1000 });
+  const estacoes = estacoesData?.data ?? [];
+  const departamentos = departamentosData?.data ?? [];
 
-  useEffect(() => { loadAll(); }, []);
-  useEffect(() => { loadMaints(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [maintsPag.page, maintsPag.pageSize]);
+  const createAsset = useCreateAsset();
+  const updateAsset = useUpdateAsset();
+  const deleteAsset = useDeleteAsset();
+  const createMaint = useCreateMaintenance();
+  const updateMaint = useUpdateMaintenance();
+  const deleteMaint = useDeleteMaintenance();
 
+  // --- KPIs ---
   const kpis = useMemo(() => {
-    const total = assets.length;
-    const active = assets.filter((a) => a.status === "activo").length;
-    const value = assets.reduce((s, a) => s + Number(a.current_value ?? a.acquisition_cost ?? 0), 0);
-    const today = new Date().toISOString().slice(0, 10);
-    const dueSoon = maints.filter((m) => m.next_due_date && m.next_due_date >= today).length;
-    return { total, active, value, dueSoon };
-  }, [assets, maints]);
+    const total = assetsStats.data?.meta.total ?? allAssets.length;
+    const value = allAssets.reduce((s, a) => s + Number(a.currentValue ?? a.acquisitionCost ?? 0), 0);
+    const attention = allAssets.filter(
+      (a) => a.status === "em_manutencao" || a.status === "avariado",
+    ).length;
+    const today = todayISO();
+    const upcoming = allMaints.filter((m) => m.nextDueDate && m.nextDueDate >= today).length;
+    return { total, value, attention, upcoming };
+  }, [assetsStats.data, allAssets, allMaints]);
 
-  const assetsPag = useClientPagination(assets, 20);
+  // --- Lookups ---
+  const assetLabel = (id: string) => {
+    const a = allAssets.find((x) => x.id === id);
+    return a ? `${a.code} — ${a.name}` : t("assets.table.emptyCell");
+  };
+  const stationName = (id: string | null) =>
+    id ? estacoes.find((s) => s.id === id)?.name ?? t("assets.table.emptyCell") : t("assets.table.emptyCell");
+  const departmentName = (id: string | null) =>
+    id ? departamentos.find((d) => d.id === id)?.name ?? t("assets.table.emptyCell") : t("assets.table.emptyCell");
 
-  const fmt = (n: number) => new Intl.NumberFormat("pt-AO", { style: "currency", currency: "AOA", maximumFractionDigits: 0 }).format(n);
-  const stationName = (id: string | null) => id ? (stations.find((s) => s.id === id)?.name ?? "—") : "—";
-  const assetLabel = (id: string) => { const a = assets.find((x) => x.id === id); return a ? `${a.code} — ${a.name}` : "—"; };
+  // --- Formulário de Activo ---
+  const assetSchema = useMemo(() => buildAssetSchema(t), [t]);
+  const assetInitial = useMemo<Partial<AssetFormValues> | undefined>(
+    () =>
+      assetEdit
+        ? {
+            code: assetEdit.code,
+            name: assetEdit.name,
+            category: assetEdit.category,
+            description: assetEdit.description ?? "",
+            location: assetEdit.location ?? "",
+            stationId: assetEdit.stationId ?? "",
+            departmentId: assetEdit.departmentId ?? "",
+            responsibleUser: assetEdit.responsibleUser ?? "",
+            acquisitionDate: assetEdit.acquisitionDate ?? "",
+            acquisitionCost: String(assetEdit.acquisitionCost ?? 0),
+            currentValue: assetEdit.currentValue != null ? String(assetEdit.currentValue) : "",
+            serialNumber: assetEdit.serialNumber ?? "",
+            status: assetEdit.status,
+            notes: assetEdit.notes ?? "",
+          }
+        : undefined,
+    [assetEdit],
+  );
 
-  const saveAsset = async (form: Partial<Asset>) => {
-    if (!form.code || !form.name || !form.category) return toast({ title: "Código, nome e categoria obrigatórios", variant: "destructive" });
-    const payload: any = {
-      code: form.code, name: form.name, category: form.category, description: form.description || null,
-      location: form.location || null, station_id: form.station_id || null, department_id: form.department_id || null,
-      responsible_user_id: form.responsible_user_id || null,
-      acquisition_date: form.acquisition_date || null,
-      acquisition_cost: Number(form.acquisition_cost) || 0,
-      current_value: form.current_value != null ? Number(form.current_value) : null,
-      serial_number: form.serial_number || null, status: form.status || "activo", notes: form.notes || null,
-    };
-    if (!assetEdit) payload.created_by = user?.id;
-    const { error } = assetEdit
-      ? await supabase.from("assets").update(payload).eq("id", assetEdit.id)
-      : await supabase.from("assets").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: assetEdit ? "Activo actualizado" : "Activo criado" });
-    setAssetOpen(false); setAssetEdit(null); loadAll();
+  const assetForm = useEntityForm({
+    schema: assetSchema,
+    initialValues: assetInitial,
+    defaultValues: {
+      code: "", name: "", category: "equipamento_laboratorio", description: "", location: "",
+      stationId: "", departmentId: "", responsibleUser: "", acquisitionDate: "",
+      acquisitionCost: "0", currentValue: "", serialNumber: "", status: "activo", notes: "",
+    },
+    open: assetFormOpen,
+    onSubmit: async (values) => {
+      const payload: Partial<AssetDto> = {
+        code: values.code,
+        name: values.name,
+        category: values.category,
+        description: values.description?.trim() || null,
+        location: values.location?.trim() || null,
+        stationId: values.stationId || null,
+        departmentId: values.departmentId || null,
+        responsibleUser: values.responsibleUser?.trim() || null,
+        acquisitionDate: values.acquisitionDate || null,
+        acquisitionCost: Number(values.acquisitionCost),
+        currentValue: values.currentValue?.trim() ? Number(values.currentValue) : null,
+        serialNumber: values.serialNumber?.trim() || null,
+        status: values.status,
+        notes: values.notes?.trim() || null,
+      };
+      if (assetEdit) {
+        await updateAsset.mutateAsync({ id: assetEdit.id, payload });
+      } else {
+        await createAsset.mutateAsync(payload);
+      }
+    },
+    successMessage: assetEdit ? t("toast.assetUpdateSuccess") : t("toast.assetCreateSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setAssetFormOpen(false),
+  });
+
+  // --- Formulário de Manutenção ---
+  const maintSchema = useMemo(() => buildMaintenanceSchema(t), [t]);
+  const maintInitial = useMemo<Partial<MaintenanceFormValues> | undefined>(
+    () =>
+      maintEdit
+        ? {
+            assetId: maintEdit.assetId,
+            date: maintEdit.date,
+            type: maintEdit.type,
+            description: maintEdit.description,
+            cost: String(maintEdit.cost ?? 0),
+            provider: maintEdit.provider ?? "",
+            nextDueDate: maintEdit.nextDueDate ?? "",
+            notes: maintEdit.notes ?? "",
+          }
+        : undefined,
+    [maintEdit],
+  );
+
+  const maintForm = useEntityForm({
+    schema: maintSchema,
+    initialValues: maintInitial,
+    defaultValues: {
+      assetId: "", date: todayISO(), type: "preventiva", description: "",
+      cost: "0", provider: "", nextDueDate: "", notes: "",
+    },
+    open: maintFormOpen,
+    onSubmit: async (values) => {
+      const payload: Partial<MaintenanceDto> = {
+        assetId: values.assetId,
+        date: values.date,
+        type: values.type,
+        description: values.description,
+        cost: values.cost?.trim() ? Number(values.cost) : 0,
+        provider: values.provider?.trim() || null,
+        nextDueDate: values.nextDueDate || null,
+        notes: values.notes?.trim() || null,
+      };
+      if (maintEdit) {
+        await updateMaint.mutateAsync({ id: maintEdit.id, payload });
+      } else {
+        await createMaint.mutateAsync(payload);
+      }
+    },
+    successMessage: maintEdit ? t("toast.maintUpdateSuccess") : t("toast.maintCreateSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setMaintFormOpen(false),
+  });
+
+  const openAssetCreate = () => { setAssetEdit(null); setAssetFormOpen(true); };
+  const openAssetEdit = (a: AssetDto) => { setAssetEdit(a); setAssetFormOpen(true); };
+  const openMaintCreate = () => { setMaintEdit(null); setMaintFormOpen(true); };
+  const openMaintEdit = (m: MaintenanceDto) => { setMaintEdit(m); setMaintFormOpen(true); };
+
+  // --- Colunas: Activos ---
+  const assetColumns = useMemo<ColumnDef<AssetDto>[]>(
+    () => [
+      {
+        accessorKey: "code",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("assets.table.code")} />,
+        cell: ({ row }) => <span className="font-medium">{row.original.code}</span>,
+      },
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("assets.table.name")} />,
+        cell: ({ row }) => (
+          <div className="max-w-[260px]">
+            <div className="font-medium truncate">{row.original.name}</div>
+            {row.original.serialNumber && (
+              <div className="text-xs text-muted-foreground">{row.original.serialNumber}</div>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: "category",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("assets.table.category")} />,
+        cell: ({ row }) => <Badge variant="outline">{t(`category.${row.original.category}`)}</Badge>,
+      },
+      {
+        id: "location",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("assets.table.location")} />,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.location ?? stationName(row.original.stationId)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "currentValue",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("assets.table.value")} />,
+        cell: ({ row }) => (
+          <span className="text-sm tabular-nums">
+            {formatKwanza(Number(row.original.currentValue ?? row.original.acquisitionCost))}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("assets.table.status")} />,
+        cell: ({ row }) => (
+          <Badge variant={statusVariant[row.original.status]}>{t(`status.${row.original.status}`)}</Badge>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, estacoes],
+  );
+
+  // --- Colunas: Manutenções ---
+  const maintColumns = useMemo<ColumnDef<MaintenanceDto>[]>(
+    () => [
+      {
+        accessorKey: "date",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("maintenances.table.date")} />,
+        cell: ({ row }) => <span className="text-sm">{formatDate(row.original.date)}</span>,
+      },
+      {
+        id: "asset",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("maintenances.table.asset")} />,
+        cell: ({ row }) => <span className="text-xs">{assetLabel(row.original.assetId)}</span>,
+      },
+      {
+        accessorKey: "type",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("maintenances.table.type")} />,
+        cell: ({ row }) => <Badge variant="outline">{t(`maintType.${row.original.type}`)}</Badge>,
+      },
+      {
+        accessorKey: "description",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("maintenances.table.description")} />,
+        cell: ({ row }) => (
+          <span className="text-sm max-w-[280px] truncate block" title={row.original.description}>
+            {row.original.description}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "cost",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("maintenances.table.cost")} />,
+        cell: ({ row }) => <span className="text-sm tabular-nums">{formatKwanza(Number(row.original.cost))}</span>,
+      },
+      {
+        accessorKey: "nextDueDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("maintenances.table.nextDue")} />,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.nextDueDate ? formatDate(row.original.nextDueDate) : t("maintenances.table.emptyCell")}
+          </span>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, allAssets],
+  );
+
+  const renderAssetActions = (row: AssetDto) => {
+    const actions: RowAction[] = [];
+    if (canEdit) {
+      actions.push({ label: t("assets.actions.edit"), icon: Pencil, onClick: () => openAssetEdit(row) });
+      actions.push({ label: t("assets.actions.delete"), icon: Trash2, destructive: true, onClick: () => setAssetDeleteId(row.id) });
+    }
+    return <RowActions primary={{ label: t("assets.actions.view"), icon: Eye, onClick: () => setAssetView(row) }} actions={actions} />;
   };
 
-  const saveMaint = async (form: Partial<Maintenance>) => {
-    if (!form.asset_id || !form.description) return toast({ title: "Activo e descrição obrigatórios", variant: "destructive" });
-    const payload = {
-      asset_id: form.asset_id,
-      maintenance_date: form.maintenance_date || new Date().toISOString().slice(0, 10),
-      type: form.type || "preventiva",
-      description: form.description, cost: Number(form.cost) || 0,
-      provider: form.provider || null, performed_by: user?.id || null,
-      next_due_date: form.next_due_date || null, notes: form.notes || null,
-    };
-    const { error } = await supabase.from("asset_maintenance").insert(payload);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: "Manutenção registada" });
-    setMaintOpen(false); loadMaints();
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from(deleteId.table as any).delete().eq("id", deleteId.id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    else toast({ title: "Registo apagado" });
-    setDeleteId(null); loadAll(); loadMaints();
+  const renderMaintActions = (row: MaintenanceDto) => {
+    const actions: RowAction[] = [];
+    if (canEdit) {
+      actions.push({ label: t("maintenances.actions.edit"), icon: Pencil, onClick: () => openMaintEdit(row) });
+      actions.push({ label: t("maintenances.actions.delete"), icon: Trash2, destructive: true, onClick: () => setMaintDeleteId(row.id) });
+    }
+    return <RowActions actions={actions} />;
   };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={Package} title="Património" description="Inventário de bens, ativos e manutenções." />
+      <AdminPageHeader icon={Package} title={t("page.title")} description={t("page.description")} />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <AdminCard variant="gradient-green-gold" icon={Boxes} title="Total de activos" metric={kpis.total} stagger={1} />
-        <AdminCard variant="glass" icon={Package} title="Em uso" metric={kpis.active} stagger={2} />
-        <AdminCard variant="glass" icon={CircleDollarSign} title="Valor patrimonial" metric={fmt(kpis.value)} stagger={3} />
-        <AdminCard variant="glass" icon={AlertTriangle} title="Manutenções agendadas" metric={kpis.dueSoon} stagger={4} />
-      </div>
+      {/* KPIs */}
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+        variants={staggerContainer}
+        initial={reduceMotion ? false : "hidden"}
+        animate="visible"
+      >
+        <motion.div variants={fadeInUp}>
+          <AdminCard variant="gradient-green-gold" icon={Boxes} metric={kpis.total} title={t("kpis.totalAssets")} caption={t("kpis.totalAssetsCaption")} />
+        </motion.div>
+        <motion.div variants={fadeInUp}>
+          <AdminCard variant="glass" icon={CircleDollarSign} metric={formatKwanza(kpis.value)} title={t("kpis.totalValue")} caption={t("kpis.totalValueCaption")} />
+        </motion.div>
+        <motion.div variants={fadeInUp}>
+          <AdminCard variant={kpis.attention > 0 ? "gradient-gold" : "glass"} icon={AlertTriangle} metric={kpis.attention} title={t("kpis.needsAttention")} caption={t("kpis.needsAttentionCaption")} />
+        </motion.div>
+        <motion.div variants={fadeInUp}>
+          <AdminCard variant="glass" icon={CalendarClock} metric={kpis.upcoming} title={t("kpis.upcoming")} caption={t("kpis.upcomingCaption")} />
+        </motion.div>
+      </motion.div>
 
-      <Tabs defaultValue="activos" className="space-y-4">
+      <Tabs defaultValue="assets" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="activos"><Boxes className="h-4 w-4 mr-1" /> Activos</TabsTrigger>
-          <TabsTrigger value="manutencoes"><Wrench className="h-4 w-4 mr-1" /> Manutenções</TabsTrigger>
+          <TabsTrigger value="assets"><Boxes className="h-4 w-4 mr-1.5" /> {t("tabs.assets")}</TabsTrigger>
+          <TabsTrigger value="maintenances"><Wrench className="h-4 w-4 mr-1.5" /> {t("tabs.maintenances")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="activos">
-          <AdminCard title="Inventário" loading={loading} isEmpty={!loading && assets.length === 0} emptyMessage="Sem activos registados.">
-            <div className="flex justify-end mb-3">
-              {canEdit && (
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setMaintOpen(true)} disabled={assets.length === 0}><Wrench className="h-4 w-4 mr-1" /> Manutenção</Button>
-                  <Button size="sm" onClick={() => { setAssetEdit(null); setAssetOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Activo</Button>
-                </div>
-              )}
+        {/* --- ACTIVOS --- */}
+        <TabsContent value="assets" className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setAssetPagination((p) => ({ ...p, pageIndex: 0 })); }}>
+              <SelectTrigger className="sm:w-[200px]"><SelectValue placeholder={t("filters.statusPlaceholder")} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">{t("filters.statusAll")}</SelectItem>
+                {ASSET_STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setAssetPagination((p) => ({ ...p, pageIndex: 0 })); }}>
+              <SelectTrigger className="sm:w-[220px]"><SelectValue placeholder={t("filters.categoryPlaceholder")} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">{t("filters.categoryAll")}</SelectItem>
+                {ASSET_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{t(`category.${c}`)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="sm:ml-auto">
+              <WriteGuard module="patrimonio">
+                <Button onClick={openAssetCreate}><Plus className="mr-2 h-4 w-4" /> {t("assets.actions.new")}</Button>
+              </WriteGuard>
             </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Código</TableHead><TableHead>Nome</TableHead><TableHead>Categoria</TableHead>
-                <TableHead>Estação</TableHead><TableHead>Aquisição</TableHead><TableHead>Valor</TableHead><TableHead>Estado</TableHead>
-                {canEdit && <TableHead className="w-24">Acções</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {assetsPag.pageItems.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="font-medium">{a.code}</TableCell>
-                    <TableCell>{a.name}</TableCell>
-                    <TableCell><Badge variant="outline">{a.category}</Badge></TableCell>
-                    <TableCell>{stationName(a.station_id)}</TableCell>
-                    <TableCell>{a.acquisition_date ?? "—"}</TableCell>
-                    <TableCell>{fmt(Number(a.current_value ?? a.acquisition_cost))}</TableCell>
-                    <TableCell><Badge variant={a.status === "activo" ? "default" : "outline"}>{STATUS.find((s) => s.value === a.status)?.label}</Badge></TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setAssetEdit(a); setAssetOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteId({ table: "assets", id: a.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <TablePagination page={assetsPag.page} pageSize={assetsPag.pageSize} total={assetsPag.total} totalPages={assetsPag.totalPages} canPrev={assetsPag.canPrev} canNext={assetsPag.canNext} onPageChange={assetsPag.setPage} onPageSizeChange={assetsPag.setPageSize} />
-          </AdminCard>
+          </div>
+
+          <DataTable
+            columns={assetColumns}
+            data={assetsData?.data ?? []}
+            loading={assetsLoading}
+            pageCount={assetsData?.meta.lastPage ?? 0}
+            pagination={assetPagination}
+            onPaginationChange={setAssetPagination}
+            rowCount={assetsData?.meta.total}
+            globalFilter={assetSearch}
+            onGlobalFilterChange={setAssetSearch}
+            searchPlaceholder={t("assets.table.searchPlaceholder")}
+            emptyMessage={t("assets.table.empty")}
+            renderRowActions={renderAssetActions}
+          />
         </TabsContent>
 
-        <TabsContent value="manutencoes">
-          <AdminCard title="Histórico de manutenções" loading={loading} isEmpty={!loading && maintsPag.total === 0} emptyMessage="Sem manutenções registadas.">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Data</TableHead><TableHead>Activo</TableHead><TableHead>Tipo</TableHead>
-                <TableHead>Descrição</TableHead><TableHead>Custo</TableHead><TableHead>Fornecedor</TableHead><TableHead>Próxima</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {maints.map((m) => (
-                  <TableRow key={m.id}>
-                    <TableCell>{m.maintenance_date}</TableCell>
-                    <TableCell className="text-xs">{assetLabel(m.asset_id)}</TableCell>
-                    <TableCell><Badge variant="outline">{MAINT.find((x) => x.value === m.type)?.label}</Badge></TableCell>
-                    <TableCell className="max-w-[260px] truncate" title={m.description}>{m.description}</TableCell>
-                    <TableCell>{fmt(Number(m.cost))}</TableCell>
-                    <TableCell>{m.provider ?? "—"}</TableCell>
-                    <TableCell>{m.next_due_date ?? "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <TablePagination page={maintsPag.page} pageSize={maintsPag.pageSize} total={maintsPag.total} totalPages={maintsPag.totalPages} canPrev={maintsPag.canPrev} canNext={maintsPag.canNext} onPageChange={maintsPag.setPage} onPageSizeChange={maintsPag.setPageSize} />
-          </AdminCard>
+        {/* --- MANUTENÇÕES --- */}
+        <TabsContent value="maintenances" className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setMaintPagination((p) => ({ ...p, pageIndex: 0 })); }}>
+              <SelectTrigger className="sm:w-[200px]"><SelectValue placeholder={t("filters.typePlaceholder")} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">{t("filters.typeAll")}</SelectItem>
+                {MAINT_TYPES.map((mt) => <SelectItem key={mt} value={mt}>{t(`maintType.${mt}`)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="sm:ml-auto">
+              <WriteGuard module="patrimonio">
+                <Button onClick={openMaintCreate} disabled={allAssets.length === 0}>
+                  <Plus className="mr-2 h-4 w-4" /> {t("maintenances.actions.new")}
+                </Button>
+              </WriteGuard>
+            </div>
+          </div>
+
+          <DataTable
+            columns={maintColumns}
+            data={maintData?.data ?? []}
+            loading={maintLoading}
+            pageCount={maintData?.meta.lastPage ?? 0}
+            pagination={maintPagination}
+            onPaginationChange={setMaintPagination}
+            rowCount={maintData?.meta.total}
+            globalFilter={maintSearch}
+            onGlobalFilterChange={setMaintSearch}
+            searchPlaceholder={t("maintenances.table.searchPlaceholder")}
+            emptyMessage={t("maintenances.table.empty")}
+            renderRowActions={renderMaintActions}
+          />
         </TabsContent>
       </Tabs>
 
-      <AssetDialog open={assetOpen} onOpenChange={(v) => { setAssetOpen(v); if (!v) setAssetEdit(null); }} asset={assetEdit} stations={stations} depts={depts} onSave={saveAsset} />
-      <MaintDialog open={maintOpen} onOpenChange={setMaintOpen} assets={assets} onSave={saveMaint} />
-
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}
-        title="Apagar registo?" description="Esta acção é permanente." onConfirm={confirmDelete} />
-    </div>
-  );
-}
-
-function AssetDialog({ open, onOpenChange, asset, stations, depts, onSave }: {
-  open: boolean; onOpenChange: (v: boolean) => void; asset: Asset | null;
-  stations: Station[]; depts: Dept[]; onSave: (f: Partial<Asset>) => void;
-}) {
-  const [form, setForm] = useState<Partial<Asset>>({});
-  useEffect(() => { setForm(asset ?? { status: "activo", acquisition_cost: 0 }); }, [asset, open]);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>{asset ? "Editar Activo" : "Novo Activo"}</DialogTitle></DialogHeader>
-        <div className="grid grid-cols-2 gap-3">
-          <div><Label>Código *</Label><Input value={form.code || ""} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Ex.: PAT-0001" /></div>
-          <div><Label>Categoria *</Label><Input value={form.category || ""} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Ex.: Equipamento, Viatura, Mobiliário" /></div>
-          <div className="col-span-2"><Label>Nome *</Label><Input value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div><Label>Localização</Label><Input value={form.location || ""} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
-          <div><Label>Nº de série</Label><Input value={form.serial_number || ""} onChange={(e) => setForm({ ...form, serial_number: e.target.value })} /></div>
-          <div><Label>Estação</Label>
-            <Select value={form.station_id ?? "none"} onValueChange={(v) => setForm({ ...form, station_id: v === "none" ? null : v })}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">—</SelectItem>
-                {stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div><Label>Departamento</Label>
-            <Select value={form.department_id ?? "none"} onValueChange={(v) => setForm({ ...form, department_id: v === "none" ? null : v })}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">—</SelectItem>
-                {depts.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div><Label>Data de aquisição</Label><Input type="date" value={form.acquisition_date || ""} onChange={(e) => setForm({ ...form, acquisition_date: e.target.value })} /></div>
-          <div><Label>Custo de aquisição</Label><Input type="number" step="0.01" value={form.acquisition_cost ?? 0} onChange={(e) => setForm({ ...form, acquisition_cost: Number(e.target.value) })} /></div>
-          <div><Label>Valor actual</Label><Input type="number" step="0.01" value={form.current_value ?? ""} onChange={(e) => setForm({ ...form, current_value: e.target.value === "" ? null : Number(e.target.value) })} /></div>
-          <div><Label>Estado</Label>
-            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as AssetStatus })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{STATUS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-2"><Label>Descrição</Label><Textarea value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-          <div className="col-span-2"><Label>Notas</Label><Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Guardar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function MaintDialog({ open, onOpenChange, assets, onSave }: { open: boolean; onOpenChange: (v: boolean) => void; assets: Asset[]; onSave: (f: Partial<Maintenance>) => void }) {
-  const [form, setForm] = useState<Partial<Maintenance>>({ type: "preventiva", maintenance_date: new Date().toISOString().slice(0, 10), cost: 0 });
-  useEffect(() => { if (open) setForm({ type: "preventiva", maintenance_date: new Date().toISOString().slice(0, 10), cost: 0 }); }, [open]);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Registar Manutenção</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div><Label>Activo *</Label>
-            <Select value={form.asset_id} onValueChange={(v) => setForm({ ...form, asset_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Escolher" /></SelectTrigger>
-              <SelectContent>{assets.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div><Label>Data</Label><Input type="date" value={form.maintenance_date || ""} onChange={(e) => setForm({ ...form, maintenance_date: e.target.value })} /></div>
-            <div><Label>Tipo</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as MaintType })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{MAINT.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
-              </Select>
+      {/* --- Dialog: Activo --- */}
+      <EntityFormDialog
+        open={assetFormOpen}
+        onOpenChange={setAssetFormOpen}
+        title={assetEdit ? t("assets.dialog.editTitle") : t("assets.dialog.createTitle")}
+        form={assetForm}
+        submitLabel={assetEdit ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="code" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.code")}</FormLabel>
+                  <FormControl><Input placeholder={t("assets.form.placeholders.code")} {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="category" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.category")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {ASSET_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{t(`category.${c}`)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </div>
-            <div><Label>Custo</Label><Input type="number" step="0.01" value={form.cost ?? 0} onChange={(e) => setForm({ ...form, cost: Number(e.target.value) })} /></div>
-          </div>
-          <div><Label>Descrição *</Label><Input value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Fornecedor</Label><Input value={form.provider || ""} onChange={(e) => setForm({ ...form, provider: e.target.value })} /></div>
-            <div><Label>Próxima manutenção</Label><Input type="date" value={form.next_due_date || ""} onChange={(e) => setForm({ ...form, next_due_date: e.target.value })} /></div>
-          </div>
-          <div><Label>Notas</Label><Textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-        </div>
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onSave(form)}>Registar</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+
+            <FormField control={form.control} name="name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("assets.form.labels.name")}</FormLabel>
+                <FormControl><Input placeholder={t("assets.form.placeholders.name")} {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("assets.form.labels.description")}</FormLabel>
+                <FormControl><Textarea rows={2} placeholder={t("assets.form.placeholders.description")} {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="location" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.location")}</FormLabel>
+                  <FormControl><Input placeholder={t("assets.form.placeholders.location")} {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="serialNumber" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.serialNumber")}</FormLabel>
+                  <FormControl><Input placeholder={t("assets.form.placeholders.serialNumber")} {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="stationId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.station")}</FormLabel>
+                  <Select value={field.value || NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)}>
+                    <FormControl><SelectTrigger><SelectValue placeholder={t("assets.form.placeholders.none")} /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value={NONE}>{t("assets.form.placeholders.none")}</SelectItem>
+                      {estacoes.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="departmentId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.department")}</FormLabel>
+                  <Select value={field.value || NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)}>
+                    <FormControl><SelectTrigger><SelectValue placeholder={t("assets.form.placeholders.none")} /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value={NONE}>{t("assets.form.placeholders.none")}</SelectItem>
+                      {departamentos.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="responsibleUser" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.responsibleUser")}</FormLabel>
+                  <FormControl><Input placeholder={t("assets.form.placeholders.responsibleUser")} {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.status")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {ASSET_STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.acquisitionDate")}</FormLabel>
+                  <FormControl><Input type="date" {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="acquisitionCost" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.acquisitionCost")}</FormLabel>
+                  <FormControl><Input type="number" min="0" step="1000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="currentValue" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("assets.form.labels.currentValue")}</FormLabel>
+                  <FormControl><Input type="number" min="0" step="1000" {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("assets.form.labels.notes")}</FormLabel>
+                <FormControl><Textarea rows={2} placeholder={t("assets.form.placeholders.notes")} {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* --- Dialog: Manutenção --- */}
+      <EntityFormDialog
+        open={maintFormOpen}
+        onOpenChange={setMaintFormOpen}
+        title={maintEdit ? t("maintenances.dialog.editTitle") : t("maintenances.dialog.createTitle")}
+        form={maintForm}
+        submitLabel={maintEdit ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField control={form.control} name="assetId" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("maintenances.form.labels.asset")}</FormLabel>
+                <Select value={field.value || undefined} onValueChange={field.onChange}>
+                  <FormControl><SelectTrigger><SelectValue placeholder={t("maintenances.form.placeholders.assetSelect")} /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {allAssets.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <FormField control={form.control} name="date" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("maintenances.form.labels.date")}</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="type" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("maintenances.form.labels.type")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {MAINT_TYPES.map((mt) => <SelectItem key={mt} value={mt}>{t(`maintType.${mt}`)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="cost" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("maintenances.form.labels.cost")}</FormLabel>
+                  <FormControl><Input type="number" min="0" step="1000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("maintenances.form.labels.description")}</FormLabel>
+                <FormControl><Input placeholder={t("maintenances.form.placeholders.description")} {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="provider" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("maintenances.form.labels.provider")}</FormLabel>
+                  <FormControl><Input placeholder={t("maintenances.form.placeholders.provider")} {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="nextDueDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("maintenances.form.labels.nextDueDate")}</FormLabel>
+                  <FormControl><Input type="date" {...field} value={field.value ?? ""} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("maintenances.form.labels.notes")}</FormLabel>
+                <FormControl><Textarea rows={2} placeholder={t("maintenances.form.placeholders.notes")} {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </>
+        )}
+      </EntityFormDialog>
+
+      {/* --- Delete confirms --- */}
+      <DeleteConfirmDialog
+        open={!!assetDeleteId}
+        onOpenChange={(o) => !o && setAssetDeleteId(null)}
+        title={t("delete.title")}
+        description={t("delete.description")}
+        onConfirm={async () => {
+          if (!assetDeleteId) return;
+          await deleteAsset.mutateAsync(assetDeleteId);
+          setAssetDeleteId(null);
+        }}
+      />
+      <DeleteConfirmDialog
+        open={!!maintDeleteId}
+        onOpenChange={(o) => !o && setMaintDeleteId(null)}
+        title={t("delete.title")}
+        description={t("delete.description")}
+        onConfirm={async () => {
+          if (!maintDeleteId) return;
+          await deleteMaint.mutateAsync(maintDeleteId);
+          setMaintDeleteId(null);
+        }}
+      />
+
+      {/* --- Dialog: Detalhes do Activo --- */}
+      <Dialog open={!!assetView} onOpenChange={(o) => !o && setAssetView(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-serif">
+              <Package className="h-5 w-5 text-primary" /> {assetView?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {assetView && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{assetView.code}</Badge>
+                <Badge variant="outline">{t(`category.${assetView.category}`)}</Badge>
+                <Badge variant={statusVariant[assetView.status]}>{t(`status.${assetView.status}`)}</Badge>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("assets.details.location")}</p>
+                  <p className="font-medium">{assetView.location ?? t("assets.table.emptyCell")}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("assets.form.labels.station")}</p>
+                  <p className="font-medium">{stationName(assetView.stationId)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("assets.form.labels.department")}</p>
+                  <p className="font-medium">{departmentName(assetView.departmentId)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("assets.details.responsibleUser")}</p>
+                  <p className="font-medium">{assetView.responsibleUser ?? t("assets.table.emptyCell")}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("assets.details.serialNumber")}</p>
+                  <p className="font-medium">{assetView.serialNumber ?? t("assets.table.emptyCell")}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("assets.details.acquisitionDate")}</p>
+                  <p className="font-medium">{assetView.acquisitionDate ? formatDate(assetView.acquisitionDate) : t("assets.table.emptyCell")}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("assets.details.acquisitionCost")}</p>
+                  <p className="font-medium tabular-nums">{formatKwanza(Number(assetView.acquisitionCost))}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("assets.details.currentValue")}</p>
+                  <p className="font-medium tabular-nums">
+                    {assetView.currentValue != null ? formatKwanza(Number(assetView.currentValue)) : t("assets.table.emptyCell")}
+                  </p>
+                </div>
+              </div>
+              {assetView.description && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">{t("assets.details.description")}</p>
+                  <p className="text-sm">{assetView.description}</p>
+                </div>
+              )}
+              {assetView.notes && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">{t("assets.details.notes")}</p>
+                  <p className="text-sm">{assetView.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
