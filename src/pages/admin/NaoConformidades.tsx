@@ -1,198 +1,617 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import {
+  AlertTriangle,
+  ShieldAlert,
+  CalendarX,
+  Eye,
+  FileText,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { format } from "date-fns";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, AlertTriangle, Pencil, Trash2, Eye } from "lucide-react";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
 import { AttachedDocsPanel } from "@/components/admin/AttachedDocsPanel";
 import { OpenProcessButton } from "@/components/admin/OpenProcessButton";
-import { format } from "date-fns";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  useNaoConformidadesList,
+  useCreateNaoConformidade,
+  useDeleteNaoConformidade,
+  useUpdateNaoConformidade,
+} from "@/hooks/queries/useNaoConformidades";
+import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
+import { useAuditoriasList } from "@/hooks/queries/useAuditorias";
+import { SEVERITY_LEVEL, NC_STATUS } from "@/lib/domain-enums";
+import { generateInstitutionalPdf } from "@/lib/generateInstitutionalPdf";
+import { fadeIn } from "@/lib/motion";
+import type { NaoConformidadeDto } from "@/types/dto/naoConformidade";
+import i18n from "@/i18n";
+import ptNaoConformidades from "@/i18n/locales/pt/admin/nao-conformidades.json";
+import enNaoConformidades from "@/i18n/locales/en/admin/nao-conformidades.json";
 
-interface NC {
-  id: string; title: string; description: string; severity: string; status: string;
-  corrective_action: string | null; deadline: string | null; resolved_at: string | null;
-  department_id: string | null; audit_id: string | null;
-  departments?: { name: string } | null; quality_audits?: { title: string } | null;
+// Namespace autónomo registado em runtime (o bundle central só regista common/nav),
+// seguindo o padrão de Auditorias.tsx / Departamentos.tsx.
+if (!i18n.hasResourceBundle("pt", "admin-nao-conformidades"))
+  i18n.addResourceBundle("pt", "admin-nao-conformidades", ptNaoConformidades, true, true);
+if (!i18n.hasResourceBundle("en", "admin-nao-conformidades"))
+  i18n.addResourceBundle("en", "admin-nao-conformidades", enNaoConformidades, true, true);
+
+const SEVERITY_KEYS = Object.keys(SEVERITY_LEVEL);
+const NC_STATUS_KEYS = Object.keys(NC_STATUS);
+/** Sentinela para "sem departamento/auditoria" — o <Select> shadcn não aceita valor "". */
+const NONE = "none";
+
+function buildNaoConformidadeSchema(t: TFunction) {
+  return z.object({
+    title: z.string().trim().min(2, t("validation.titleShort")),
+    description: z.string().trim().min(2, t("validation.descriptionShort")),
+    severity: z.string().min(1, t("validation.severityRequired")),
+    status: z.string().min(1),
+    departmentId: z.string(),
+    auditId: z.string(),
+    deadline: z.string().optional(),
+    correctiveAction: z.string().trim().optional(),
+  });
 }
 
-const sevMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
-  menor: { label: "Menor", variant: "secondary" }, maior: { label: "Maior", variant: "default" }, critica: { label: "Crítica", variant: "destructive" },
-};
-const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  aberta: { label: "Aberta", variant: "destructive" }, em_resolucao: { label: "Em Resolução", variant: "secondary" },
-  resolvida: { label: "Resolvida", variant: "default" }, encerrada: { label: "Encerrada", variant: "outline" },
-};
+type NaoConformidadeFormValues = z.infer<ReturnType<typeof buildNaoConformidadeSchema>>;
+
+/** Uma NC ainda "por resolver" (não resolvida nem encerrada). */
+function isOpen(nc: NaoConformidadeDto): boolean {
+  return nc.status === "aberta" || nc.status === "em_resolucao";
+}
+
+/** Prazo vencido: tem prazo, não está resolvida, e a data já passou. */
+function isOverdue(nc: NaoConformidadeDto): boolean {
+  return Boolean(nc.deadline) && isOpen(nc) && new Date(nc.deadline as string) < new Date();
+}
 
 export default function NaoConformidades() {
-  const [ncs, setNcs] = useState<NC[]>([]);
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
-  const [audits, setAudits] = useState<{ id: string; title: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const { t } = useTranslation("admin-nao-conformidades");
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("nao-conformidades");
+  const prefersReduced = useReducedMotion();
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewItem, setViewItem] = useState<NC | null>(null);
-  const [editItem, setEditItem] = useState<NC | null>(null);
-  const { toast } = useToast();
-  const pag = usePagination(20);
+  const [viewItem, setViewItem] = useState<NaoConformidadeDto | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<NaoConformidadeDto | null>(null);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [severity, setSeverity] = useState("menor");
-  const [statusVal, setStatusVal] = useState("aberta");
-  const [deptId, setDeptId] = useState("");
-  const [auditId, setAuditId] = useState("");
-  const [corrective, setCorrective] = useState("");
-  const [deadline, setDeadline] = useState("");
+  const { data, isLoading } = useNaoConformidadesList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [ncRes, dRes, aRes] = await Promise.all([
-      supabase.from("nonconformities")
-        .select("*, departments(name), quality_audits(title)", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(pag.from, pag.to),
-      supabase.from("departments").select("id, name").order("name"),
-      supabase.from("quality_audits").select("id, title").order("title"),
-    ]);
-    setNcs((ncRes.data as any[]) ?? []);
-    pag.setTotal(ncRes.count ?? 0);
-    setDepartments((dRes.data as any[]) ?? []);
-    setAudits((aRes.data as any[]) ?? []);
-    setLoading(false);
-  };
+  // Selects de FK — usam os módulos já migrados (dados reais via MSW).
+  const { data: deptData } = useDepartamentosList({ perPage: 100 });
+  const { data: auditData } = useAuditoriasList({ perPage: 100 });
+  const departamentos = deptData?.data ?? [];
+  const auditorias = auditData?.data ?? [];
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
+  const createNaoConformidade = useCreateNaoConformidade();
+  const updateNaoConformidade = useUpdateNaoConformidade();
+  const deleteNaoConformidade = useDeleteNaoConformidade();
 
-  const resetForm = () => { setTitle(""); setDescription(""); setSeverity("menor"); setStatusVal("aberta"); setDeptId(""); setAuditId(""); setCorrective(""); setDeadline(""); };
+  const ncSchema = useMemo(() => buildNaoConformidadeSchema(t), [t]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from("nonconformities").insert({
-      title, description, severity, department_id: deptId || null,
-      audit_id: auditId || null, corrective_action: corrective || null, deadline: deadline || null,
-    } as any);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Não-conformidade registada" }); setOpen(false); resetForm(); fetchData();
-  };
-
-  const openEdit = (nc: NC) => {
-    setEditItem(nc); setTitle(nc.title); setDescription(nc.description); setSeverity(nc.severity);
-    setStatusVal(nc.status); setDeptId(nc.department_id || ""); setAuditId(nc.audit_id || "");
-    setCorrective(nc.corrective_action || ""); setDeadline(nc.deadline || ""); setEditOpen(true);
-  };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editItem) return;
-    const update: any = {
-      title, description, severity, status: statusVal,
-      department_id: deptId || null, audit_id: auditId || null,
-      corrective_action: corrective || null, deadline: deadline || null,
-    };
-    if (statusVal === "resolvida" && editItem.status !== "resolvida") update.resolved_at = new Date().toISOString();
-    const { error } = await supabase.from("nonconformities").update(update).eq("id", editItem.id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Não-conformidade actualizada" }); setEditOpen(false); setEditItem(null); resetForm(); fetchData();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("nonconformities").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Não-conformidade eliminada" }); setDeleteId(null); fetchData();
-  };
-
-  const formFields = (
-    <>
-      <div><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} required /></div>
-      <div><Label>Descrição</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} required /></div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Gravidade</Label>
-          <Select value={severity} onValueChange={setSeverity}><SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="menor">Menor</SelectItem><SelectItem value="maior">Maior</SelectItem><SelectItem value="critica">Crítica</SelectItem></SelectContent>
-          </Select>
-        </div>
-        <div><Label>Prazo</Label><Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Departamento</Label>
-          <Select value={deptId} onValueChange={setDeptId}><SelectTrigger><SelectValue placeholder="(Opcional)" /></SelectTrigger>
-            <SelectContent>{departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div><Label>Auditoria</Label>
-          <Select value={auditId} onValueChange={setAuditId}><SelectTrigger><SelectValue placeholder="(Opcional)" /></SelectTrigger>
-            <SelectContent>{audits.map((a) => <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div><Label>Acção Correctiva</Label><Textarea value={corrective} onChange={(e) => setCorrective(e.target.value)} /></div>
-    </>
+  const initialValues = useMemo<Partial<NaoConformidadeFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            title: editItem.title,
+            description: editItem.description,
+            severity: editItem.severity,
+            status: editItem.status,
+            departmentId: editItem.departmentId ?? NONE,
+            auditId: editItem.auditId ?? NONE,
+            deadline: editItem.deadline ?? "",
+            correctiveAction: editItem.correctiveAction ?? "",
+          }
+        : undefined,
+    [editItem],
   );
 
+  const entityForm = useEntityForm({
+    schema: ncSchema,
+    initialValues,
+    defaultValues: {
+      title: "",
+      description: "",
+      severity: "menor",
+      status: "aberta",
+      departmentId: NONE,
+      auditId: NONE,
+      deadline: "",
+      correctiveAction: "",
+    },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const payload = {
+        title: values.title,
+        description: values.description,
+        severity: values.severity,
+        status: values.status,
+        departmentId: values.departmentId === NONE ? null : values.departmentId,
+        auditId: values.auditId === NONE ? null : values.auditId,
+        deadline: values.deadline?.trim() ? values.deadline : null,
+        correctiveAction: values.correctiveAction?.trim() ? values.correctiveAction.trim() : null,
+      };
+      if (editItem) {
+        await updateNaoConformidade.mutateAsync({ id: editItem.id, payload });
+      } else {
+        await createNaoConformidade.mutateAsync(payload);
+      }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (nc: NaoConformidadeDto) => {
+    setEditItem(nc);
+    setFormOpen(true);
+  };
+
+  const rows = data?.data ?? [];
+  const kpiOpen = useMemo(() => rows.filter(isOpen).length, [rows]);
+  const kpiCritical = useMemo(
+    () => rows.filter((nc) => nc.severity === "critica" && isOpen(nc)).length,
+    [rows],
+  );
+  const kpiOverdue = useMemo(() => rows.filter(isOverdue).length, [rows]);
+
+  const severityLabel = (severity: string) =>
+    SEVERITY_LEVEL[severity] ? t(`severity.${severity}`) : severity;
+  const severityVariant = (severity: string) => SEVERITY_LEVEL[severity]?.variant ?? "secondary";
+  const statusLabel = (status: string) => (NC_STATUS[status] ? t(`status.${status}`) : status);
+  const statusVariant = (status: string) => NC_STATUS[status]?.variant ?? "outline";
+  const fmtDate = (value: string | null) => (value ? format(new Date(value), "dd/MM/yyyy") : "—");
+
+  const generatePDF = async () => {
+    await generateInstitutionalPdf({
+      title: t("pdf.subtitle"),
+      filename: t("pdf.filename"),
+      sections: [
+        {
+          type: "table",
+          head: [
+            [
+              t("table.title"),
+              t("table.severity"),
+              t("table.status"),
+              t("table.department"),
+              t("table.deadline"),
+            ],
+          ],
+          body: rows.map((nc) => [
+            nc.title,
+            severityLabel(nc.severity),
+            statusLabel(nc.status),
+            nc.departmentName ?? "—",
+            fmtDate(nc.deadline),
+          ]),
+        },
+      ],
+    });
+  };
+
+  const columns = useMemo<ColumnDef<NaoConformidadeDto>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.title")} />,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2 font-medium">
+            <AlertTriangle
+              className={`h-4 w-4 ${
+                row.original.severity === "critica" ? "text-destructive" : "text-secondary"
+              }`}
+            />
+            {row.original.title}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "severity",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.severity")} />,
+        cell: ({ row }) => (
+          <Badge variant={severityVariant(row.original.severity)}>
+            {severityLabel(row.original.severity)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) => (
+          <Badge variant={statusVariant(row.original.status)}>{statusLabel(row.original.status)}</Badge>
+        ),
+      },
+      {
+        accessorKey: "departmentName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("table.department")} />
+        ),
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">
+            {row.original.departmentName ?? t("table.emptyCell")}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "deadline",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.deadline")} />,
+        cell: ({ row }) =>
+          row.original.deadline ? (
+            <span className={isOverdue(row.original) ? "text-destructive font-medium" : ""}>
+              {fmtDate(row.original.deadline)}
+            </span>
+          ) : (
+            t("table.emptyCell")
+          ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t],
+  );
+
+  const renderRowActions = (row: NaoConformidadeDto) => {
+    const actions: RowAction[] = [
+      { label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) },
+    ];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return <RowActions actions={actions} />;
+  };
+
+  const motionProps = prefersReduced
+    ? {}
+    : { initial: "hidden" as const, animate: "visible" as const, variants: fadeIn };
+
   return (
-    <div className="space-y-6">
-      <AdminPageHeader icon={AlertTriangle} title="Não-Conformidades" description="Registo e acompanhamento de não-conformidades">
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Nova NC</Button></DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle className="font-serif">Registar Não-Conformidade</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">{formFields}<Button type="submit" className="w-full">Registar</Button></form>
-          </DialogContent>
-        </Dialog>
+    <motion.div className="space-y-6" {...motionProps}>
+      <AdminPageHeader icon={AlertTriangle} title={t("page.title")} description={t("page.description")}>
+        {rows.length > 0 && (
+          <Button variant="outline" onClick={generatePDF}>
+            <FileText className="mr-2 h-4 w-4" /> {t("actions.pdf")}
+          </Button>
+        )}
+        <WriteGuard module="nao-conformidades">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) { setEditItem(null); resetForm(); } }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-serif">Editar Não-Conformidade</DialogTitle></DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">
-            {formFields}
-            <div><Label>Estado</Label>
-              <Select value={statusVal} onValueChange={setStatusVal}><SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{Object.entries(statusMap).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" className="w-full">Guardar Alterações</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <AdminCard
+          variant="gradient-green"
+          icon={AlertTriangle}
+          metric={kpiOpen}
+          title={t("kpis.open")}
+          caption={t("kpis.openCaption")}
+          stagger={1}
+        />
+        <AdminCard
+          variant="gradient-gold"
+          icon={ShieldAlert}
+          metric={kpiCritical}
+          title={t("kpis.critical")}
+          caption={t("kpis.criticalCaption")}
+          stagger={2}
+        />
+        <AdminCard
+          variant="gradient-teal"
+          icon={CalendarX}
+          metric={kpiOverdue}
+          title={t("kpis.overdue")}
+          caption={t("kpis.overdueCaption")}
+          stagger={3}
+        />
+      </div>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.title")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.title")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.description")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t("form.placeholders.description")}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="severity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.severity")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("form.placeholders.severity")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SEVERITY_KEYS.map((k) => (
+                          <SelectItem key={k} value={k}>
+                            {t(`severity.${k}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="deadline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.deadline")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="departmentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.department")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("form.placeholders.department")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>{t("form.placeholders.none")}</SelectItem>
+                        {departamentos.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="auditId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.audit")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("form.placeholders.audit")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>{t("form.placeholders.none")}</SelectItem>
+                        {auditorias.map((a) => (
+                          <SelectItem key={a.id} value={a.id}>
+                            {a.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            {editItem && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.status")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {NC_STATUS_KEYS.map((k) => (
+                          <SelectItem key={k} value={k}>
+                            {t(`status.${k}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            <FormField
+              control={form.control}
+              name="correctiveAction"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.correctiveAction")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t("form.placeholders.correctiveAction")}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </EntityFormDialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await deleteNaoConformidade.mutateAsync(deleteId);
+          setDeleteId(null);
+        }}
+      />
 
       <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-serif">Detalhes da Não-Conformidade</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-serif">{t("dialog.detailsTitle")}</DialogTitle>
+          </DialogHeader>
           {viewItem && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Título:</span><p className="font-medium">{viewItem.title}</p></div>
-                <div><span className="text-muted-foreground">Gravidade:</span><p><Badge variant={(sevMap[viewItem.severity] ?? sevMap.menor).variant}>{(sevMap[viewItem.severity] ?? sevMap.menor).label}</Badge></p></div>
-                <div><span className="text-muted-foreground">Estado:</span><p><Badge variant={(statusMap[viewItem.status] ?? statusMap.aberta).variant}>{(statusMap[viewItem.status] ?? statusMap.aberta).label}</Badge></p></div>
-                <div><span className="text-muted-foreground">Departamento:</span><p className="font-medium">{viewItem.departments?.name ?? "—"}</p></div>
-                <div><span className="text-muted-foreground">Auditoria:</span><p className="font-medium">{viewItem.quality_audits?.title ?? "—"}</p></div>
-                <div><span className="text-muted-foreground">Prazo:</span><p className="font-medium">{viewItem.deadline ? format(new Date(viewItem.deadline), "dd/MM/yyyy") : "—"}</p></div>
-                <div><span className="text-muted-foreground">Resolvida em:</span><p className="font-medium">{viewItem.resolved_at ? format(new Date(viewItem.resolved_at), "dd/MM/yyyy") : "—"}</p></div>
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-muted-foreground">{t("details.title")}:</span>
+                  <p className="font-medium">{viewItem.title}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.severity")}:</span>
+                  <p>
+                    <Badge variant={severityVariant(viewItem.severity)}>
+                      {severityLabel(viewItem.severity)}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.status")}:</span>
+                  <p>
+                    <Badge variant={statusVariant(viewItem.status)}>
+                      {statusLabel(viewItem.status)}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.department")}:</span>
+                  <p className="font-medium">{viewItem.departmentName ?? "—"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.audit")}:</span>
+                  <p className="font-medium">{viewItem.auditTitle ?? "—"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.deadline")}:</span>
+                  <p className="font-medium">{fmtDate(viewItem.deadline)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.resolvedAt")}:</span>
+                  <p className="font-medium">{fmtDate(viewItem.resolvedAt)}</p>
+                </div>
               </div>
-              <div><span className="text-muted-foreground">Descrição:</span><p className="font-medium mt-1 whitespace-pre-wrap">{viewItem.description}</p></div>
-              {viewItem.corrective_action && <div><span className="text-muted-foreground">Acção Correctiva:</span><p className="font-medium mt-1 whitespace-pre-wrap">{viewItem.corrective_action}</p></div>}
+              <div>
+                <span className="text-muted-foreground">{t("details.description")}:</span>
+                <p className="font-medium mt-1 whitespace-pre-wrap">{viewItem.description}</p>
+              </div>
+              {viewItem.correctiveAction && (
+                <div>
+                  <span className="text-muted-foreground">{t("details.correctiveAction")}:</span>
+                  <p className="font-medium mt-1 whitespace-pre-wrap">{viewItem.correctiveAction}</p>
+                </div>
+              )}
 
               <AttachedDocsPanel entityType="nonconformity" entityId={viewItem.id} />
 
               <div className="flex justify-end pt-2 border-t border-border/40">
                 <OpenProcessButton
-                  entityType="nonconformity" entityId={viewItem.id}
+                  entityType="nonconformity"
+                  entityId={viewItem.id}
                   defaultTitle={`NC: ${viewItem.title}`}
                   defaultTypeHint="Não Conformidade"
                 />
@@ -201,52 +620,6 @@ export default function NaoConformidades() {
           )}
         </DialogContent>
       </Dialog>
-
-      <AdminCard title="Não-Conformidades Registadas" icon={AlertTriangle} loading={loading} isEmpty={ncs.length === 0} emptyMessage="Nenhuma não-conformidade registada.">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead><TableHead>Gravidade</TableHead><TableHead>Estado</TableHead>
-                <TableHead>Departamento</TableHead><TableHead>Prazo</TableHead><TableHead className="w-24">Acções</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ncs.map((nc) => {
-                const sev = sevMap[nc.severity] ?? { label: nc.severity, variant: "secondary" as const };
-                const st = statusMap[nc.status] ?? { label: nc.status, variant: "outline" as const };
-                const overdue = nc.deadline && !nc.resolved_at && new Date(nc.deadline) < new Date();
-                return (
-                  <TableRow key={nc.id}>
-                    <TableCell className="font-medium"><div className="flex items-center gap-2"><AlertTriangle className={`h-4 w-4 ${nc.severity === "critica" ? "text-destructive" : "text-secondary"}`} />{nc.title}</div></TableCell>
-                    <TableCell><Badge variant={sev.variant}>{sev.label}</Badge></TableCell>
-                    <TableCell><Badge variant={st.variant}>{st.label}</Badge></TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{nc.departments?.name ?? "—"}</TableCell>
-                    <TableCell>{nc.deadline ? <span className={overdue ? "text-destructive font-medium" : ""}>{format(new Date(nc.deadline), "dd/MM/yyyy")}</span> : "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setViewItem(nc)}><Eye className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(nc)}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(nc.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
-    </div>
+    </motion.div>
   );
 }

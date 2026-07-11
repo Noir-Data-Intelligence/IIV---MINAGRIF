@@ -1,0 +1,79 @@
+{
+  "page": {
+    "title": "Auditoria do Sistema",
+    "description": "Eventos de login, alterações e acções críticas com rastreio completo"
+  },
+  "kpi": {
+    "total": {
+      "title": "Eventos totais",
+      "caption": "Registados no sistema"
+    },
+    "critical": {
+      "title": "Eventos críticos",
+      "caption": "Requerem atenção"
+    }
+  },
+  "filters": {
+    "title": "Filtros",
+    "action": "Acção",
+    "actionAll": "Todas",
+    "entityType": "Entidade",
+    "entityTypeAll": "Todas",
+    "dateFrom": "De",
+    "dateTo": "Até",
+    "clear": "Limpar filtros",
+    "export": "Exportar CSV"
+  },
+  "actions": {
+    "create": "Criação",
+    "update": "Alteração",
+    "delete": "Eliminação",
+    "login": "Login",
+    "logout": "Logout",
+    "critical": "Crítica"
+  },
+  "entityTypes": {
+    "auth": "Autenticação",
+    "sincronizacao": "Sincronização",
+    "departamentos": "Departamentos",
+    "laboratorios": "Laboratórios",
+    "analises": "Análises",
+    "resultados": "Resultados",
+    "lotes": "Lotes",
+    "planeamento": "Planeamento",
+    "distribuicao": "Distribuição",
+    "users": "Utilizadores",
+    "noticias": "Notícias",
+    "legislacao": "Legislação"
+  },
+  "table": {
+    "title": "Registos",
+    "dateTime": "Data/Hora",
+    "user": "Utilizador",
+    "action": "Acção",
+    "entity": "Entidade",
+    "ip": "IP",
+    "details": "Detalhes",
+    "system": "Sistema",
+    "empty": "Nenhum registo encontrado para os filtros aplicados.",
+    "emptyCell": "—"
+  },
+  "rowActions": {
+    "viewDetails": "Ver detalhes"
+  },
+  "detailsDialog": {
+    "title": "Detalhes do Evento",
+    "dateTime": "Data/Hora",
+    "user": "Utilizador",
+    "action": "Acção",
+    "entity": "Entidade",
+    "entityId": "ID da Entidade",
+    "ip": "Endereço IP",
+    "details": "Dados",
+    "noDetails": "Sem dados adicionais."
+  },
+  "export": {
+    "filenamePrefix": "auditoria",
+    "header": ["Data", "Utilizador", "Acção", "Entidade", "ID Entidade", "IP", "Detalhes"]
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "page": {
+    "title": "Auditorias",
+    "description": "Gestão de auditorias internas, externas e ISO"
+  },
+  "kpis": {
+    "total": "Total de Auditorias",
+    "totalCaption": "Registadas no sistema",
+    "completed": "Concluídas",
+    "completedCaption": "Com relatório fechado",
+    "pending": "Por Realizar",
+    "pendingCaption": "Planeadas ou em curso"
+  },
+  "actions": {
+    "new": "Nova Auditoria",
+    "pdf": "Exportar PDF",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "types": {
+    "interna": "Interna",
+    "externa": "Externa",
+    "ISO": "ISO"
+  },
+  "status": {
+    "planeada": "Planeada",
+    "em_curso": "Em Curso",
+    "concluida": "Concluída",
+    "cancelada": "Cancelada"
+  },
+  "form": {
+    "labels": {
+      "title": "Título",
+      "auditType": "Tipo",
+      "scheduledDate": "Data agendada",
+      "auditor": "Auditor",
+      "department": "Departamento",
+      "laboratory": "Laboratório",
+      "status": "Estado",
+      "findings": "Constatações",
+      "recommendations": "Recomendações"
+    },
+    "placeholders": {
+      "title": "Ex: Auditoria interna ao Laboratório de Virologia",
+      "auditType": "Seleccione o tipo",
+      "auditor": "Nome do auditor responsável",
+      "department": "(Opcional)",
+      "laboratory": "(Opcional)",
+      "findings": "Principais constatações da auditoria",
+      "recommendations": "Recomendações e acções propostas",
+      "none": "Nenhum"
+    },
+    "submitCreate": "Criar Auditoria",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Criar Auditoria",
+    "editTitle": "Editar Auditoria",
+    "detailsTitle": "Detalhes da Auditoria"
+  },
+  "details": {
+    "title": "Título",
+    "auditType": "Tipo",
+    "auditor": "Auditor",
+    "scheduledDate": "Data Agendada",
+    "completedDate": "Data de Conclusão",
+    "status": "Estado",
+    "department": "Departamento",
+    "laboratory": "Laboratório",
+    "findings": "Constatações",
+    "recommendations": "Recomendações"
+  },
+  "table": {
+    "title": "Título",
+    "type": "Tipo",
+    "auditor": "Auditor",
+    "date": "Data",
+    "status": "Estado",
+    "empty": "Nenhuma auditoria encontrada.",
+    "searchPlaceholder": "Pesquisar auditorias...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "titleShort": "Título demasiado curto",
+    "typeRequired": "Indique o tipo de auditoria",
+    "auditorRequired": "Indique o auditor responsável",
+    "dateRequired": "Indique a data agendada"
+  },
+  "pdf": {
+    "subtitle": "Relatório de Auditorias",
+    "filename": "auditorias"
+  },
+  "toast": {
+    "createSuccess": "Auditoria criada com sucesso",
+    "updateSuccess": "Auditoria actualizada",
+    "deleteSuccess": "Auditoria eliminada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

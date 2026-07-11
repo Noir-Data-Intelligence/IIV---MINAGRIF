@@ -91,7 +91,7 @@ const navGroups: NavGroup[] = [
       { icon: Dna, label: "Inseminação Artificial", path: "/admin/inseminacao", module: "inseminacao" },
       { icon: ClipboardCheck, label: "Auditorias", path: "/admin/auditorias", module: "auditorias" },
       { icon: AlertTriangle, label: "Não-Conformidades", path: "/admin/nao-conformidades", module: "nao-conformidades" },
-      { icon: Shield, label: "Auditoria", path: "/admin/logs", module: "logs" },
+      { icon: Shield, label: "Logs de Atividade", path: "/admin/logs", module: "logs" },
       { icon: ShieldCheck, label: "Acessibilidade", path: "/admin/acessibilidade", module: "acessibilidade" },
     ],
   },

@@ -1,226 +1,601 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import {
+  ClipboardCheck,
+  CheckCircle2,
+  CalendarClock,
+  Eye,
+  FileText,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { format } from "date-fns";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, ClipboardCheck, FileText, Pencil, Trash2, Eye } from "lucide-react";
-import { format } from "date-fns";
-import { pt } from "date-fns/locale";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { ensurePdfFonts, PDF_HEADING_FONT, PDF_BODY_FONT } from "@/lib/pdfFonts";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
 import { AttachedDocsPanel } from "@/components/admin/AttachedDocsPanel";
 import { OpenProcessButton } from "@/components/admin/OpenProcessButton";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  useAuditoriasList,
+  useCreateAuditoria,
+  useDeleteAuditoria,
+  useUpdateAuditoria,
+} from "@/hooks/queries/useAuditorias";
+import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
+import { useLaboratoriosList } from "@/hooks/queries/useLaboratorios";
+import { AUDIT_STATUS } from "@/lib/domain-enums";
+import { generateInstitutionalPdf } from "@/lib/generateInstitutionalPdf";
+import { fadeIn } from "@/lib/motion";
+import type { AuditoriaDto } from "@/types/dto/auditoria";
+import i18n from "@/i18n";
+import ptAuditorias from "@/i18n/locales/pt/admin/auditorias.json";
+import enAuditorias from "@/i18n/locales/en/admin/auditorias.json";
 
-interface Department { id: string; name: string; }
-interface Laboratory { id: string; name: string; }
-interface Audit {
-  id: string; title: string; audit_type: string; auditor: string;
-  scheduled_date: string; completed_date: string | null; status: string;
-  findings: string | null; recommendations: string | null;
-  department_id: string | null; laboratory_id: string | null;
-  departments?: Department | null; laboratories?: Laboratory | null;
+// Namespace autónomo registado em runtime (o bundle central só regista common/nav),
+// seguindo o padrão de Departamentos.tsx / Laboratorios.tsx.
+if (!i18n.hasResourceBundle("pt", "admin-auditorias"))
+  i18n.addResourceBundle("pt", "admin-auditorias", ptAuditorias, true, true);
+if (!i18n.hasResourceBundle("en", "admin-auditorias"))
+  i18n.addResourceBundle("en", "admin-auditorias", enAuditorias, true, true);
+
+const AUDIT_TYPE_KEYS = ["interna", "externa", "ISO"] as const;
+const AUDIT_STATUS_KEYS = Object.keys(AUDIT_STATUS);
+/** Sentinela para "sem departamento/laboratório" — o <Select> shadcn não aceita valor "". */
+const NONE = "none";
+
+function buildAuditoriaSchema(t: TFunction) {
+  return z.object({
+    title: z.string().trim().min(2, t("validation.titleShort")),
+    auditType: z.string().min(1, t("validation.typeRequired")),
+    auditor: z.string().trim().min(2, t("validation.auditorRequired")),
+    scheduledDate: z.string().min(1, t("validation.dateRequired")),
+    status: z.string().min(1),
+    departmentId: z.string(),
+    laboratoryId: z.string(),
+    findings: z.string().trim().optional(),
+    recommendations: z.string().trim().optional(),
+  });
 }
 
-const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  planeada: { label: "Planeada", variant: "outline" }, em_curso: { label: "Em Curso", variant: "secondary" },
-  concluida: { label: "Concluída", variant: "default" }, cancelada: { label: "Cancelada", variant: "destructive" },
-};
-const typeLabels: Record<string, string> = { interna: "Interna", externa: "Externa", ISO: "ISO" };
+type AuditoriaFormValues = z.infer<ReturnType<typeof buildAuditoriaSchema>>;
 
 export default function Auditorias() {
-  const [audits, setAudits] = useState<Audit[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [laboratories, setLaboratories] = useState<Laboratory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const { t } = useTranslation("admin-auditorias");
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("auditorias");
+  const prefersReduced = useReducedMotion();
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewItem, setViewItem] = useState<Audit | null>(null);
-  const [editItem, setEditItem] = useState<Audit | null>(null);
-  const { toast } = useToast();
-  const pag = usePagination(20);
+  const [viewItem, setViewItem] = useState<AuditoriaDto | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<AuditoriaDto | null>(null);
 
-  const [title, setTitle] = useState("");
-  const [auditType, setAuditType] = useState("");
-  const [auditor, setAuditor] = useState("");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [deptId, setDeptId] = useState("");
-  const [labId, setLabId] = useState("");
-  const [findings, setFindings] = useState("");
-  const [recommendations, setRecommendations] = useState("");
-  const [statusVal, setStatusVal] = useState("planeada");
+  const { data, isLoading } = useAuditoriasList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [aRes, dRes, lRes] = await Promise.all([
-      supabase.from("quality_audits")
-        .select("*, departments(id, name), laboratories(id, name)", { count: "exact" })
-        .order("scheduled_date", { ascending: false })
-        .range(pag.from, pag.to),
-      supabase.from("departments").select("id, name").order("name"),
-      supabase.from("laboratories").select("id, name").order("name"),
-    ]);
-    setAudits((aRes.data as any[]) ?? []);
-    pag.setTotal(aRes.count ?? 0);
-    setDepartments((dRes.data as Department[]) ?? []);
-    setLaboratories((lRes.data as Laboratory[]) ?? []);
-    setLoading(false);
-  };
+  // Selects de FK — usam os módulos já migrados (dados reais via MSW).
+  const { data: deptData } = useDepartamentosList({ perPage: 100 });
+  const { data: labData } = useLaboratoriosList({ perPage: 100 });
+  const departamentos = deptData?.data ?? [];
+  const laboratorios = labData?.data ?? [];
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
+  const createAuditoria = useCreateAuditoria();
+  const updateAuditoria = useUpdateAuditoria();
+  const deleteAuditoria = useDeleteAuditoria();
 
-  const resetForm = () => { setTitle(""); setAuditType(""); setAuditor(""); setScheduledDate(""); setDeptId(""); setLabId(""); setFindings(""); setRecommendations(""); setStatusVal("planeada"); };
+  const auditoriaSchema = useMemo(() => buildAuditoriaSchema(t), [t]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from("quality_audits").insert({
-      title, audit_type: auditType, auditor, scheduled_date: scheduledDate,
-      department_id: deptId || null, laboratory_id: labId || null,
-      findings: findings || null, recommendations: recommendations || null,
-    } as any);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Auditoria criada com sucesso" }); setOpen(false); resetForm(); fetchData();
-  };
-
-  const openEdit = (a: Audit) => {
-    setEditItem(a); setTitle(a.title); setAuditType(a.audit_type); setAuditor(a.auditor);
-    setScheduledDate(a.scheduled_date); setDeptId(a.department_id || ""); setLabId(a.laboratory_id || "");
-    setFindings(a.findings || ""); setRecommendations(a.recommendations || ""); setStatusVal(a.status); setEditOpen(true);
-  };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editItem) return;
-    const update: any = {
-      title, audit_type: auditType, auditor, scheduled_date: scheduledDate,
-      department_id: deptId || null, laboratory_id: labId || null,
-      findings: findings || null, recommendations: recommendations || null, status: statusVal,
-    };
-    if (statusVal === "concluida" && editItem.status !== "concluida") update.completed_date = new Date().toISOString().split("T")[0];
-    const { error } = await supabase.from("quality_audits").update(update).eq("id", editItem.id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Auditoria actualizada" }); setEditOpen(false); setEditItem(null); resetForm(); fetchData();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("quality_audits").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Auditoria eliminada" }); setDeleteId(null); fetchData();
-  };
-
-  const generatePDF = async () => {
-    const doc = new jsPDF();
-    await ensurePdfFonts(doc);
-    doc.setFont(PDF_HEADING_FONT, "bold");
-    doc.setFontSize(16); doc.text("Instituto de Investigação Veterinária", 105, 20, { align: "center" });
-    doc.setFontSize(11); doc.text("Relatório de Auditorias", 105, 28, { align: "center" });
-    doc.setFont(PDF_BODY_FONT, "normal");
-    doc.setFontSize(9); doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: pt })}`, 105, 34, { align: "center" });
-    autoTable(doc, {
-      startY: 42, head: [["Título", "Tipo", "Auditor", "Data", "Estado"]],
-      body: audits.map((a) => [a.title, typeLabels[a.audit_type] || a.audit_type, a.auditor, format(new Date(a.scheduled_date), "dd/MM/yyyy"), statusMap[a.status]?.label ?? a.status]),
-      styles: { font: PDF_BODY_FONT },
-      headStyles: { fillColor: [34, 87, 55], font: PDF_HEADING_FONT, fontStyle: "bold" },
-    });
-    doc.save("auditorias.pdf");
-  };
-
-  const formFields = (
-    <>
-      <div><Label>Título</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} required /></div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Tipo</Label>
-          <Select value={auditType} onValueChange={setAuditType} required>
-            <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
-            <SelectContent><SelectItem value="interna">Interna</SelectItem><SelectItem value="externa">Externa</SelectItem><SelectItem value="ISO">ISO</SelectItem></SelectContent>
-          </Select>
-        </div>
-        <div><Label>Data</Label><Input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} required /></div>
-      </div>
-      <div><Label>Auditor</Label><Input value={auditor} onChange={(e) => setAuditor(e.target.value)} required /></div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Departamento</Label>
-          <Select value={deptId} onValueChange={setDeptId}><SelectTrigger><SelectValue placeholder="(Opcional)" /></SelectTrigger>
-            <SelectContent>{departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div><Label>Laboratório</Label>
-          <Select value={labId} onValueChange={setLabId}><SelectTrigger><SelectValue placeholder="(Opcional)" /></SelectTrigger>
-            <SelectContent>{laboratories.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div><Label>Constatações</Label><Textarea value={findings} onChange={(e) => setFindings(e.target.value)} /></div>
-      <div><Label>Recomendações</Label><Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} /></div>
-    </>
+  const initialValues = useMemo<Partial<AuditoriaFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            title: editItem.title,
+            auditType: editItem.auditType,
+            auditor: editItem.auditor,
+            scheduledDate: editItem.scheduledDate,
+            status: editItem.status,
+            departmentId: editItem.departmentId ?? NONE,
+            laboratoryId: editItem.laboratoryId ?? NONE,
+            findings: editItem.findings ?? "",
+            recommendations: editItem.recommendations ?? "",
+          }
+        : undefined,
+    [editItem],
   );
 
+  const entityForm = useEntityForm({
+    schema: auditoriaSchema,
+    initialValues,
+    defaultValues: {
+      title: "",
+      auditType: "",
+      auditor: "",
+      scheduledDate: "",
+      status: "planeada",
+      departmentId: NONE,
+      laboratoryId: NONE,
+      findings: "",
+      recommendations: "",
+    },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const payload = {
+        title: values.title,
+        auditType: values.auditType,
+        auditor: values.auditor,
+        scheduledDate: values.scheduledDate,
+        status: values.status,
+        departmentId: values.departmentId === NONE ? null : values.departmentId,
+        laboratoryId: values.laboratoryId === NONE ? null : values.laboratoryId,
+        findings: values.findings?.trim() ? values.findings.trim() : null,
+        recommendations: values.recommendations?.trim() ? values.recommendations.trim() : null,
+      };
+      if (editItem) {
+        await updateAuditoria.mutateAsync({ id: editItem.id, payload });
+      } else {
+        await createAuditoria.mutateAsync(payload);
+      }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (a: AuditoriaDto) => {
+    setEditItem(a);
+    setFormOpen(true);
+  };
+
+  const rows = data?.data ?? [];
+  const kpiTotal = data?.meta.total ?? 0;
+  const kpiCompleted = useMemo(() => rows.filter((a) => a.status === "concluida").length, [rows]);
+  const kpiPending = useMemo(
+    () => rows.filter((a) => a.status === "planeada" || a.status === "em_curso").length,
+    [rows],
+  );
+
+  const statusLabel = (status: string) =>
+    AUDIT_STATUS[status] ? t(`status.${status}`) : status;
+  const statusVariant = (status: string) => AUDIT_STATUS[status]?.variant ?? "outline";
+  const typeLabel = (type: string) =>
+    (AUDIT_TYPE_KEYS as readonly string[]).includes(type) ? t(`types.${type}`) : type;
+  const fmtDate = (value: string | null) => (value ? format(new Date(value), "dd/MM/yyyy") : "—");
+
+  const generatePDF = async () => {
+    await generateInstitutionalPdf({
+      title: t("pdf.subtitle"),
+      filename: t("pdf.filename"),
+      sections: [
+        {
+          type: "table",
+          head: [
+            [
+              t("table.title"),
+              t("table.type"),
+              t("table.auditor"),
+              t("table.date"),
+              t("table.status"),
+            ],
+          ],
+          body: rows.map((a) => [
+            a.title,
+            typeLabel(a.auditType),
+            a.auditor,
+            fmtDate(a.scheduledDate),
+            statusLabel(a.status),
+          ]),
+        },
+      ],
+    });
+  };
+
+  const columns = useMemo<ColumnDef<AuditoriaDto>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.title")} />,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2 font-medium">
+            <ClipboardCheck className="h-4 w-4 text-primary" />
+            {row.original.title}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "auditType",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.type")} />,
+        cell: ({ row }) => <Badge variant="secondary">{typeLabel(row.original.auditType)}</Badge>,
+      },
+      {
+        accessorKey: "auditor",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.auditor")} />,
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.auditor}</span>,
+      },
+      {
+        accessorKey: "scheduledDate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.date")} />,
+        cell: ({ row }) => fmtDate(row.original.scheduledDate),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) => (
+          <Badge variant={statusVariant(row.original.status)}>{statusLabel(row.original.status)}</Badge>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t],
+  );
+
+  const renderRowActions = (row: AuditoriaDto) => {
+    const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) }];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return <RowActions actions={actions} />;
+  };
+
+  const motionProps = prefersReduced
+    ? {}
+    : { initial: "hidden" as const, animate: "visible" as const, variants: fadeIn };
+
   return (
-    <div className="space-y-6">
-      <AdminPageHeader icon={ClipboardCheck} title="Auditorias" description="Gestão de auditorias internas, externas e ISO">
-        {audits.length > 0 && <Button variant="outline" onClick={generatePDF}><FileText className="mr-2 h-4 w-4" /> PDF</Button>}
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Nova Auditoria</Button></DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle className="font-serif">Criar Auditoria</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">{formFields}<Button type="submit" className="w-full" disabled={!auditType}>Criar Auditoria</Button></form>
-          </DialogContent>
-        </Dialog>
+    <motion.div className="space-y-6" {...motionProps}>
+      <AdminPageHeader icon={ClipboardCheck} title={t("page.title")} description={t("page.description")}>
+        {rows.length > 0 && (
+          <Button variant="outline" onClick={generatePDF}>
+            <FileText className="mr-2 h-4 w-4" /> {t("actions.pdf")}
+          </Button>
+        )}
+        <WriteGuard module="auditorias">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) { setEditItem(null); resetForm(); } }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-serif">Editar Auditoria</DialogTitle></DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">
-            {formFields}
-            <div><Label>Estado</Label>
-              <Select value={statusVal} onValueChange={setStatusVal}><SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{Object.entries(statusMap).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" className="w-full" disabled={!auditType}>Guardar Alterações</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <AdminCard
+          variant="gradient-green"
+          icon={ClipboardCheck}
+          metric={kpiTotal}
+          title={t("kpis.total")}
+          caption={t("kpis.totalCaption")}
+          stagger={1}
+        />
+        <AdminCard
+          variant="gradient-teal"
+          icon={CheckCircle2}
+          metric={kpiCompleted}
+          title={t("kpis.completed")}
+          caption={t("kpis.completedCaption")}
+          stagger={2}
+        />
+        <AdminCard
+          variant="gradient-gold"
+          icon={CalendarClock}
+          metric={kpiPending}
+          title={t("kpis.pending")}
+          caption={t("kpis.pendingCaption")}
+          stagger={3}
+        />
+      </div>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.title")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.title")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="auditType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.auditType")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("form.placeholders.auditType")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {AUDIT_TYPE_KEYS.map((k) => (
+                          <SelectItem key={k} value={k}>
+                            {t(`types.${k}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="scheduledDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.scheduledDate")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="auditor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.auditor")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.auditor")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="departmentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.department")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("form.placeholders.department")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>{t("form.placeholders.none")}</SelectItem>
+                        {departamentos.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="laboratoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.laboratory")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("form.placeholders.laboratory")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>{t("form.placeholders.none")}</SelectItem>
+                        {laboratorios.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>
+                            {l.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            {editItem && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.status")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {AUDIT_STATUS_KEYS.map((k) => (
+                          <SelectItem key={k} value={k}>
+                            {t(`status.${k}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            <FormField
+              control={form.control}
+              name="findings"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.findings")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t("form.placeholders.findings")}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="recommendations"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.recommendations")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={t("form.placeholders.recommendations")}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </EntityFormDialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await deleteAuditoria.mutateAsync(deleteId);
+          setDeleteId(null);
+        }}
+      />
 
       <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-serif">Detalhes da Auditoria</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-serif">{t("dialog.detailsTitle")}</DialogTitle>
+          </DialogHeader>
           {viewItem && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Título:</span><p className="font-medium">{viewItem.title}</p></div>
-                <div><span className="text-muted-foreground">Tipo:</span><p className="font-medium">{typeLabels[viewItem.audit_type] || viewItem.audit_type}</p></div>
-                <div><span className="text-muted-foreground">Auditor:</span><p className="font-medium">{viewItem.auditor}</p></div>
-                <div><span className="text-muted-foreground">Data Agendada:</span><p className="font-medium">{format(new Date(viewItem.scheduled_date), "dd/MM/yyyy")}</p></div>
-                <div><span className="text-muted-foreground">Data Conclusão:</span><p className="font-medium">{viewItem.completed_date ? format(new Date(viewItem.completed_date), "dd/MM/yyyy") : "—"}</p></div>
-                <div><span className="text-muted-foreground">Estado:</span><p><Badge variant={(statusMap[viewItem.status] ?? statusMap.planeada).variant}>{(statusMap[viewItem.status] ?? statusMap.planeada).label}</Badge></p></div>
-                <div><span className="text-muted-foreground">Departamento:</span><p className="font-medium">{viewItem.departments?.name ?? "—"}</p></div>
-                <div><span className="text-muted-foreground">Laboratório:</span><p className="font-medium">{viewItem.laboratories?.name ?? "—"}</p></div>
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-muted-foreground">{t("details.title")}:</span>
+                  <p className="font-medium">{viewItem.title}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.auditType")}:</span>
+                  <p className="font-medium">{typeLabel(viewItem.auditType)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.auditor")}:</span>
+                  <p className="font-medium">{viewItem.auditor}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.status")}:</span>
+                  <p>
+                    <Badge variant={statusVariant(viewItem.status)}>{statusLabel(viewItem.status)}</Badge>
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.scheduledDate")}:</span>
+                  <p className="font-medium">{fmtDate(viewItem.scheduledDate)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.completedDate")}:</span>
+                  <p className="font-medium">{fmtDate(viewItem.completedDate)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.department")}:</span>
+                  <p className="font-medium">{viewItem.departmentName ?? "—"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.laboratory")}:</span>
+                  <p className="font-medium">{viewItem.laboratoryName ?? "—"}</p>
+                </div>
               </div>
-              {viewItem.findings && <div><span className="text-muted-foreground">Constatações:</span><p className="font-medium mt-1 whitespace-pre-wrap">{viewItem.findings}</p></div>}
-              {viewItem.recommendations && <div><span className="text-muted-foreground">Recomendações:</span><p className="font-medium mt-1 whitespace-pre-wrap">{viewItem.recommendations}</p></div>}
+              {viewItem.findings && (
+                <div>
+                  <span className="text-muted-foreground">{t("details.findings")}:</span>
+                  <p className="font-medium mt-1 whitespace-pre-wrap">{viewItem.findings}</p>
+                </div>
+              )}
+              {viewItem.recommendations && (
+                <div>
+                  <span className="text-muted-foreground">{t("details.recommendations")}:</span>
+                  <p className="font-medium mt-1 whitespace-pre-wrap">{viewItem.recommendations}</p>
+                </div>
+              )}
 
               <AttachedDocsPanel entityType="audit" entityId={viewItem.id} />
 
               <div className="flex justify-end pt-2 border-t border-border/40">
                 <OpenProcessButton
-                  entityType="audit" entityId={viewItem.id}
+                  entityType="audit"
+                  entityId={viewItem.id}
                   defaultTitle={`Auditoria: ${viewItem.title}`}
                   defaultTypeHint="Parecer Técnico"
                 />
@@ -229,50 +604,6 @@ export default function Auditorias() {
           )}
         </DialogContent>
       </Dialog>
-
-      <AdminCard title="Auditorias Registadas" icon={ClipboardCheck} loading={loading} isEmpty={audits.length === 0} emptyMessage="Nenhuma auditoria registada.">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead><TableHead>Tipo</TableHead><TableHead>Auditor</TableHead>
-                <TableHead>Data</TableHead><TableHead>Estado</TableHead><TableHead className="w-24">Acções</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {audits.map((a) => {
-                const s = statusMap[a.status] ?? { label: a.status, variant: "outline" as const };
-                return (
-                  <TableRow key={a.id}>
-                    <TableCell className="font-medium"><div className="flex items-center gap-2"><ClipboardCheck className="h-4 w-4 text-primary" />{a.title}</div></TableCell>
-                    <TableCell><Badge variant="secondary">{typeLabels[a.audit_type] || a.audit_type}</Badge></TableCell>
-                    <TableCell>{a.auditor}</TableCell>
-                    <TableCell>{format(new Date(a.scheduled_date), "dd/MM/yyyy")}</TableCell>
-                    <TableCell><Badge variant={s.variant}>{s.label}</Badge></TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setViewItem(a)}><Eye className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(a)}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(a.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
-    </div>
+    </motion.div>
   );
 }

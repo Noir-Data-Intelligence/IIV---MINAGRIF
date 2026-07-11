@@ -1,0 +1,158 @@
+{
+  "page": {
+    "title": "Animals",
+    "description": "Individual animal traceability across zootechnical stations"
+  },
+  "kpi": {
+    "total": "Total Animals",
+    "totalCaption": "Registered in the system",
+    "active": "Active Animals",
+    "activeCaption": "In the herd",
+    "males": "Active Males",
+    "malesCaption": "Breeders and others",
+    "females": "Active Females",
+    "femalesCaption": "Breeding stock"
+  },
+  "actions": {
+    "new": "New Animal",
+    "view": "View record",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "sex": {
+    "macho": "Male",
+    "femea": "Female"
+  },
+  "status": {
+    "activo": "Active",
+    "vendido": "Sold",
+    "morto": "Dead",
+    "abatido": "Slaughtered",
+    "transferido": "Transferred"
+  },
+  "eventTypes": {
+    "nascimento": "Birth",
+    "pesagem": "Weighing",
+    "vacinacao": "Vaccination",
+    "tratamento": "Treatment",
+    "transferencia": "Transfer",
+    "venda": "Sale",
+    "morte": "Death",
+    "abate": "Slaughter",
+    "observacao": "Observation"
+  },
+  "recordTypes": {
+    "vacina": "Vaccine",
+    "tratamento": "Treatment",
+    "diagnostico": "Diagnosis",
+    "desparasitacao": "Deworming"
+  },
+  "filters": {
+    "allStations": "All stations",
+    "allStatuses": "All statuses",
+    "station": "Station",
+    "status": "Status"
+  },
+  "form": {
+    "labels": {
+      "station": "Station",
+      "tag": "Tag",
+      "name": "Name (optional)",
+      "species": "Species",
+      "breed": "Breed",
+      "sex": "Sex",
+      "birthDate": "Birth date",
+      "motherTag": "Mother's tag",
+      "fatherTag": "Father's tag",
+      "status": "Status",
+      "weight": "Current weight (kg)",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "station": "Select station",
+      "tag": "e.g. BR-0001",
+      "name": "e.g. Mimosa",
+      "species": "e.g. Cattle",
+      "breed": "e.g. Nelore",
+      "sex": "Select",
+      "status": "Select status",
+      "notes": "Additional notes about the animal"
+    },
+    "submitCreate": "Create Animal",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Register Animal",
+    "editTitle": "Edit Animal",
+    "detailsTitle": "Animal Record"
+  },
+  "detail": {
+    "tabs": {
+      "ficha": "Record",
+      "eventos": "Events",
+      "saude": "Health"
+    },
+    "fields": {
+      "species": "Species",
+      "breed": "Breed",
+      "sex": "Sex",
+      "birthDate": "Birth",
+      "mother": "Mother",
+      "father": "Father",
+      "weight": "Weight",
+      "status": "Status",
+      "station": "Station",
+      "notes": "Notes"
+    },
+    "events": {
+      "new": "New event",
+      "empty": "No events recorded.",
+      "dialogTitle": "Record event",
+      "type": "Type",
+      "date": "Date",
+      "notes": "Notes",
+      "submit": "Record"
+    },
+    "health": {
+      "new": "New record",
+      "empty": "No health records.",
+      "dialogTitle": "Health record",
+      "type": "Type",
+      "product": "Product",
+      "dosage": "Dosage",
+      "diagnosis": "Diagnosis",
+      "treatment": "Treatment",
+      "veterinarian": "Veterinarian",
+      "date": "Date",
+      "nextDate": "Next date",
+      "next": "Next",
+      "submit": "Save"
+    }
+  },
+  "table": {
+    "tag": "Tag",
+    "speciesBreed": "Species / Breed",
+    "sex": "Sex",
+    "station": "Station",
+    "status": "Status",
+    "empty": "No animals found.",
+    "searchPlaceholder": "Search by tag, name or species...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "stationRequired": "Select a station",
+    "tagShort": "Enter the tag",
+    "speciesRequired": "Enter the species",
+    "sexRequired": "Select the sex"
+  },
+  "toast": {
+    "createSuccess": "Animal registered successfully",
+    "updateSuccess": "Animal updated",
+    "deleteSuccess": "Animal deleted",
+    "eventSuccess": "Event recorded",
+    "healthSuccess": "Health record created",
+    "error": "An error occurred. Please try again."
+  }
+}

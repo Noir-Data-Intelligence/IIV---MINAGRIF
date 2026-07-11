@@ -1,0 +1,80 @@
+{
+  "page": {
+    "title": "Stations",
+    "description": "Management of zootechnical and experimental stations"
+  },
+  "kpi": {
+    "total": "Total Stations",
+    "totalCaption": "Registered in the system",
+    "active": "Active Stations",
+    "activeCaption": "In operation",
+    "types": "Types",
+    "typesCaption": "Distinct categories"
+  },
+  "actions": {
+    "new": "New Station",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "types": {
+    "zootecnica": "Zootechnical",
+    "experimental": "Experimental",
+    "campo": "Field"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "form": {
+    "labels": {
+      "name": "Name",
+      "type": "Type",
+      "location": "Location",
+      "description": "Description",
+      "active": "Active station"
+    },
+    "placeholders": {
+      "name": "e.g. Humpata Zootechnical Station",
+      "type": "Select type",
+      "location": "e.g. Humpata, Huíla",
+      "description": "Station description"
+    },
+    "submitCreate": "Create Station",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Register Station",
+    "editTitle": "Edit Station",
+    "detailsTitle": "Station Details"
+  },
+  "details": {
+    "name": "Name",
+    "type": "Type",
+    "location": "Location",
+    "status": "Status",
+    "createdAt": "Created on",
+    "description": "Description"
+  },
+  "table": {
+    "name": "Name",
+    "type": "Type",
+    "location": "Location",
+    "status": "Status",
+    "empty": "No stations found.",
+    "searchPlaceholder": "Search stations...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "nameShort": "Name too short",
+    "typeRequired": "Select a type"
+  },
+  "toast": {
+    "createSuccess": "Station created successfully",
+    "updateSuccess": "Station updated",
+    "deleteSuccess": "Station deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

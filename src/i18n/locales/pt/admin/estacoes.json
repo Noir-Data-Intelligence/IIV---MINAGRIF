@@ -1,0 +1,80 @@
+{
+  "page": {
+    "title": "Estações",
+    "description": "Gestão de estações zootécnicas e experimentais"
+  },
+  "kpi": {
+    "total": "Total de Estações",
+    "totalCaption": "Registadas no sistema",
+    "active": "Estações Activas",
+    "activeCaption": "Em funcionamento",
+    "types": "Tipos",
+    "typesCaption": "Categorias distintas"
+  },
+  "actions": {
+    "new": "Nova Estação",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "types": {
+    "zootecnica": "Zootécnica",
+    "experimental": "Experimental",
+    "campo": "Campo"
+  },
+  "status": {
+    "active": "Activa",
+    "inactive": "Inactiva"
+  },
+  "form": {
+    "labels": {
+      "name": "Nome",
+      "type": "Tipo",
+      "location": "Localização",
+      "description": "Descrição",
+      "active": "Estação activa"
+    },
+    "placeholders": {
+      "name": "Ex: Estação Zootécnica da Humpata",
+      "type": "Seleccionar tipo",
+      "location": "Ex: Humpata, Huíla",
+      "description": "Descrição da estação"
+    },
+    "submitCreate": "Criar Estação",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Cadastrar Estação",
+    "editTitle": "Editar Estação",
+    "detailsTitle": "Detalhes da Estação"
+  },
+  "details": {
+    "name": "Nome",
+    "type": "Tipo",
+    "location": "Localização",
+    "status": "Estado",
+    "createdAt": "Criada em",
+    "description": "Descrição"
+  },
+  "table": {
+    "name": "Nome",
+    "type": "Tipo",
+    "location": "Localização",
+    "status": "Estado",
+    "empty": "Nenhuma estação encontrada.",
+    "searchPlaceholder": "Pesquisar estações...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "nameShort": "Nome demasiado curto",
+    "typeRequired": "Seleccione um tipo"
+  },
+  "toast": {
+    "createSuccess": "Estação criada com sucesso",
+    "updateSuccess": "Estação actualizada",
+    "deleteSuccess": "Estação eliminada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

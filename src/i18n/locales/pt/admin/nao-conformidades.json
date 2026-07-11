@@ -1,0 +1,98 @@
+{
+  "page": {
+    "title": "Não-Conformidades",
+    "description": "Registo e acompanhamento de não-conformidades da qualidade"
+  },
+  "kpis": {
+    "open": "Em Aberto",
+    "openCaption": "Abertas ou em resolução",
+    "critical": "Críticas",
+    "criticalCaption": "Gravidade crítica por resolver",
+    "overdue": "Prazo Vencido",
+    "overdueCaption": "Fora do prazo e não resolvidas"
+  },
+  "actions": {
+    "new": "Nova Não-Conformidade",
+    "pdf": "Exportar PDF",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "severity": {
+    "menor": "Menor",
+    "maior": "Maior",
+    "critica": "Crítica"
+  },
+  "status": {
+    "aberta": "Aberta",
+    "em_resolucao": "Em Resolução",
+    "resolvida": "Resolvida",
+    "encerrada": "Encerrada"
+  },
+  "form": {
+    "labels": {
+      "title": "Título",
+      "description": "Descrição",
+      "severity": "Gravidade",
+      "deadline": "Prazo",
+      "department": "Departamento",
+      "audit": "Auditoria",
+      "status": "Estado",
+      "correctiveAction": "Acção Correctiva"
+    },
+    "placeholders": {
+      "title": "Ex: Registos de calibração incompletos",
+      "description": "Descreva a não-conformidade detectada",
+      "severity": "Seleccione a gravidade",
+      "department": "(Opcional)",
+      "audit": "(Opcional)",
+      "correctiveAction": "Acção correctiva proposta ou executada",
+      "none": "Nenhum"
+    },
+    "submitCreate": "Registar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Registar Não-Conformidade",
+    "editTitle": "Editar Não-Conformidade",
+    "detailsTitle": "Detalhes da Não-Conformidade"
+  },
+  "details": {
+    "title": "Título",
+    "severity": "Gravidade",
+    "status": "Estado",
+    "department": "Departamento",
+    "audit": "Auditoria",
+    "deadline": "Prazo",
+    "resolvedAt": "Resolvida em",
+    "description": "Descrição",
+    "correctiveAction": "Acção Correctiva"
+  },
+  "table": {
+    "title": "Título",
+    "severity": "Gravidade",
+    "status": "Estado",
+    "department": "Departamento",
+    "deadline": "Prazo",
+    "empty": "Nenhuma não-conformidade encontrada.",
+    "searchPlaceholder": "Pesquisar não-conformidades...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "titleShort": "Título demasiado curto",
+    "descriptionShort": "Descrição demasiado curta",
+    "severityRequired": "Indique a gravidade"
+  },
+  "pdf": {
+    "subtitle": "Relatório de Não-Conformidades",
+    "filename": "nao-conformidades"
+  },
+  "toast": {
+    "createSuccess": "Não-conformidade registada com sucesso",
+    "updateSuccess": "Não-conformidade actualizada",
+    "deleteSuccess": "Não-conformidade eliminada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

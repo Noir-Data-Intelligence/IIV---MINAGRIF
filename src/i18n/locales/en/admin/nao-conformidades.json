@@ -1,0 +1,98 @@
+{
+  "page": {
+    "title": "Non-Conformities",
+    "description": "Recording and tracking of quality non-conformities"
+  },
+  "kpis": {
+    "open": "Open",
+    "openCaption": "Open or under resolution",
+    "critical": "Critical",
+    "criticalCaption": "Critical severity, unresolved",
+    "overdue": "Overdue",
+    "overdueCaption": "Past deadline and unresolved"
+  },
+  "actions": {
+    "new": "New Non-Conformity",
+    "pdf": "Export PDF",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "severity": {
+    "menor": "Minor",
+    "maior": "Major",
+    "critica": "Critical"
+  },
+  "status": {
+    "aberta": "Open",
+    "em_resolucao": "Under Resolution",
+    "resolvida": "Resolved",
+    "encerrada": "Closed"
+  },
+  "form": {
+    "labels": {
+      "title": "Title",
+      "description": "Description",
+      "severity": "Severity",
+      "deadline": "Deadline",
+      "department": "Department",
+      "audit": "Audit",
+      "status": "Status",
+      "correctiveAction": "Corrective Action"
+    },
+    "placeholders": {
+      "title": "e.g. Incomplete calibration records",
+      "description": "Describe the detected non-conformity",
+      "severity": "Select the severity",
+      "department": "(Optional)",
+      "audit": "(Optional)",
+      "correctiveAction": "Proposed or executed corrective action",
+      "none": "None"
+    },
+    "submitCreate": "Register",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Register Non-Conformity",
+    "editTitle": "Edit Non-Conformity",
+    "detailsTitle": "Non-Conformity Details"
+  },
+  "details": {
+    "title": "Title",
+    "severity": "Severity",
+    "status": "Status",
+    "department": "Department",
+    "audit": "Audit",
+    "deadline": "Deadline",
+    "resolvedAt": "Resolved at",
+    "description": "Description",
+    "correctiveAction": "Corrective Action"
+  },
+  "table": {
+    "title": "Title",
+    "severity": "Severity",
+    "status": "Status",
+    "department": "Department",
+    "deadline": "Deadline",
+    "empty": "No non-conformities found.",
+    "searchPlaceholder": "Search non-conformities...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "titleShort": "Title too short",
+    "descriptionShort": "Description too short",
+    "severityRequired": "Indicate the severity"
+  },
+  "pdf": {
+    "subtitle": "Non-Conformities Report",
+    "filename": "non-conformities"
+  },
+  "toast": {
+    "createSuccess": "Non-conformity registered successfully",
+    "updateSuccess": "Non-conformity updated",
+    "deleteSuccess": "Non-conformity deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

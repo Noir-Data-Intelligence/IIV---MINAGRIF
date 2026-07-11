@@ -1,176 +1,392 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import type { TFunction } from "i18next";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { motion, useReducedMotion } from "framer-motion";
+import { Eye, Layers, MapPin, Pencil, Plus, Power, Trash2 } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RowActions, type RowAction } from "@/components/admin/RowActions";
+import { WriteGuard } from "@/components/WriteGuard";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
+import { EntityFormDialog } from "@/components/EntityFormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { Plus, MapPin, Pencil, Trash2, Eye } from "lucide-react";
+import { useEntityForm } from "@/hooks/useEntityForm";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  useCreateEstacao,
+  useDeleteEstacao,
+  useEstacoesList,
+  useUpdateEstacao,
+} from "@/hooks/queries/useEstacoes";
+import type { EstacaoDto, StationType } from "@/types/dto/estacao";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import i18n from "@/i18n";
+import ptEstacoes from "@/i18n/locales/pt/admin/estacoes.json";
+import enEstacoes from "@/i18n/locales/en/admin/estacoes.json";
 
-interface Station {
-  id: string; name: string; station_type: string; location: string | null;
-  description: string | null; is_active: boolean; created_at: string;
+// Namespace "estacoes" registado em runtime, guardado por `hasResourceBundle`
+// (mesmo padrão de Departamentos.tsx — mantém a página autónoma).
+if (!i18n.hasResourceBundle("pt", "estacoes"))
+  i18n.addResourceBundle("pt", "estacoes", ptEstacoes, true, true);
+if (!i18n.hasResourceBundle("en", "estacoes"))
+  i18n.addResourceBundle("en", "estacoes", enEstacoes, true, true);
+
+const STATION_TYPES: StationType[] = ["zootecnica", "experimental", "campo"];
+
+function buildEstacaoSchema(t: TFunction) {
+  return z.object({
+    name: z.string().trim().min(2, t("validation.nameShort")),
+    stationType: z.enum(["zootecnica", "experimental", "campo"], {
+      errorMap: () => ({ message: t("validation.typeRequired") }),
+    }),
+    location: z.string().trim().optional(),
+    description: z.string().trim().optional(),
+    isActive: z.boolean(),
+  });
 }
 
-const typeLabels: Record<string, string> = { zootecnica: "Zootécnica", experimental: "Experimental", campo: "Campo" };
+type EstacaoFormValues = z.infer<ReturnType<typeof buildEstacaoSchema>>;
 
 export default function Estacoes() {
-  const [stations, setStations] = useState<Station[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const { t, i18n: i18nInstance } = useTranslation("estacoes");
+  const { canWrite } = useUserRole();
+  const canEdit = canWrite("estacoes");
+  const reduceMotion = useReducedMotion();
+
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
+  const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewItem, setViewItem] = useState<Station | null>(null);
-  const [editItem, setEditItem] = useState<Station | null>(null);
-  const [name, setName] = useState("");
-  const [stationType, setStationType] = useState("");
-  const [location, setLocation] = useState("");
-  const [description, setDescription] = useState("");
-  const { toast } = useToast();
-  const pag = usePagination(20);
+  const [viewItem, setViewItem] = useState<EstacaoDto | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<EstacaoDto | null>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data, count } = await supabase
-      .from("stations")
-      .select("*", { count: "exact" })
-      .order("name")
-      .range(pag.from, pag.to);
-    setStations((data as Station[]) ?? []);
-    pag.setTotal(count ?? 0);
-    setLoading(false);
-  };
+  const { data, isLoading } = useEstacoesList({
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
+    search: search || undefined,
+  });
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pag.page, pag.pageSize]);
+  // Query separada (dataset amplo) para KPIs agregados, independente da página.
+  const { data: statsData } = useEstacoesList({ page: 1, perPage: 100 });
 
-  const resetForm = () => { setName(""); setStationType(""); setLocation(""); setDescription(""); };
+  const createEstacao = useCreateEstacao();
+  const updateEstacao = useUpdateEstacao();
+  const deleteEstacao = useDeleteEstacao();
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.from("stations").insert({ name, station_type: stationType, location: location || null, description: description || null } as any);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Estação criada com sucesso" }); setOpen(false); resetForm(); fetchData();
-  };
+  const estacaoSchema = useMemo(() => buildEstacaoSchema(t), [t]);
 
-  const openEdit = (s: Station) => {
-    setEditItem(s); setName(s.name); setStationType(s.station_type); setLocation(s.location || ""); setDescription(s.description || ""); setEditOpen(true);
-  };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editItem) return;
-    const { error } = await supabase.from("stations").update({ name, station_type: stationType, location: location || null, description: description || null } as any).eq("id", editItem.id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Estação actualizada" }); setEditOpen(false); setEditItem(null); resetForm(); fetchData();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("stations").delete().eq("id", deleteId);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Estação eliminada" }); setDeleteId(null); fetchData();
-  };
-
-  const formFields = (
-    <>
-      <div><Label>Nome</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Estação Zootécnica de Maputo" required /></div>
-      <div><Label>Tipo</Label>
-        <Select value={stationType} onValueChange={setStationType} required>
-          <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="zootecnica">Zootécnica</SelectItem><SelectItem value="experimental">Experimental</SelectItem><SelectItem value="campo">Campo</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div><Label>Localização</Label><Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ex: Maputo, Moçambique" /></div>
-      <div><Label>Descrição</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-    </>
+  const initialValues = useMemo<Partial<EstacaoFormValues> | undefined>(
+    () =>
+      editItem
+        ? {
+            name: editItem.name,
+            stationType: editItem.stationType,
+            location: editItem.location ?? "",
+            description: editItem.description ?? "",
+            isActive: editItem.isActive,
+          }
+        : undefined,
+    [editItem],
   );
+
+  const entityForm = useEntityForm({
+    schema: estacaoSchema,
+    initialValues,
+    defaultValues: { name: "", stationType: undefined, location: "", description: "", isActive: true },
+    open: formOpen,
+    onSubmit: async (values) => {
+      const payload = {
+        name: values.name,
+        stationType: values.stationType,
+        location: values.location?.trim() ? values.location.trim() : null,
+        description: values.description?.trim() ? values.description.trim() : null,
+        isActive: values.isActive,
+      };
+      if (editItem) {
+        await updateEstacao.mutateAsync({ id: editItem.id, payload });
+      } else {
+        await createEstacao.mutateAsync(payload);
+      }
+    },
+    successMessage: editItem ? t("toast.updateSuccess") : t("toast.createSuccess"),
+    errorMessage: t("toast.error"),
+    onSuccess: () => setFormOpen(false),
+  });
+
+  const openCreate = () => {
+    setEditItem(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (s: EstacaoDto) => {
+    setEditItem(s);
+    setFormOpen(true);
+  };
+
+  const stats = useMemo(() => {
+    const rows = statsData?.data ?? [];
+    return {
+      total: statsData?.meta.total ?? rows.length,
+      active: rows.filter((s) => s.isActive).length,
+      types: new Set(rows.map((s) => s.stationType)).size,
+    };
+  }, [statsData]);
+
+  const columns = useMemo<ColumnDef<EstacaoDto>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.name")} />,
+        cell: ({ row }) => (
+          <span className="font-medium flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary" />
+            {row.original.name}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "stationType",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.type")} />,
+        cell: ({ row }) => <Badge variant="secondary">{t(`types.${row.original.stationType}`)}</Badge>,
+      },
+      {
+        accessorKey: "location",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.location")} />,
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">{row.original.location || t("table.emptyCell")}</span>
+        ),
+      },
+      {
+        accessorKey: "isActive",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) => (
+          <Badge variant={row.original.isActive ? "default" : "destructive"}>
+            {row.original.isActive ? t("status.active") : t("status.inactive")}
+          </Badge>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  const renderRowActions = (row: EstacaoDto) => {
+    const actions: RowAction[] = [
+      { label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) },
+    ];
+    if (canEdit) {
+      actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return <RowActions actions={actions} />;
+  };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader icon={MapPin} title="Estações" description="Gestão de estações zootécnicas e experimentais">
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Nova Estação</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle className="font-serif">Cadastrar Estação</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">{formFields}<Button type="submit" className="w-full" disabled={!stationType}>Criar Estação</Button></form>
-          </DialogContent>
-        </Dialog>
+      <AdminPageHeader icon={MapPin} title={t("page.title")} description={t("page.description")}>
+        <WriteGuard module="estacoes">
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+          </Button>
+        </WriteGuard>
       </AdminPageHeader>
 
-      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) { setEditItem(null); resetForm(); } }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle className="font-serif">Editar Estação</DialogTitle></DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">{formFields}<Button type="submit" className="w-full" disabled={!stationType}>Guardar Alterações</Button></form>
-        </DialogContent>
-      </Dialog>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={staggerContainer}
+        initial={reduceMotion ? false : "hidden"}
+        animate="visible"
+      >
+        <motion.div variants={fadeInUp}>
+          <AdminCard variant="gradient-green-gold" icon={MapPin} metric={stats.total} title={t("kpi.total")} caption={t("kpi.totalCaption")} />
+        </motion.div>
+        <motion.div variants={fadeInUp}>
+          <AdminCard variant="glass" icon={Power} metric={stats.active} title={t("kpi.active")} caption={t("kpi.activeCaption")} />
+        </motion.div>
+        <motion.div variants={fadeInUp}>
+          <AdminCard variant="glass" icon={Layers} metric={stats.types} title={t("kpi.types")} caption={t("kpi.typesCaption")} />
+        </motion.div>
+      </motion.div>
 
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)} onConfirm={handleDelete} />
+      <DataTable
+        columns={columns}
+        data={data?.data ?? []}
+        loading={isLoading}
+        pageCount={data?.meta.lastPage ?? 0}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        rowCount={data?.meta.total}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        searchPlaceholder={t("table.searchPlaceholder")}
+        emptyMessage={t("table.empty")}
+        renderRowActions={renderRowActions}
+      />
+
+      <EntityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        form={entityForm}
+        submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
+        submittingLabel={t("form.submitting")}
+        cancelLabel={t("form.cancel")}
+      >
+        {(form) => (
+          <>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.name")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.name")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="stationType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.type")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("form.placeholders.type")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {STATION_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {t(`types.${type}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.location")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.location")} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.description")}</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder={t("form.placeholders.description")} {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                  <FormLabel className="mb-0">{t("form.labels.active")}</FormLabel>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </EntityFormDialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await deleteEstacao.mutateAsync(deleteId);
+          setDeleteId(null);
+        }}
+      />
 
       <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="font-serif">Detalhes da Estação</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-serif">{t("dialog.detailsTitle")}</DialogTitle>
+          </DialogHeader>
           {viewItem && (
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="text-muted-foreground">Nome:</span><p className="font-medium">{viewItem.name}</p></div>
-                <div><span className="text-muted-foreground">Tipo:</span><p className="font-medium">{typeLabels[viewItem.station_type] || viewItem.station_type}</p></div>
-                <div><span className="text-muted-foreground">Localização:</span><p className="font-medium">{viewItem.location || "—"}</p></div>
-                <div><span className="text-muted-foreground">Estado:</span><p><Badge variant={viewItem.is_active ? "default" : "destructive"}>{viewItem.is_active ? "Activa" : "Inactiva"}</Badge></p></div>
-                <div><span className="text-muted-foreground">Criada em:</span><p className="font-medium">{new Date(viewItem.created_at).toLocaleDateString("pt-AO")}</p></div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.name")}:</span>
+                  <p className="font-medium">{viewItem.name}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.type")}:</span>
+                  <p className="font-medium">{t(`types.${viewItem.stationType}`)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.location")}:</span>
+                  <p className="font-medium">{viewItem.location || t("table.emptyCell")}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.status")}:</span>
+                  <p>
+                    <Badge variant={viewItem.isActive ? "default" : "destructive"}>
+                      {viewItem.isActive ? t("status.active") : t("status.inactive")}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.createdAt")}:</span>
+                  <p className="font-medium">
+                    {new Date(viewItem.createdAt).toLocaleDateString(
+                      i18nInstance.language === "en" ? "en-GB" : "pt-AO",
+                    )}
+                  </p>
+                </div>
               </div>
-              {viewItem.description && <div><span className="text-muted-foreground">Descrição:</span><p className="font-medium mt-1">{viewItem.description}</p></div>}
+              {viewItem.description && (
+                <div>
+                  <span className="text-muted-foreground">{t("details.description")}:</span>
+                  <p className="font-medium mt-1">{viewItem.description}</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
-
-      <AdminCard title="Estações Cadastradas" icon={MapPin} loading={loading} isEmpty={stations.length === 0} emptyMessage="Nenhuma estação cadastrada.">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Localização</TableHead><TableHead>Estado</TableHead><TableHead className="w-24">Acções</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {stations.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium"><div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />{s.name}</div></TableCell>
-                <TableCell><Badge variant="secondary">{typeLabels[s.station_type] || s.station_type}</Badge></TableCell>
-                <TableCell className="text-muted-foreground text-sm">{s.location || "—"}</TableCell>
-                <TableCell><Badge variant={s.is_active ? "default" : "destructive"}>{s.is_active ? "Activa" : "Inactiva"}</Badge></TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => setViewItem(s)}><Eye className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
-        />
-      </AdminCard>
     </div>
   );
 }

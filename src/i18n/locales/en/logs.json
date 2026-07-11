@@ -1,0 +1,79 @@
+{
+  "page": {
+    "title": "System Audit Log",
+    "description": "Login events, changes and critical actions with full traceability"
+  },
+  "kpi": {
+    "total": {
+      "title": "Total events",
+      "caption": "Recorded in the system"
+    },
+    "critical": {
+      "title": "Critical events",
+      "caption": "Require attention"
+    }
+  },
+  "filters": {
+    "title": "Filters",
+    "action": "Action",
+    "actionAll": "All",
+    "entityType": "Entity",
+    "entityTypeAll": "All",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "clear": "Clear filters",
+    "export": "Export CSV"
+  },
+  "actions": {
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "login": "Login",
+    "logout": "Logout",
+    "critical": "Critical"
+  },
+  "entityTypes": {
+    "auth": "Authentication",
+    "sincronizacao": "Synchronization",
+    "departamentos": "Departments",
+    "laboratorios": "Laboratories",
+    "analises": "Analyses",
+    "resultados": "Results",
+    "lotes": "Batches",
+    "planeamento": "Planning",
+    "distribuicao": "Distribution",
+    "users": "Users",
+    "noticias": "News",
+    "legislacao": "Legislation"
+  },
+  "table": {
+    "title": "Records",
+    "dateTime": "Date/Time",
+    "user": "User",
+    "action": "Action",
+    "entity": "Entity",
+    "ip": "IP",
+    "details": "Details",
+    "system": "System",
+    "empty": "No records found for the applied filters.",
+    "emptyCell": "—"
+  },
+  "rowActions": {
+    "viewDetails": "View details"
+  },
+  "detailsDialog": {
+    "title": "Event Details",
+    "dateTime": "Date/Time",
+    "user": "User",
+    "action": "Action",
+    "entity": "Entity",
+    "entityId": "Entity ID",
+    "ip": "IP Address",
+    "details": "Data",
+    "noDetails": "No additional data."
+  },
+  "export": {
+    "filenamePrefix": "audit-log",
+    "header": ["Date", "User", "Action", "Entity", "Entity ID", "IP", "Details"]
+  }
+}

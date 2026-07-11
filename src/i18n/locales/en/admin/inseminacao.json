@@ -1,0 +1,166 @@
+{
+  "page": {
+    "title": "Artificial Insemination",
+    "description": "Management of centres, breeders, doses, tanks and inseminations."
+  },
+  "kpi": {
+    "activeBreeders": "Active Breeders",
+    "activeBreedersCaption": "In service",
+    "doses": "Available Doses",
+    "dosesCaption": "Semen stock",
+    "rate": "Conception Rate",
+    "rateCaption": "Evaluated inseminations",
+    "lowTanks": "Low N₂ Tanks",
+    "lowTanksCaption": "Below minimum level"
+  },
+  "tabs": {
+    "centros": "Centres",
+    "reprodutores": "Breeders",
+    "tanques": "N₂ Tanks",
+    "doses": "Doses",
+    "inseminacoes": "Inseminations"
+  },
+  "common": {
+    "new": "New",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "actions": "Actions",
+    "none": "—",
+    "required": "*"
+  },
+  "breederStatus": {
+    "activo": "Active",
+    "inactivo": "Inactive",
+    "baixado": "Retired"
+  },
+  "result": {
+    "pendente": "Pending",
+    "confirmada": "Confirmed",
+    "falhou": "Failed"
+  },
+  "centros": {
+    "title": "Insemination Centres",
+    "empty": "No centres registered.",
+    "new": "New Centre",
+    "status": { "active": "Active", "inactive": "Inactive" },
+    "table": { "name": "Name", "location": "Location", "status": "Status" },
+    "dialog": { "createTitle": "New centre", "editTitle": "Edit centre" },
+    "form": { "name": "Name", "location": "Location", "notes": "Notes", "active": "Active centre" }
+  },
+  "reprodutores": {
+    "title": "Breeders",
+    "empty": "No breeders registered.",
+    "new": "New Breeder",
+    "table": {
+      "tag": "Tag",
+      "name": "Name",
+      "species": "Species",
+      "breed": "Breed",
+      "center": "Centre",
+      "status": "Status"
+    },
+    "dialog": { "createTitle": "New breeder", "editTitle": "Edit breeder" },
+    "form": {
+      "tag": "Tag",
+      "name": "Name",
+      "species": "Species",
+      "breed": "Breed",
+      "center": "Centre",
+      "selectCenter": "Select centre",
+      "birthDate": "Birth date",
+      "status": "Status",
+      "notes": "Notes"
+    }
+  },
+  "tanques": {
+    "title": "Liquid Nitrogen Tanks",
+    "empty": "No tanks registered.",
+    "new": "New Tank",
+    "low": "Low N₂",
+    "ok": "OK",
+    "table": {
+      "code": "Code",
+      "center": "Centre",
+      "capacity": "Capacity (L)",
+      "level": "Current Level",
+      "lastRefill": "Last Refill",
+      "status": "Status"
+    },
+    "dialog": { "createTitle": "New tank", "editTitle": "Edit tank" },
+    "form": {
+      "code": "Code",
+      "center": "Centre",
+      "selectCenter": "Select centre",
+      "capacity": "Capacity (L)",
+      "current": "Current Level (L)",
+      "min": "Minimum Level (L)",
+      "lastRefill": "Last Refill",
+      "notes": "Notes"
+    }
+  },
+  "doses": {
+    "title": "Semen Doses",
+    "empty": "No doses registered.",
+    "new": "New Dose",
+    "table": {
+      "date": "Date",
+      "breeder": "Breeder",
+      "tank": "Tank",
+      "quantity": "Quantity",
+      "available": "Available",
+      "quality": "Quality"
+    },
+    "dialog": { "createTitle": "New dose", "editTitle": "Edit dose" },
+    "form": {
+      "breeder": "Breeder",
+      "selectBreeder": "Select breeder",
+      "tank": "Tank",
+      "noTank": "No tank",
+      "collectionDate": "Collection Date",
+      "quality": "Quality",
+      "quantity": "Quantity",
+      "available": "Available",
+      "notes": "Notes"
+    }
+  },
+  "inseminacoes": {
+    "title": "Insemination Records",
+    "empty": "No inseminations registered.",
+    "new": "New Insemination",
+    "table": {
+      "date": "Date",
+      "animal": "Animal",
+      "dose": "Dose",
+      "result": "Result",
+      "confirmation": "Confirmation",
+      "expectedBirth": "Expected birth"
+    },
+    "dialog": { "createTitle": "New insemination", "editTitle": "Edit insemination" },
+    "form": {
+      "animal": "Animal (female)",
+      "selectAnimal": "Select animal",
+      "dose": "Dose",
+      "noDose": "No dose",
+      "doseOption": "{{date}} · {{breeder}} ({{available}} avail.)",
+      "date": "Date",
+      "result": "Result",
+      "pregnancyConfirmed": "Pregnancy confirmed on",
+      "expectedBirth": "Expected birth",
+      "notes": "Notes"
+    }
+  },
+  "toast": {
+    "created": "Record created",
+    "updated": "Record updated",
+    "deleted": "Record deleted",
+    "requiredFields": "Fill in the required fields",
+    "error": "An error occurred. Please try again."
+  },
+  "delete": {
+    "title": "Delete record?",
+    "description": "This action is irreversible."
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "page": {
+    "title": "Audits",
+    "description": "Management of internal, external and ISO audits"
+  },
+  "kpis": {
+    "total": "Total Audits",
+    "totalCaption": "Registered in the system",
+    "completed": "Completed",
+    "completedCaption": "With closed report",
+    "pending": "Pending",
+    "pendingCaption": "Planned or in progress"
+  },
+  "actions": {
+    "new": "New Audit",
+    "pdf": "Export PDF",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "types": {
+    "interna": "Internal",
+    "externa": "External",
+    "ISO": "ISO"
+  },
+  "status": {
+    "planeada": "Planned",
+    "em_curso": "In Progress",
+    "concluida": "Completed",
+    "cancelada": "Cancelled"
+  },
+  "form": {
+    "labels": {
+      "title": "Title",
+      "auditType": "Type",
+      "scheduledDate": "Scheduled date",
+      "auditor": "Auditor",
+      "department": "Department",
+      "laboratory": "Laboratory",
+      "status": "Status",
+      "findings": "Findings",
+      "recommendations": "Recommendations"
+    },
+    "placeholders": {
+      "title": "e.g. Internal audit of the Virology Laboratory",
+      "auditType": "Select the type",
+      "auditor": "Name of the responsible auditor",
+      "department": "(Optional)",
+      "laboratory": "(Optional)",
+      "findings": "Main audit findings",
+      "recommendations": "Recommendations and proposed actions",
+      "none": "None"
+    },
+    "submitCreate": "Create Audit",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createTitle": "Create Audit",
+    "editTitle": "Edit Audit",
+    "detailsTitle": "Audit Details"
+  },
+  "details": {
+    "title": "Title",
+    "auditType": "Type",
+    "auditor": "Auditor",
+    "scheduledDate": "Scheduled Date",
+    "completedDate": "Completion Date",
+    "status": "Status",
+    "department": "Department",
+    "laboratory": "Laboratory",
+    "findings": "Findings",
+    "recommendations": "Recommendations"
+  },
+  "table": {
+    "title": "Title",
+    "type": "Type",
+    "auditor": "Auditor",
+    "date": "Date",
+    "status": "Status",
+    "empty": "No audits found.",
+    "searchPlaceholder": "Search audits...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "titleShort": "Title too short",
+    "typeRequired": "Indicate the audit type",
+    "auditorRequired": "Indicate the responsible auditor",
+    "dateRequired": "Indicate the scheduled date"
+  },
+  "pdf": {
+    "subtitle": "Audit Report",
+    "filename": "audits"
+  },
+  "toast": {
+    "createSuccess": "Audit created successfully",
+    "updateSuccess": "Audit updated",
+    "deleteSuccess": "Audit deleted",
+    "error": "An error occurred. Please try again."
+  }
+}

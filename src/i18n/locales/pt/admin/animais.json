@@ -1,0 +1,158 @@
+{
+  "page": {
+    "title": "Animais",
+    "description": "Rastreabilidade individual de animais nas estações zootécnicas"
+  },
+  "kpi": {
+    "total": "Total de Animais",
+    "totalCaption": "Registados no sistema",
+    "active": "Animais Activos",
+    "activeCaption": "Em efectivo",
+    "males": "Machos Activos",
+    "malesCaption": "Reprodutores e outros",
+    "females": "Fêmeas Activas",
+    "femalesCaption": "Efectivo reprodutor"
+  },
+  "actions": {
+    "new": "Novo Animal",
+    "view": "Ver ficha",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "sex": {
+    "macho": "Macho",
+    "femea": "Fêmea"
+  },
+  "status": {
+    "activo": "Activo",
+    "vendido": "Vendido",
+    "morto": "Morto",
+    "abatido": "Abatido",
+    "transferido": "Transferido"
+  },
+  "eventTypes": {
+    "nascimento": "Nascimento",
+    "pesagem": "Pesagem",
+    "vacinacao": "Vacinação",
+    "tratamento": "Tratamento",
+    "transferencia": "Transferência",
+    "venda": "Venda",
+    "morte": "Morte",
+    "abate": "Abate",
+    "observacao": "Observação"
+  },
+  "recordTypes": {
+    "vacina": "Vacina",
+    "tratamento": "Tratamento",
+    "diagnostico": "Diagnóstico",
+    "desparasitacao": "Desparasitação"
+  },
+  "filters": {
+    "allStations": "Todas as estações",
+    "allStatuses": "Todos os estados",
+    "station": "Estação",
+    "status": "Estado"
+  },
+  "form": {
+    "labels": {
+      "station": "Estação",
+      "tag": "Brinco / Tag",
+      "name": "Nome (opcional)",
+      "species": "Espécie",
+      "breed": "Raça",
+      "sex": "Sexo",
+      "birthDate": "Data de nascimento",
+      "motherTag": "Brinco da mãe",
+      "fatherTag": "Brinco do pai",
+      "status": "Estado",
+      "weight": "Peso actual (kg)",
+      "notes": "Observações"
+    },
+    "placeholders": {
+      "station": "Seleccionar estação",
+      "tag": "Ex: BR-0001",
+      "name": "Ex: Mimosa",
+      "species": "Ex: Bovino",
+      "breed": "Ex: Nelore",
+      "sex": "Seleccionar",
+      "status": "Seleccionar estado",
+      "notes": "Notas adicionais sobre o animal"
+    },
+    "submitCreate": "Criar Animal",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createTitle": "Cadastrar Animal",
+    "editTitle": "Editar Animal",
+    "detailsTitle": "Ficha do Animal"
+  },
+  "detail": {
+    "tabs": {
+      "ficha": "Ficha",
+      "eventos": "Eventos",
+      "saude": "Saúde"
+    },
+    "fields": {
+      "species": "Espécie",
+      "breed": "Raça",
+      "sex": "Sexo",
+      "birthDate": "Nascimento",
+      "mother": "Mãe",
+      "father": "Pai",
+      "weight": "Peso",
+      "status": "Estado",
+      "station": "Estação",
+      "notes": "Observações"
+    },
+    "events": {
+      "new": "Novo evento",
+      "empty": "Sem eventos registados.",
+      "dialogTitle": "Registar evento",
+      "type": "Tipo",
+      "date": "Data",
+      "notes": "Notas",
+      "submit": "Registar"
+    },
+    "health": {
+      "new": "Novo registo",
+      "empty": "Sem registos sanitários.",
+      "dialogTitle": "Registo sanitário",
+      "type": "Tipo",
+      "product": "Produto",
+      "dosage": "Dosagem",
+      "diagnosis": "Diagnóstico",
+      "treatment": "Tratamento",
+      "veterinarian": "Veterinário",
+      "date": "Data",
+      "nextDate": "Próxima data",
+      "next": "Próxima",
+      "submit": "Guardar"
+    }
+  },
+  "table": {
+    "tag": "Brinco",
+    "speciesBreed": "Espécie / Raça",
+    "sex": "Sexo",
+    "station": "Estação",
+    "status": "Estado",
+    "empty": "Nenhum animal encontrado.",
+    "searchPlaceholder": "Pesquisar por brinco, nome ou espécie...",
+    "emptyCell": "—"
+  },
+  "validation": {
+    "stationRequired": "Seleccione uma estação",
+    "tagShort": "Indique o brinco",
+    "speciesRequired": "Indique a espécie",
+    "sexRequired": "Seleccione o sexo"
+  },
+  "toast": {
+    "createSuccess": "Animal cadastrado com sucesso",
+    "updateSuccess": "Animal actualizado",
+    "deleteSuccess": "Animal eliminado",
+    "eventSuccess": "Evento registado",
+    "healthSuccess": "Registo sanitário criado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

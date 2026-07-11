@@ -1,0 +1,93 @@
+{
+  "page": {
+    "title": "Accessibility Audit",
+    "description": "Automated contrast, sizing and WCAG 2.1 AA rule analysis across every route of the portal."
+  },
+  "viewport": {
+    "desktop": "Desktop ({{width}}×{{height}})",
+    "mobile": "Mobile ({{width}}×{{height}})"
+  },
+  "actions": {
+    "run": "Run audit",
+    "running": "Running...",
+    "exportPdf": "Export PDF"
+  },
+  "progress": {
+    "analyzing": "Analyzing: {{current}}",
+    "analyzingFallback": "..."
+  },
+  "kpi": {
+    "totalIssues": { "title": "Total occurrences", "caption": "{{scanned}}/{{total}} routes" },
+    "contrast": { "title": "Contrast", "caption": "color-contrast" },
+    "sizes": { "title": "Sizes / targets", "caption": "target-size, viewport" },
+    "criticalSerious": { "title": "Critical + Serious", "caption": "{{critical}} critical" }
+  },
+  "results": {
+    "title": "Results by route",
+    "empty": "Run an audit to get started.",
+    "tabs": {
+      "all": "All ({{count}})",
+      "contrast": "Contrast ({{count}})",
+      "sizes": "Sizes ({{count}})"
+    },
+    "noOccurrences": "No occurrences in this category.",
+    "errorBadge": "error",
+    "occurrenceCount": "{{count}} occ.",
+    "viewRuleGuide": "View rule guide →"
+  },
+  "toast": {
+    "completedTitle": "Audit completed",
+    "completedDescription": "{{count}} routes analyzed at {{viewport}}.",
+    "noResultsTitle": "No results",
+    "noResultsDescription": "Run an audit first."
+  },
+  "pdf": {
+    "title": "Accessibility Report",
+    "viewportLabel": "Viewport: {{viewport}}",
+    "generatedAt": "Generated on {{date}}",
+    "summaryTable": {
+      "indicator": "Indicator",
+      "value": "Value",
+      "totalOccurrences": "Total occurrences",
+      "contrast": "Contrast",
+      "sizes": "Size / targets",
+      "other": "Other",
+      "critical": "Critical",
+      "serious": "Serious",
+      "moderate": "Moderate",
+      "minor": "Minor"
+    },
+    "routeError": "Error: {{error}}",
+    "routeSummary": "{{violations}} failed rules · {{pass}} passed · {{incomplete}} incomplete · {{duration}} ms",
+    "violationsTable": {
+      "rule": "Rule",
+      "impact": "Impact",
+      "category": "Category",
+      "nodes": "Nodes",
+      "description": "Description"
+    },
+    "footer": "Automated audit (axe-core / WCAG 2.1 AA) — IIV Management System.",
+    "filenamePrefix": "accessibility-report"
+  },
+  "routes": {
+    "home": "Home",
+    "about": "About",
+    "services": "Services",
+    "news": "News",
+    "legislation": "Legislation",
+    "contacts": "Contacts",
+    "panel": "Panel",
+    "users": "Users",
+    "laboratories": "Laboratories",
+    "analyses": "Analyses",
+    "results": "Results",
+    "batches": "Batches",
+    "planning": "Planning",
+    "distribution": "Distribution",
+    "audits": "Audits"
+  },
+  "groups": {
+    "public": "Public",
+    "admin": "Admin"
+  }
+}

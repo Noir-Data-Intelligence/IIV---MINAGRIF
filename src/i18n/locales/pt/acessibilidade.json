@@ -1,0 +1,93 @@
+{
+  "page": {
+    "title": "Auditoria de Acessibilidade",
+    "description": "Análise automática de contraste, tamanhos e regras WCAG 2.1 AA em todas as rotas do portal."
+  },
+  "viewport": {
+    "desktop": "Desktop ({{width}}×{{height}})",
+    "mobile": "Mobile ({{width}}×{{height}})"
+  },
+  "actions": {
+    "run": "Executar auditoria",
+    "running": "A executar...",
+    "exportPdf": "Exportar PDF"
+  },
+  "progress": {
+    "analyzing": "A analisar: {{current}}",
+    "analyzingFallback": "..."
+  },
+  "kpi": {
+    "totalIssues": { "title": "Ocorrências totais", "caption": "{{scanned}}/{{total}} rotas" },
+    "contrast": { "title": "Contraste", "caption": "color-contrast" },
+    "sizes": { "title": "Tamanhos / alvos", "caption": "target-size, viewport" },
+    "criticalSerious": { "title": "Críticas + Sérias", "caption": "{{critical}} críticas" }
+  },
+  "results": {
+    "title": "Resultados por rota",
+    "empty": "Execute uma auditoria para começar.",
+    "tabs": {
+      "all": "Todas ({{count}})",
+      "contrast": "Contraste ({{count}})",
+      "sizes": "Tamanhos ({{count}})"
+    },
+    "noOccurrences": "Nenhuma ocorrência nesta categoria.",
+    "errorBadge": "erro",
+    "occurrenceCount": "{{count}} ocorr.",
+    "viewRuleGuide": "Ver guia da regra →"
+  },
+  "toast": {
+    "completedTitle": "Auditoria concluída",
+    "completedDescription": "{{count}} rotas analisadas em {{viewport}}.",
+    "noResultsTitle": "Sem resultados",
+    "noResultsDescription": "Execute uma auditoria primeiro."
+  },
+  "pdf": {
+    "title": "Relatório de Acessibilidade",
+    "viewportLabel": "Viewport: {{viewport}}",
+    "generatedAt": "Gerado em {{date}}",
+    "summaryTable": {
+      "indicator": "Indicador",
+      "value": "Valor",
+      "totalOccurrences": "Total de ocorrências",
+      "contrast": "Contraste",
+      "sizes": "Tamanho / alvos",
+      "other": "Outras",
+      "critical": "Críticas",
+      "serious": "Sérias",
+      "moderate": "Moderadas",
+      "minor": "Menores"
+    },
+    "routeError": "Erro: {{error}}",
+    "routeSummary": "{{violations}} regras falhadas · {{pass}} aprovadas · {{incomplete}} incertas · {{duration}} ms",
+    "violationsTable": {
+      "rule": "Regra",
+      "impact": "Impacto",
+      "category": "Categoria",
+      "nodes": "Nós",
+      "description": "Descrição"
+    },
+    "footer": "Auditoria automatizada (axe-core / WCAG 2.1 AA) — Sistema de Gestão IIV.",
+    "filenamePrefix": "relatorio-acessibilidade"
+  },
+  "routes": {
+    "home": "Início",
+    "about": "Sobre",
+    "services": "Serviços",
+    "news": "Notícias",
+    "legislation": "Legislação",
+    "contacts": "Contactos",
+    "panel": "Painel",
+    "users": "Utilizadores",
+    "laboratories": "Laboratórios",
+    "analyses": "Análises",
+    "results": "Resultados",
+    "batches": "Lotes",
+    "planning": "Planeamento",
+    "distribution": "Distribuição",
+    "audits": "Auditorias"
+  },
+  "groups": {
+    "public": "Público",
+    "admin": "Admin"
+  }
+}

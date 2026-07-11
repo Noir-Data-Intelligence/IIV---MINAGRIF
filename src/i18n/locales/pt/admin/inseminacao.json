@@ -1,0 +1,166 @@
+{
+  "page": {
+    "title": "Inseminação Artificial",
+    "description": "Gestão de centros, reprodutores, doses, tanques e inseminações."
+  },
+  "kpi": {
+    "activeBreeders": "Reprodutores Activos",
+    "activeBreedersCaption": "Em serviço",
+    "doses": "Doses Disponíveis",
+    "dosesCaption": "Stock de sémen",
+    "rate": "Taxa de Concepção",
+    "rateCaption": "Inseminações avaliadas",
+    "lowTanks": "Tanques N₂ Baixos",
+    "lowTanksCaption": "Abaixo do nível mínimo"
+  },
+  "tabs": {
+    "centros": "Centros",
+    "reprodutores": "Reprodutores",
+    "tanques": "Tanques N₂",
+    "doses": "Doses",
+    "inseminacoes": "Inseminações"
+  },
+  "common": {
+    "new": "Novo",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "save": "Gravar",
+    "saving": "A gravar...",
+    "actions": "Acções",
+    "none": "—",
+    "required": "*"
+  },
+  "breederStatus": {
+    "activo": "Activo",
+    "inactivo": "Inactivo",
+    "baixado": "Baixado"
+  },
+  "result": {
+    "pendente": "Pendente",
+    "confirmada": "Confirmada",
+    "falhou": "Falhou"
+  },
+  "centros": {
+    "title": "Centros de Inseminação",
+    "empty": "Sem centros registados.",
+    "new": "Novo Centro",
+    "status": { "active": "Activo", "inactive": "Inactivo" },
+    "table": { "name": "Nome", "location": "Localização", "status": "Estado" },
+    "dialog": { "createTitle": "Novo centro", "editTitle": "Editar centro" },
+    "form": { "name": "Nome", "location": "Localização", "notes": "Notas", "active": "Centro activo" }
+  },
+  "reprodutores": {
+    "title": "Reprodutores",
+    "empty": "Sem reprodutores registados.",
+    "new": "Novo Reprodutor",
+    "table": {
+      "tag": "Brinco",
+      "name": "Nome",
+      "species": "Espécie",
+      "breed": "Raça",
+      "center": "Centro",
+      "status": "Estado"
+    },
+    "dialog": { "createTitle": "Novo reprodutor", "editTitle": "Editar reprodutor" },
+    "form": {
+      "tag": "Brinco",
+      "name": "Nome",
+      "species": "Espécie",
+      "breed": "Raça",
+      "center": "Centro",
+      "selectCenter": "Seleccionar centro",
+      "birthDate": "Data de nascimento",
+      "status": "Estado",
+      "notes": "Notas"
+    }
+  },
+  "tanques": {
+    "title": "Tanques de Azoto Líquido",
+    "empty": "Sem tanques registados.",
+    "new": "Novo Tanque",
+    "low": "N₂ baixo",
+    "ok": "OK",
+    "table": {
+      "code": "Código",
+      "center": "Centro",
+      "capacity": "Capacidade (L)",
+      "level": "Nível Actual",
+      "lastRefill": "Última Recarga",
+      "status": "Estado"
+    },
+    "dialog": { "createTitle": "Novo tanque", "editTitle": "Editar tanque" },
+    "form": {
+      "code": "Código",
+      "center": "Centro",
+      "selectCenter": "Seleccionar centro",
+      "capacity": "Capacidade (L)",
+      "current": "Nível Actual (L)",
+      "min": "Nível Mínimo (L)",
+      "lastRefill": "Última Recarga",
+      "notes": "Notas"
+    }
+  },
+  "doses": {
+    "title": "Doses de Sémen",
+    "empty": "Sem doses registadas.",
+    "new": "Nova Dose",
+    "table": {
+      "date": "Data",
+      "breeder": "Reprodutor",
+      "tank": "Tanque",
+      "quantity": "Quantidade",
+      "available": "Disponível",
+      "quality": "Qualidade"
+    },
+    "dialog": { "createTitle": "Nova dose", "editTitle": "Editar dose" },
+    "form": {
+      "breeder": "Reprodutor",
+      "selectBreeder": "Seleccionar reprodutor",
+      "tank": "Tanque",
+      "noTank": "Sem tanque",
+      "collectionDate": "Data de Colheita",
+      "quality": "Qualidade",
+      "quantity": "Quantidade",
+      "available": "Disponível",
+      "notes": "Notas"
+    }
+  },
+  "inseminacoes": {
+    "title": "Registos de Inseminação",
+    "empty": "Sem inseminações registadas.",
+    "new": "Nova Inseminação",
+    "table": {
+      "date": "Data",
+      "animal": "Animal",
+      "dose": "Dose",
+      "result": "Resultado",
+      "confirmation": "Confirmação",
+      "expectedBirth": "Parto previsto"
+    },
+    "dialog": { "createTitle": "Nova inseminação", "editTitle": "Editar inseminação" },
+    "form": {
+      "animal": "Animal (fêmea)",
+      "selectAnimal": "Seleccionar animal",
+      "dose": "Dose",
+      "noDose": "Sem dose",
+      "doseOption": "{{date}} · {{breeder}} ({{available}} disp.)",
+      "date": "Data",
+      "result": "Resultado",
+      "pregnancyConfirmed": "Gravidez confirmada em",
+      "expectedBirth": "Parto previsto",
+      "notes": "Notas"
+    }
+  },
+  "toast": {
+    "created": "Registo criado",
+    "updated": "Registo actualizado",
+    "deleted": "Registo eliminado",
+    "requiredFields": "Preencha os campos obrigatórios",
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "delete": {
+    "title": "Apagar registo?",
+    "description": "Esta acção é irreversível."
+  }
+}
