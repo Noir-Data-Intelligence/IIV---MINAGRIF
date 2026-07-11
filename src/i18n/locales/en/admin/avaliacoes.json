@@ -1,0 +1,172 @@
+{
+  "page": {
+    "title": "Performance Evaluations",
+    "description": "Cycles, criteria, submission and approval workflow with audit trail."
+  },
+  "kpi": {
+    "activeCycle": "Active cycle",
+    "total": "Total evaluations",
+    "pending": "Pending approval",
+    "avgScore": "Average score"
+  },
+  "tabs": {
+    "evaluations": "Evaluations",
+    "cycles": "Cycles",
+    "criterias": "Criteria"
+  },
+  "status": {
+    "rascunho": "Draft",
+    "submetida": "Submitted",
+    "aprovada": "Approved",
+    "rejeitada": "Rejected",
+    "validada": "Validated"
+  },
+  "cycleStatus": {
+    "planeado": "Planned",
+    "aberto": "Open",
+    "fechado": "Closed"
+  },
+  "actions": {
+    "newEvaluation": "New Evaluation",
+    "newCycle": "New Cycle",
+    "newCriteria": "New Criteria",
+    "view": "Details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "submit": "Submit for approval",
+    "approve": "Approve",
+    "reject": "Reject",
+    "validate": "Validate",
+    "reopen": "Reopen"
+  },
+  "evaluationsTable": {
+    "employee": "Employee",
+    "evaluator": "Evaluator",
+    "cycle": "Cycle",
+    "date": "Date",
+    "score": "Score",
+    "status": "Status",
+    "searchPlaceholder": "Search by employee, evaluator or cycle...",
+    "empty": "No evaluations found.",
+    "emptyCell": "—"
+  },
+  "cyclesTable": {
+    "name": "Name",
+    "year": "Year",
+    "period": "Period",
+    "status": "Status",
+    "searchPlaceholder": "Search cycles...",
+    "empty": "No cycles found."
+  },
+  "criteriasTable": {
+    "cycle": "Cycle",
+    "name": "Name",
+    "weight": "Weight",
+    "order": "Order",
+    "description": "Description",
+    "searchPlaceholder": "Search criteria...",
+    "empty": "No criteria found."
+  },
+  "detail": {
+    "title": "Evaluation",
+    "resumo": "Summary",
+    "notas": "Scores by criteria",
+    "historico": "History",
+    "date": "Date",
+    "globalScore": "Global score",
+    "submittedAt": "Submitted at",
+    "approvedAt": "Approved at",
+    "approvedBy": "Approved by",
+    "acknowledgedAt": "Validated at",
+    "rejectionReason": "Rejection reason",
+    "strengths": "Strengths",
+    "improvements": "Areas to improve",
+    "generalComments": "General comments",
+    "criteria": "Criteria",
+    "weight": "Weight",
+    "score": "Score",
+    "comment": "Comment",
+    "noCriteria": "No criteria defined for this cycle.",
+    "noHistory": "No events recorded.",
+    "loading": "Loading…"
+  },
+  "historyAction": {
+    "criou": "Created",
+    "submeteu": "Submitted",
+    "aprovou": "Approved",
+    "rejeitou": "Rejected",
+    "validou": "Validated",
+    "reabriu": "Reopened"
+  },
+  "form": {
+    "evaluation": {
+      "cycle": "Cycle",
+      "employee": "Employee",
+      "evaluator": "Evaluator",
+      "date": "Date",
+      "globalScore": "Global score (0-20)",
+      "strengths": "Strengths",
+      "improvements": "Areas to improve",
+      "generalComments": "General comments",
+      "selectPlaceholder": "Select",
+      "draftHint": "On save, the evaluation stays as a draft. Use the Submit action in the list to send it for approval."
+    },
+    "cycle": {
+      "name": "Name",
+      "year": "Year",
+      "startDate": "Start",
+      "endDate": "End",
+      "status": "Status",
+      "description": "Description"
+    },
+    "criteria": {
+      "cycle": "Cycle",
+      "name": "Name",
+      "weight": "Weight",
+      "order": "Order",
+      "description": "Description",
+      "selectPlaceholder": "Select cycle"
+    },
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "createEvaluation": "New Evaluation",
+    "editEvaluation": "Edit Evaluation",
+    "createCycle": "New Cycle",
+    "editCycle": "Edit Cycle",
+    "createCriteria": "New Criteria",
+    "editCriteria": "Edit Criteria",
+    "deleteTitle": "Remove?",
+    "deleteDescription": "This action is permanent."
+  },
+  "reject": {
+    "title": "Reject evaluation",
+    "description": "State the reason. The evaluator can review and resubmit.",
+    "placeholder": "Rejection reason...",
+    "confirm": "Reject",
+    "cancel": "Cancel"
+  },
+  "toast": {
+    "createSuccess": "Evaluation created successfully",
+    "updateSuccess": "Evaluation updated",
+    "cycleSaved": "Cycle saved",
+    "criteriaSaved": "Criteria saved",
+    "deleteSuccess": "Record removed",
+    "submitSuccess": "Evaluation submitted for approval",
+    "approveSuccess": "Evaluation approved",
+    "rejectSuccess": "Evaluation returned for review",
+    "validateSuccess": "Evaluation validated",
+    "reopenSuccess": "Evaluation reopened",
+    "reasonRequired": "State the rejection reason",
+    "error": "An error occurred. Please try again."
+  },
+  "validation": {
+    "nameShort": "Name too short",
+    "cycleRequired": "Select a cycle",
+    "employeeRequired": "Select an employee",
+    "datesRequired": "Dates are required"
+  }
+}

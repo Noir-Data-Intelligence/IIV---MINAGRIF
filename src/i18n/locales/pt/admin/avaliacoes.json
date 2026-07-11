@@ -1,0 +1,172 @@
+{
+  "page": {
+    "title": "Avaliações de Desempenho",
+    "description": "Ciclos, critérios, fluxo de submissão e aprovação com auditoria."
+  },
+  "kpi": {
+    "activeCycle": "Ciclo activo",
+    "total": "Total de avaliações",
+    "pending": "Pendentes de aprovação",
+    "avgScore": "Pontuação média"
+  },
+  "tabs": {
+    "evaluations": "Avaliações",
+    "cycles": "Ciclos",
+    "criterias": "Critérios"
+  },
+  "status": {
+    "rascunho": "Rascunho",
+    "submetida": "Submetida",
+    "aprovada": "Aprovada",
+    "rejeitada": "Rejeitada",
+    "validada": "Validada"
+  },
+  "cycleStatus": {
+    "planeado": "Planeado",
+    "aberto": "Aberto",
+    "fechado": "Fechado"
+  },
+  "actions": {
+    "newEvaluation": "Nova Avaliação",
+    "newCycle": "Novo Ciclo",
+    "newCriteria": "Novo Critério",
+    "view": "Detalhes",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "submit": "Submeter para aprovação",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "validate": "Validar",
+    "reopen": "Reabrir"
+  },
+  "evaluationsTable": {
+    "employee": "Colaborador",
+    "evaluator": "Avaliador",
+    "cycle": "Ciclo",
+    "date": "Data",
+    "score": "Nota",
+    "status": "Estado",
+    "searchPlaceholder": "Pesquisar por colaborador, avaliador ou ciclo...",
+    "empty": "Nenhuma avaliação encontrada.",
+    "emptyCell": "—"
+  },
+  "cyclesTable": {
+    "name": "Nome",
+    "year": "Ano",
+    "period": "Período",
+    "status": "Estado",
+    "searchPlaceholder": "Pesquisar ciclos...",
+    "empty": "Nenhum ciclo encontrado."
+  },
+  "criteriasTable": {
+    "cycle": "Ciclo",
+    "name": "Nome",
+    "weight": "Peso",
+    "order": "Ordem",
+    "description": "Descrição",
+    "searchPlaceholder": "Pesquisar critérios...",
+    "empty": "Nenhum critério encontrado."
+  },
+  "detail": {
+    "title": "Avaliação",
+    "resumo": "Resumo",
+    "notas": "Notas por critério",
+    "historico": "Histórico",
+    "date": "Data",
+    "globalScore": "Nota global",
+    "submittedAt": "Submetida em",
+    "approvedAt": "Aprovada em",
+    "approvedBy": "Aprovada por",
+    "acknowledgedAt": "Validada em",
+    "rejectionReason": "Motivo da rejeição",
+    "strengths": "Pontos fortes",
+    "improvements": "Áreas a melhorar",
+    "generalComments": "Comentários gerais",
+    "criteria": "Critério",
+    "weight": "Peso",
+    "score": "Nota",
+    "comment": "Comentário",
+    "noCriteria": "Sem critérios definidos para este ciclo.",
+    "noHistory": "Sem eventos registados.",
+    "loading": "A carregar…"
+  },
+  "historyAction": {
+    "criou": "Criou",
+    "submeteu": "Submeteu",
+    "aprovou": "Aprovou",
+    "rejeitou": "Rejeitou",
+    "validou": "Validou",
+    "reabriu": "Reabriu"
+  },
+  "form": {
+    "evaluation": {
+      "cycle": "Ciclo",
+      "employee": "Colaborador",
+      "evaluator": "Avaliador",
+      "date": "Data",
+      "globalScore": "Nota global (0-20)",
+      "strengths": "Pontos fortes",
+      "improvements": "Áreas a melhorar",
+      "generalComments": "Comentários gerais",
+      "selectPlaceholder": "Seleccionar",
+      "draftHint": "Ao guardar, a avaliação fica em rascunho. Use a acção Submeter na lista para enviar para aprovação."
+    },
+    "cycle": {
+      "name": "Nome",
+      "year": "Ano",
+      "startDate": "Início",
+      "endDate": "Fim",
+      "status": "Estado",
+      "description": "Descrição"
+    },
+    "criteria": {
+      "cycle": "Ciclo",
+      "name": "Nome",
+      "weight": "Peso",
+      "order": "Ordem",
+      "description": "Descrição",
+      "selectPlaceholder": "Seleccionar ciclo"
+    },
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "createEvaluation": "Nova Avaliação",
+    "editEvaluation": "Editar Avaliação",
+    "createCycle": "Novo Ciclo",
+    "editCycle": "Editar Ciclo",
+    "createCriteria": "Novo Critério",
+    "editCriteria": "Editar Critério",
+    "deleteTitle": "Remover?",
+    "deleteDescription": "Esta acção é permanente."
+  },
+  "reject": {
+    "title": "Rejeitar avaliação",
+    "description": "Indique o motivo. O avaliador poderá rever e voltar a submeter.",
+    "placeholder": "Motivo da rejeição...",
+    "confirm": "Rejeitar",
+    "cancel": "Cancelar"
+  },
+  "toast": {
+    "createSuccess": "Avaliação criada com sucesso",
+    "updateSuccess": "Avaliação actualizada",
+    "cycleSaved": "Ciclo guardado",
+    "criteriaSaved": "Critério guardado",
+    "deleteSuccess": "Registo removido",
+    "submitSuccess": "Avaliação submetida para aprovação",
+    "approveSuccess": "Avaliação aprovada",
+    "rejectSuccess": "Avaliação devolvida para revisão",
+    "validateSuccess": "Avaliação validada",
+    "reopenSuccess": "Avaliação reaberta",
+    "reasonRequired": "Indique o motivo da rejeição",
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "validation": {
+    "nameShort": "Nome demasiado curto",
+    "cycleRequired": "Seleccione um ciclo",
+    "employeeRequired": "Seleccione um colaborador",
+    "datesRequired": "Datas obrigatórias"
+  }
+}

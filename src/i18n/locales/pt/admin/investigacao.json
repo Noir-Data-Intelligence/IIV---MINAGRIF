@@ -1,0 +1,190 @@
+{
+  "page": {
+    "title": "Investigação & Publicações",
+    "description": "Linhas de investigação, projectos de I&D e produção científica do instituto."
+  },
+  "kpi": {
+    "lines": "Linhas de investigação",
+    "projects": "Projectos activos",
+    "publications": "Publicações",
+    "funding": "Financiamento total"
+  },
+  "tabs": {
+    "lines": "Linhas",
+    "projects": "Projectos",
+    "publications": "Publicações"
+  },
+  "lineStatus": {
+    "activa": "Activa",
+    "suspensa": "Suspensa",
+    "concluida": "Concluída"
+  },
+  "projectStatus": {
+    "proposto": "Proposto",
+    "aprovado": "Aprovado",
+    "em_curso": "Em curso",
+    "concluido": "Concluído",
+    "cancelado": "Cancelado"
+  },
+  "pubType": {
+    "artigo": "Artigo",
+    "comunicacao": "Comunicação",
+    "livro": "Livro",
+    "tese": "Tese",
+    "relatorio": "Relatório"
+  },
+  "actions": {
+    "newLine": "Nova Linha",
+    "newProject": "Novo Projecto",
+    "newPublication": "Nova Publicação",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "lines": {
+    "table": {
+      "name": "Nome",
+      "area": "Área",
+      "description": "Descrição",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar linhas...",
+      "empty": "Nenhuma linha de investigação encontrada."
+    },
+    "form": {
+      "labels": {
+        "name": "Nome",
+        "area": "Área",
+        "description": "Descrição",
+        "status": "Estado"
+      },
+      "placeholders": {
+        "name": "Ex: Vigilância epidemiológica de doenças transfronteiriças",
+        "area": "Ex: Epidemiologia",
+        "description": "Âmbito e objectivos da linha de investigação"
+      }
+    },
+    "dialog": {
+      "createTitle": "Nova Linha de Investigação",
+      "editTitle": "Editar Linha de Investigação",
+      "detailsTitle": "Detalhes da Linha"
+    }
+  },
+  "projects": {
+    "table": {
+      "title": "Título",
+      "line": "Linha",
+      "period": "Período",
+      "funding": "Financiamento",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar projectos...",
+      "empty": "Nenhum projecto encontrado."
+    },
+    "form": {
+      "labels": {
+        "title": "Título",
+        "line": "Linha de investigação",
+        "objectives": "Objectivos",
+        "status": "Estado",
+        "startDate": "Data de início",
+        "endDate": "Data de fim",
+        "fundingSource": "Fonte de financiamento",
+        "fundingAmount": "Montante (AOA)",
+        "partners": "Parceiros"
+      },
+      "placeholders": {
+        "title": "Ex: Vigilância da Peste Suína Africana na região norte",
+        "objectives": "Objectivos e resultados esperados",
+        "fundingSource": "Ex: FAO, WOAH, OGE",
+        "partners": "Instituições parceiras (separadas por vírgula)"
+      },
+      "noLine": "Sem linha associada"
+    },
+    "dialog": {
+      "createTitle": "Novo Projecto de I&D",
+      "editTitle": "Editar Projecto",
+      "detailsTitle": "Detalhes do Projecto"
+    }
+  },
+  "publications": {
+    "table": {
+      "title": "Título",
+      "type": "Tipo",
+      "year": "Ano",
+      "venue": "Revista/Evento",
+      "doi": "DOI",
+      "searchPlaceholder": "Pesquisar publicações...",
+      "empty": "Nenhuma publicação encontrada."
+    },
+    "form": {
+      "labels": {
+        "title": "Título",
+        "type": "Tipo",
+        "authors": "Autores",
+        "year": "Ano",
+        "venue": "Revista / Evento",
+        "doi": "DOI",
+        "url": "URL",
+        "project": "Projecto associado"
+      },
+      "placeholders": {
+        "title": "Título da publicação",
+        "authors": "Autores separados por vírgula (ex: Mateus, A., Cabral, J.)",
+        "venue": "Ex: Tropical Animal Health and Production",
+        "doi": "Ex: 10.1007/s11250-023-03612-4",
+        "url": "https://doi.org/..."
+      },
+      "noProject": "Sem projecto associado"
+    },
+    "dialog": {
+      "createTitle": "Nova Publicação",
+      "editTitle": "Editar Publicação",
+      "detailsTitle": "Detalhes da Publicação"
+    }
+  },
+  "details": {
+    "name": "Nome",
+    "area": "Área",
+    "description": "Descrição",
+    "status": "Estado",
+    "title": "Título",
+    "line": "Linha",
+    "objectives": "Objectivos",
+    "period": "Período",
+    "fundingSource": "Fonte de financiamento",
+    "fundingAmount": "Montante",
+    "partners": "Parceiros",
+    "type": "Tipo",
+    "authors": "Autores",
+    "year": "Ano",
+    "venue": "Revista/Evento",
+    "doi": "DOI",
+    "url": "URL",
+    "project": "Projecto",
+    "createdAt": "Criado em"
+  },
+  "form": {
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "deleteTitle": "Eliminar registo?",
+    "deleteDescription": "Esta acção é permanente e não pode ser revertida."
+  },
+  "table": {
+    "emptyCell": "—",
+    "allStatus": "Todos os estados",
+    "allTypes": "Todos os tipos"
+  },
+  "validation": {
+    "nameShort": "Nome demasiado curto",
+    "titleShort": "Título demasiado curto"
+  },
+  "toast": {
+    "createSuccess": "Registo criado com sucesso",
+    "updateSuccess": "Registo actualizado",
+    "deleteSuccess": "Registo eliminado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

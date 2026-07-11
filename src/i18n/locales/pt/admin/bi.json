@@ -1,0 +1,91 @@
+{
+  "page": {
+    "title": "BI Institucional",
+    "description": "Dashboards executivos e relatórios consolidados de todos os módulos."
+  },
+  "actions": {
+    "exportPdf": "Exportar PDF"
+  },
+  "kpi": {
+    "animals": "Efectivo animal",
+    "animalsCaption": "Total registado",
+    "analyses": "Análises laboratoriais",
+    "analysesCaption": "Total realizadas",
+    "missions": "Missões activas",
+    "missionsCaption": "Em curso e aprovadas",
+    "employees": "Colaboradores",
+    "employeesCaption": "Quadro de pessoal",
+    "projects": "Projectos I&D activos",
+    "projectsCaption": "Aprovados e em curso",
+    "publications": "Publicações",
+    "publicationsCaption": "Produção científica",
+    "revenue": "Receita (YTD)",
+    "revenueCaption": "Movimentos pagos do ano",
+    "expense": "Despesa (YTD)",
+    "expenseCaption": "Movimentos pagos do ano",
+    "execution": "Execução orçamental",
+    "executionCaption": "Orçamento do ano corrente"
+  },
+  "tabs": {
+    "financeiro": "Financeiro",
+    "producao": "Produção",
+    "rh": "Recursos Humanos",
+    "investigacao": "Investigação"
+  },
+  "charts": {
+    "financeiro": {
+      "title": "Receita vs Despesa (mensal)",
+      "subtitle": "Movimentos pagos do ano corrente, por mês.",
+      "empty": "Sem movimentos no ano corrente."
+    },
+    "producao": {
+      "title": "Colheitas por cultura",
+      "subtitle": "Quantidade colhida acumulada, por cultura.",
+      "empty": "Sem colheitas registadas."
+    },
+    "rh": {
+      "title": "Colaboradores por perfil",
+      "subtitle": "Distribuição dos utilizadores por perfil de acesso.",
+      "empty": "Sem dados de perfis."
+    },
+    "investigacao": {
+      "title": "Publicações por ano",
+      "subtitle": "Produção científica registada, por ano.",
+      "empty": "Sem publicações registadas."
+    },
+    "revenue": "Receita",
+    "expense": "Despesa",
+    "quantity": "Quantidade",
+    "publications": "Publicações"
+  },
+  "roles": {
+    "admin": "Administrador",
+    "tecnico": "Técnico",
+    "gestor": "Gestor",
+    "diretor": "Director",
+    "colaborador": "Colaborador"
+  },
+  "pdf": {
+    "title": "Relatório Executivo — BI Institucional",
+    "kpiSection": "Indicadores institucionais",
+    "indicator": "Indicador",
+    "value": "Valor",
+    "financialSection": "Execução financeira mensal",
+    "month": "Mês",
+    "harvestSection": "Produção agrícola por cultura",
+    "crop": "Cultura",
+    "quantity": "Quantidade",
+    "labels": {
+      "animals": "Efectivo animal",
+      "analyses": "Análises laboratoriais",
+      "missions": "Missões activas",
+      "employees": "Colaboradores",
+      "projects": "Projectos I&D activos",
+      "publications": "Publicações",
+      "revenue": "Receita (YTD)",
+      "expense": "Despesa (YTD)",
+      "balance": "Saldo (YTD)",
+      "execution": "Execução orçamental"
+    }
+  }
+}

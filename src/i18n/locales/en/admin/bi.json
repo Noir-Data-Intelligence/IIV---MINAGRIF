@@ -1,0 +1,91 @@
+{
+  "page": {
+    "title": "Institutional BI",
+    "description": "Executive dashboards and consolidated reports across all modules."
+  },
+  "actions": {
+    "exportPdf": "Export PDF"
+  },
+  "kpi": {
+    "animals": "Livestock",
+    "animalsCaption": "Total recorded",
+    "analyses": "Lab analyses",
+    "analysesCaption": "Total performed",
+    "missions": "Active missions",
+    "missionsCaption": "In progress and approved",
+    "employees": "Staff",
+    "employeesCaption": "Headcount",
+    "projects": "Active R&D projects",
+    "projectsCaption": "Approved and in progress",
+    "publications": "Publications",
+    "publicationsCaption": "Scientific output",
+    "revenue": "Revenue (YTD)",
+    "revenueCaption": "Paid movements this year",
+    "expense": "Expense (YTD)",
+    "expenseCaption": "Paid movements this year",
+    "execution": "Budget execution",
+    "executionCaption": "Current-year budget"
+  },
+  "tabs": {
+    "financeiro": "Finance",
+    "producao": "Production",
+    "rh": "Human Resources",
+    "investigacao": "Research"
+  },
+  "charts": {
+    "financeiro": {
+      "title": "Revenue vs Expense (monthly)",
+      "subtitle": "Paid movements for the current year, by month.",
+      "empty": "No movements this year."
+    },
+    "producao": {
+      "title": "Harvests by crop",
+      "subtitle": "Accumulated harvested quantity, by crop.",
+      "empty": "No harvests recorded."
+    },
+    "rh": {
+      "title": "Staff by role",
+      "subtitle": "Distribution of users by access role.",
+      "empty": "No role data."
+    },
+    "investigacao": {
+      "title": "Publications by year",
+      "subtitle": "Recorded scientific output, by year.",
+      "empty": "No publications recorded."
+    },
+    "revenue": "Revenue",
+    "expense": "Expense",
+    "quantity": "Quantity",
+    "publications": "Publications"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "tecnico": "Technician",
+    "gestor": "Manager",
+    "diretor": "Director",
+    "colaborador": "Staff"
+  },
+  "pdf": {
+    "title": "Executive Report — Institutional BI",
+    "kpiSection": "Institutional indicators",
+    "indicator": "Indicator",
+    "value": "Value",
+    "financialSection": "Monthly financial execution",
+    "month": "Month",
+    "harvestSection": "Agricultural production by crop",
+    "crop": "Crop",
+    "quantity": "Quantity",
+    "labels": {
+      "animals": "Livestock",
+      "analyses": "Lab analyses",
+      "missions": "Active missions",
+      "employees": "Staff",
+      "projects": "Active R&D projects",
+      "publications": "Publications",
+      "revenue": "Revenue (YTD)",
+      "expense": "Expense (YTD)",
+      "balance": "Balance (YTD)",
+      "execution": "Budget execution"
+    }
+  }
+}

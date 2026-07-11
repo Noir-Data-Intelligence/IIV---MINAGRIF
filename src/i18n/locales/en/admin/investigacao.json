@@ -1,0 +1,190 @@
+{
+  "page": {
+    "title": "Research & Publications",
+    "description": "Research lines, R&D projects and the institute's scientific output."
+  },
+  "kpi": {
+    "lines": "Research lines",
+    "projects": "Active projects",
+    "publications": "Publications",
+    "funding": "Total funding"
+  },
+  "tabs": {
+    "lines": "Lines",
+    "projects": "Projects",
+    "publications": "Publications"
+  },
+  "lineStatus": {
+    "activa": "Active",
+    "suspensa": "Suspended",
+    "concluida": "Completed"
+  },
+  "projectStatus": {
+    "proposto": "Proposed",
+    "aprovado": "Approved",
+    "em_curso": "In progress",
+    "concluido": "Completed",
+    "cancelado": "Cancelled"
+  },
+  "pubType": {
+    "artigo": "Article",
+    "comunicacao": "Conference paper",
+    "livro": "Book",
+    "tese": "Thesis",
+    "relatorio": "Report"
+  },
+  "actions": {
+    "newLine": "New Line",
+    "newProject": "New Project",
+    "newPublication": "New Publication",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "lines": {
+    "table": {
+      "name": "Name",
+      "area": "Area",
+      "description": "Description",
+      "status": "Status",
+      "searchPlaceholder": "Search lines...",
+      "empty": "No research lines found."
+    },
+    "form": {
+      "labels": {
+        "name": "Name",
+        "area": "Area",
+        "description": "Description",
+        "status": "Status"
+      },
+      "placeholders": {
+        "name": "e.g. Epidemiological surveillance of transboundary diseases",
+        "area": "e.g. Epidemiology",
+        "description": "Scope and objectives of the research line"
+      }
+    },
+    "dialog": {
+      "createTitle": "New Research Line",
+      "editTitle": "Edit Research Line",
+      "detailsTitle": "Line Details"
+    }
+  },
+  "projects": {
+    "table": {
+      "title": "Title",
+      "line": "Line",
+      "period": "Period",
+      "funding": "Funding",
+      "status": "Status",
+      "searchPlaceholder": "Search projects...",
+      "empty": "No projects found."
+    },
+    "form": {
+      "labels": {
+        "title": "Title",
+        "line": "Research line",
+        "objectives": "Objectives",
+        "status": "Status",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "fundingSource": "Funding source",
+        "fundingAmount": "Amount (AOA)",
+        "partners": "Partners"
+      },
+      "placeholders": {
+        "title": "e.g. African Swine Fever surveillance in the north",
+        "objectives": "Objectives and expected outcomes",
+        "fundingSource": "e.g. FAO, WOAH, State Budget",
+        "partners": "Partner institutions (comma-separated)"
+      },
+      "noLine": "No line associated"
+    },
+    "dialog": {
+      "createTitle": "New R&D Project",
+      "editTitle": "Edit Project",
+      "detailsTitle": "Project Details"
+    }
+  },
+  "publications": {
+    "table": {
+      "title": "Title",
+      "type": "Type",
+      "year": "Year",
+      "venue": "Journal/Venue",
+      "doi": "DOI",
+      "searchPlaceholder": "Search publications...",
+      "empty": "No publications found."
+    },
+    "form": {
+      "labels": {
+        "title": "Title",
+        "type": "Type",
+        "authors": "Authors",
+        "year": "Year",
+        "venue": "Journal / Venue",
+        "doi": "DOI",
+        "url": "URL",
+        "project": "Associated project"
+      },
+      "placeholders": {
+        "title": "Publication title",
+        "authors": "Authors separated by commas (e.g. Mateus, A., Cabral, J.)",
+        "venue": "e.g. Tropical Animal Health and Production",
+        "doi": "e.g. 10.1007/s11250-023-03612-4",
+        "url": "https://doi.org/..."
+      },
+      "noProject": "No project associated"
+    },
+    "dialog": {
+      "createTitle": "New Publication",
+      "editTitle": "Edit Publication",
+      "detailsTitle": "Publication Details"
+    }
+  },
+  "details": {
+    "name": "Name",
+    "area": "Area",
+    "description": "Description",
+    "status": "Status",
+    "title": "Title",
+    "line": "Line",
+    "objectives": "Objectives",
+    "period": "Period",
+    "fundingSource": "Funding source",
+    "fundingAmount": "Amount",
+    "partners": "Partners",
+    "type": "Type",
+    "authors": "Authors",
+    "year": "Year",
+    "venue": "Journal/Venue",
+    "doi": "DOI",
+    "url": "URL",
+    "project": "Project",
+    "createdAt": "Created at"
+  },
+  "form": {
+    "submitCreate": "Create",
+    "submitEdit": "Save Changes",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "deleteTitle": "Delete record?",
+    "deleteDescription": "This action is permanent and cannot be undone."
+  },
+  "table": {
+    "emptyCell": "—",
+    "allStatus": "All statuses",
+    "allTypes": "All types"
+  },
+  "validation": {
+    "nameShort": "Name too short",
+    "titleShort": "Title too short"
+  },
+  "toast": {
+    "createSuccess": "Record created successfully",
+    "updateSuccess": "Record updated",
+    "deleteSuccess": "Record deleted",
+    "error": "An error occurred. Please try again."
+  }
+}
