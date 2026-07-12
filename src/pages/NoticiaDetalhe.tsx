@@ -87,10 +87,11 @@ export default function NoticiaDetalhe() {
             <ArrowLeft className="h-4 w-4" /> {t("detail.back")}
           </Link>
 
-          <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-4">
-            <span className="text-[hsl(var(--iiv-gold-text))]">{item.categoria}</span>
-            <span className="h-px w-4 bg-border" />
-            <time>{fmt(item.published_at ?? item.created_at)}</time>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 font-mono text-[11px] uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">
+              {item.categoria}
+            </span>
+            <time className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">{fmt(item.published_at ?? item.created_at)}</time>
           </div>
 
           <h1 className="font-serif text-4xl md:text-5xl leading-tight mb-6">{item.titulo}</h1>

@@ -117,8 +117,10 @@ export default function Noticias() {
                       />
                     </div>
                     <div className="lg:col-span-5">
-                      <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-4">
-                        <span className="text-[hsl(var(--iiv-gold-text))]">{destaque.categoria}</span>
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 font-mono text-[11px] uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">
+                          {destaque.categoria}
+                        </span>
                         <span className="h-px w-4 bg-border" />
                         <time>{fmt(destaque.published_at ?? destaque.created_at)}</time>
                       </div>
@@ -144,8 +146,8 @@ export default function Noticias() {
                 >
                   {restantes.map((n, i) => (
                     <motion.div key={n.id} variants={shouldReduceMotion ? undefined : fadeInUp}>
-                      <Link to={`/noticias/${n.slug}`} className="group">
-                        <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted mb-5">
+                      <Link to={`/noticias/${n.slug}`} className="group block rounded-2xl overflow-hidden bg-card shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                        <div className="aspect-[4/3] overflow-hidden bg-muted">
                           <img
                             src={imageUrl(n.image_path, i + 1)}
                             alt={n.titulo}
@@ -153,13 +155,16 @@ export default function Noticias() {
                             loading="lazy"
                           />
                         </div>
-                        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-                          <span className="text-[hsl(var(--iiv-gold-text))]">{n.categoria}</span>
-                          <span className="h-px w-4 bg-border" />
-                          <time>{fmt(n.published_at ?? n.created_at)}</time>
+                        <div className="p-5">
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">
+                              {n.categoria}
+                            </span>
+                            <time className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{fmt(n.published_at ?? n.created_at)}</time>
+                          </div>
+                          <h3 className="font-serif text-xl leading-tight group-hover:text-primary transition-colors">{n.titulo}</h3>
+                          {n.resumo && <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-2">{n.resumo}</p>}
                         </div>
-                        <h3 className="font-serif text-xl leading-tight group-hover:text-primary transition-colors">{n.titulo}</h3>
-                        {n.resumo && <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-2">{n.resumo}</p>}
                       </Link>
                     </motion.div>
                   ))}
