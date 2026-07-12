@@ -164,8 +164,9 @@ export default function Sobre() {
             <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("values.kicker")}</p>
             <h2 className="font-serif text-3xl md:text-4xl mt-5">{t("values.title")}</h2>
           </div>
+          {/* Missão / Visão / Valores lado a lado — 3 colunas, não empilhados */}
           <motion.div
-            className="grid gap-px bg-border rounded-2xl overflow-hidden border border-border/60"
+            className="grid gap-6 md:grid-cols-3"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -177,15 +178,18 @@ export default function Sobre() {
                 <motion.div
                   key={v.title}
                   variants={revealVariants}
-                  className="group bg-card p-8 md:p-10 grid md:grid-cols-12 gap-6 items-start hover:bg-accent/20 transition-colors duration-300"
+                  className="group relative overflow-hidden rounded-3xl border border-border/60 bg-card p-8 shadow-md hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300"
                 >
-                  <div className="md:col-span-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl gradient-green-soft text-primary-foreground shadow-lg mb-5 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3">
-                      <Icon className="h-6 w-6" strokeWidth={1.75} />
-                    </div>
-                    <h3 className="font-serif text-2xl">{v.title}</h3>
+                  <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-[hsl(var(--iiv-gold))]/[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
+                  <span className="absolute top-6 right-7 font-serif text-5xl text-primary/10 select-none">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl gradient-green-soft text-primary-foreground shadow-lg mb-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+                    <Icon className="h-6 w-6" strokeWidth={1.75} />
                   </div>
-                  <p className="md:col-span-8 md:col-start-5 text-muted-foreground leading-relaxed">{v.text}</p>
+                  <h3 className="relative font-serif text-2xl">{v.title}</h3>
+                  <div className="mt-3 h-0.5 w-10 rounded-full bg-[hsl(var(--iiv-gold))] transition-all duration-300 group-hover:w-16" />
+                  <p className="relative mt-4 text-sm text-muted-foreground leading-relaxed">{v.text}</p>
                 </motion.div>
               );
             })}
