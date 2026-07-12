@@ -23,10 +23,10 @@ interface Notification {
 }
 
 const typeMeta: Record<NotificationType, { icon: any; color: string; bg: string }> = {
-  info:    { icon: Info,         color: "text-sky-600",      bg: "bg-sky-500/10" },
-  sucesso: { icon: CheckCircle2, color: "text-primary",      bg: "bg-primary/10" },
-  aviso:   { icon: AlertTriangle,color: "text-secondary",    bg: "bg-secondary/10" },
-  erro:    { icon: AlertCircle,  color: "text-destructive",  bg: "bg-destructive/10" },
+  info:    { icon: Info,         color: "text-white", bg: "bg-sky-500 shadow-md shadow-sky-500/30" },
+  sucesso: { icon: CheckCircle2, color: "text-primary-foreground", bg: "gradient-green-soft shadow-md" },
+  aviso:   { icon: AlertTriangle,color: "text-white", bg: "bg-amber-500 shadow-md shadow-amber-500/30" },
+  erro:    { icon: AlertCircle,  color: "text-white", bg: "bg-destructive shadow-md shadow-destructive/30" },
 };
 
 export function NotificationCenter() {

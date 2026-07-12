@@ -126,7 +126,7 @@ const ALERT_TONE_STYLES: Record<"warning" | "destructive", {
   destructive: {
     card: "border-destructive/25 bg-destructive/[0.035]",
     accent: "bg-destructive",
-    iconWrap: "bg-destructive/10 text-destructive",
+    iconWrap: "bg-destructive text-white shadow-md shadow-destructive/30",
     badge: "bg-destructive/10 text-destructive",
     badgeLabel: "Crítico",
     value: "text-destructive",
@@ -134,7 +134,7 @@ const ALERT_TONE_STYLES: Record<"warning" | "destructive", {
   warning: {
     card: "border-amber-500/25 bg-amber-500/[0.035]",
     accent: "bg-amber-500",
-    iconWrap: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    iconWrap: "bg-amber-500 text-white shadow-md shadow-amber-500/30",
     badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
     badgeLabel: "Atenção",
     value: "text-amber-600 dark:text-amber-400",

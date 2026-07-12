@@ -91,11 +91,11 @@ export function AdminCard({
             {Icon && (
               <div
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg backdrop-blur-sm",
-                  isGradient ? "bg-white/15" : "bg-primary/10 text-primary"
+                  "flex h-10 w-10 items-center justify-center rounded-xl backdrop-blur-sm transition-transform duration-300 group-hover:scale-105",
+                  isGradient ? "bg-white/15" : "gradient-green-soft text-primary-foreground shadow-md"
                 )}
               >
-                <Icon className="h-4.5 w-4.5" />
+                <Icon className="h-5 w-5" strokeWidth={1.75} />
               </div>
             )}
             {trend && (
