@@ -12,6 +12,10 @@
   "search": {
     "placeholder": "Search legislation..."
   },
+  "filter": {
+    "kicker": "Search & Filter",
+    "title": "Find the legal instrument you need"
+  },
   "tabs": {
     "todos": "All",
     "tipos": {
@@ -24,7 +28,11 @@
   },
   "list": {
     "viewDetails": "View details",
-    "empty": "No legal instrument found."
+    "empty": "No legal instrument found.",
+    "download": "Download",
+    "recentBadge": "Recent",
+    "resultsCount_one": "{{count}} legal instrument found",
+    "resultsCount_other": "{{count}} legal instruments found"
   },
   "detail": {
     "notFound": {
@@ -34,6 +42,7 @@
     "back": "Back",
     "download": "Download PDF",
     "pdfUnavailable": "PDF document not yet available for this instrument.",
-    "numberPrefix": "No."
+    "numberPrefix": "No.",
+    "documentLabel": "Document"
   }
 }

@@ -12,6 +12,10 @@
   "search": {
     "placeholder": "Pesquisar legislação..."
   },
+  "filter": {
+    "kicker": "Pesquisar & Filtrar",
+    "title": "Encontre o diploma que procura"
+  },
   "tabs": {
     "todos": "Todos",
     "tipos": {
@@ -24,7 +28,11 @@
   },
   "list": {
     "viewDetails": "Ver detalhes",
-    "empty": "Nenhum diploma encontrado."
+    "empty": "Nenhum diploma encontrado.",
+    "download": "Descarregar",
+    "recentBadge": "Recente",
+    "resultsCount_one": "{{count}} diploma encontrado",
+    "resultsCount_other": "{{count}} diplomas encontrados"
   },
   "detail": {
     "notFound": {
@@ -34,6 +42,7 @@
     "back": "Voltar",
     "download": "Descarregar PDF",
     "pdfUnavailable": "Documento PDF ainda não disponível para este diploma.",
-    "numberPrefix": "Nº"
+    "numberPrefix": "Nº",
+    "documentLabel": "Documento"
   }
 }
