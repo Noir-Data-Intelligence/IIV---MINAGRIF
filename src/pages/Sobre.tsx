@@ -1,4 +1,4 @@
-import { Target, Eye, Users, Award } from "lucide-react";
+import { Target, Eye, Users, Award, Landmark } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import { PageHero } from "@/components/layout/PageHero";
@@ -9,6 +9,7 @@ import ptSobre from "@/i18n/locales/pt/public/sobre.json";
 import enSobre from "@/i18n/locales/en/public/sobre.json";
 import sobreHeroInstitute from "@/assets/sobre/sobre-hero-institute.webp";
 import sobreTeamMeeting from "@/assets/sobre/sobre-team-meeting.webp";
+import sobreIntroProduction from "@/assets/hero/hero-services-vaccine-production.webp";
 
 // Namespace "sobre" não faz parte do bundle central (src/i18n/index.ts, que só
 // regista "common"/"nav"). Registamo-lo aqui em runtime para manter esta página
@@ -57,28 +58,48 @@ export default function Sobre() {
       />
 
       {/* INTRO EDITORIAL */}
-      <section className="py-24">
+      <section className="py-24 md:py-32 overflow-hidden">
         <div className="container">
           <motion.div
-            className="grid gap-12 md:grid-cols-12"
+            className="grid gap-16 lg:grid-cols-12 items-center"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
           >
-            <motion.div variants={revealVariants} className="md:col-span-5">
+            <motion.div variants={revealVariants} className="lg:col-span-5 relative order-2 lg:order-1">
               <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("intro.kicker")}</p>
-              <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">
+              <h2 className="font-serif text-3xl md:text-5xl mt-6 leading-[1.05] tracking-tight">
                 {t("intro.title")}
               </h2>
-            </motion.div>
-            <motion.div variants={revealVariants} className="md:col-span-6 md:col-start-7">
-              <p className="lead">
+              <p className="lead mt-6">
                 {t("intro.lead")}
               </p>
               <p className="mt-5 text-muted-foreground leading-relaxed">
                 {t("intro.text")}
               </p>
+            </motion.div>
+            <motion.div variants={revealVariants} className="lg:col-span-6 lg:col-start-7 relative order-1 lg:order-2">
+              <div className="absolute -inset-x-6 -top-8 -bottom-8 -z-10 rounded-[2.5rem] gradient-green-gold opacity-[0.08] blur-2xl" />
+              <div className="relative rounded-[1.75rem] overflow-hidden shadow-2xl">
+                <img src={sobreIntroProduction} alt="" className="aspect-[4/5] w-full object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--iiv-green-dark))]/45 via-transparent to-transparent" />
+              </div>
+              <motion.div
+                className="absolute -bottom-8 -left-6 sm:-left-10 flex items-center gap-3 rounded-2xl bg-card border border-border/60 shadow-2xl p-4 pr-6 max-w-[240px]"
+                initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.9, y: 10 }}
+                whileInView={prefersReducedMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.2 }}
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl gradient-green text-primary-foreground">
+                  <Landmark className="h-5 w-5" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <p className="font-serif text-xl leading-none">1965</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{t("intro.badgeLabel", "ano de fundação do Instituto")}</p>
+                </div>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>

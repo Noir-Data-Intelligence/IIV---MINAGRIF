@@ -129,7 +129,7 @@ export default function Contactos() {
           >
             {/* FORM */}
             <motion.div
-              className="lg:col-span-7"
+              className="lg:col-span-7 rounded-2xl border border-border/60 bg-card shadow-xl p-8 md:p-10"
               variants={shouldReduceMotion ? undefined : fadeInUp}
             >
               <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("form.kicker")}</p>
