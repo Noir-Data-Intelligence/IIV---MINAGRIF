@@ -26,7 +26,7 @@ import { useHarvestsList, useFieldsList, useCropsList } from "@/hooks/queries/us
 import { useUsersList } from "@/hooks/queries/useUsers";
 import { formatKwanza, formatNumber } from "@/lib/format";
 import { generateInstitutionalPdf } from "@/lib/generateInstitutionalPdf";
-import { fadeIn } from "@/lib/motion";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import type { AppRole } from "@/lib/permissions";
 import i18n from "@/i18n";
 import ptBi from "@/i18n/locales/pt/admin/bi.json";
@@ -265,19 +265,24 @@ export default function BI() {
       </AdminPageHeader>
 
       {/* KPIs institucionais */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
-        {kpiCards.map((c, i) => (
-          <AdminCard
-            key={c.key}
-            title={c.label}
-            icon={c.icon}
-            metric={c.value}
-            caption={c.caption}
-            variant={c.variant}
-            stagger={(Math.min(i + 1, 8)) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}
-          />
+      <motion.div
+        className="grid gap-4 grid-cols-2 md:grid-cols-3"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        {kpiCards.map((c) => (
+          <motion.div key={c.key} variants={prefersReduced ? undefined : fadeInUp}>
+            <AdminCard
+              title={c.label}
+              icon={c.icon}
+              metric={c.value}
+              caption={c.caption}
+              variant={c.variant}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <Tabs defaultValue="financeiro" className="space-y-4">
         <TabsList>
