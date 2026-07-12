@@ -619,7 +619,7 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-white shadow-md shadow-destructive/30">
                   <AlertTriangle className="h-3.5 w-3.5" />
                 </span>
                 <h2 className="text-sm font-semibold text-foreground">
