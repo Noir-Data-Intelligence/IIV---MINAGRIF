@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Package, Eye, Pencil, Plus, Trash2, AlertTriangle, CalendarClock } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -29,6 +30,7 @@ import {
 } from "@/hooks/queries/useInsumos";
 import { useLaboratoriosList } from "@/hooks/queries/useLaboratorios";
 import type { InsumoDto } from "@/types/dto/insumo";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptInsumos from "@/i18n/locales/pt/admin/insumos.json";
 import enInsumos from "@/i18n/locales/en/admin/insumos.json";
@@ -80,6 +82,7 @@ export default function Insumos() {
   const { t, i18n: i18nInstance } = useTranslation("admin-insumos");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("insumos");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -260,32 +263,40 @@ export default function Insumos() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        <AdminCard
-          variant="gradient-green"
-          icon={Package}
-          metric={kpiTotal}
-          title={t("kpis.total")}
-          caption={t("kpis.totalCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant={kpiLowStock > 0 ? "gradient-gold" : "glass"}
-          icon={AlertTriangle}
-          metric={kpiLowStock}
-          title={t("kpis.lowStock")}
-          caption={t("kpis.lowStockCaption")}
-          stagger={2}
-        />
-        <AdminCard
-          variant={kpiExpiringSoon > 0 ? "gradient-gold" : "glass"}
-          icon={CalendarClock}
-          metric={kpiExpiringSoon}
-          title={t("kpis.expiring")}
-          caption={t("kpis.expiringCaption")}
-          stagger={3}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={Package}
+            metric={kpiTotal}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant={kpiLowStock > 0 ? "gradient-gold" : "glass"}
+            icon={AlertTriangle}
+            metric={kpiLowStock}
+            title={t("kpis.lowStock")}
+            caption={t("kpis.lowStockCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant={kpiExpiringSoon > 0 ? "gradient-gold" : "glass"}
+            icon={CalendarClock}
+            metric={kpiExpiringSoon}
+            title={t("kpis.expiring")}
+            caption={t("kpis.expiringCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <DataTable
         columns={columns}

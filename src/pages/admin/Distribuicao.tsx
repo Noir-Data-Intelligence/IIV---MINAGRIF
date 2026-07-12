@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Truck, FileText, Eye, Pencil, Trash2, MapPin, PackageCheck } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -30,6 +31,7 @@ import { useProdutosList } from "@/hooks/queries/useProdutos";
 import type { DistribuicaoDto } from "@/types/dto/distribuicao";
 import type { LoteDto } from "@/types/dto/lote";
 import type { ProdutoDto } from "@/types/dto/produto";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptDistribuicao from "@/i18n/locales/pt/admin/distribuicao.json";
 import enDistribuicao from "@/i18n/locales/en/admin/distribuicao.json";
@@ -55,6 +57,7 @@ export default function Distribuicao() {
   const { t } = useTranslation("distribuicao");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("distribuicao");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -244,19 +247,24 @@ export default function Distribuicao() {
         )}
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        {kpiCards.map((c, i) => (
-          <AdminCard
-            key={c.key}
-            title={c.label}
-            icon={c.icon}
-            metric={c.value}
-            caption={c.caption}
-            variant={c.variant}
-            stagger={(i + 1) as 1 | 2 | 3}
-          />
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        {kpiCards.map((c) => (
+          <motion.div key={c.key} variants={prefersReducedMotion ? undefined : fadeInUp}>
+            <AdminCard
+              title={c.label}
+              icon={c.icon}
+              metric={c.value}
+              caption={c.caption}
+              variant={c.variant}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <DataTable
         columns={columns}

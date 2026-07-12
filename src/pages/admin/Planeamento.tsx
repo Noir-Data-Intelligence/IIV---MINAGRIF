@@ -5,6 +5,7 @@ import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { CalendarRange, Plus, FileText, Eye, Pencil, Trash2, Factory, Target, CheckCircle2 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -36,6 +37,7 @@ import {
 import { useProdutosList } from "@/hooks/queries/useProdutos";
 import type { PlanoDto, PlanoStatus } from "@/types/dto/plano";
 import type { ProdutoDto } from "@/types/dto/produto";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptPlaneamento from "@/i18n/locales/pt/admin/planeamento.json";
 import enPlaneamento from "@/i18n/locales/en/admin/planeamento.json";
@@ -73,6 +75,7 @@ export default function Planeamento() {
   const { t } = useTranslation("planeamento");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("planeamento");
+  const prefersReducedMotion = useReducedMotion();
   const statusLabel = (s: string) => t(`status.${s}`, { defaultValue: s });
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
@@ -287,19 +290,24 @@ export default function Planeamento() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {kpiCards.map((c, i) => (
-          <AdminCard
-            key={c.key}
-            title={c.label}
-            icon={c.icon}
-            metric={c.value}
-            caption={c.caption}
-            variant={c.variant}
-            stagger={(i + 1) as 1 | 2 | 3 | 4}
-          />
+      <motion.div
+        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        {kpiCards.map((c) => (
+          <motion.div key={c.key} variants={prefersReducedMotion ? undefined : fadeInUp}>
+            <AdminCard
+              title={c.label}
+              icon={c.icon}
+              metric={c.value}
+              caption={c.caption}
+              variant={c.variant}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <Card className="glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
         <CardHeader className="pb-2">

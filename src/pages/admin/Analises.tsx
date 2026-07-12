@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { TestTubes, Eye, Pencil, Plus, Trash2, CalendarClock, Hourglass, CheckCircle2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -31,6 +32,7 @@ import {
 } from "@/hooks/queries/useAnalises";
 import { useLaboratoriosList } from "@/hooks/queries/useLaboratorios";
 import type { AnaliseDto, AnaliseStatus } from "@/types/dto/analise";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptAnalises from "@/i18n/locales/pt/admin/analises.json";
 import enAnalises from "@/i18n/locales/en/admin/analises.json";
@@ -64,6 +66,7 @@ export default function Analises() {
   const { canWrite } = useUserRole();
   const canEdit = canWrite("analises");
   const statusLabel = (s: string) => t(`status.${s}`, { defaultValue: s });
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -234,40 +237,49 @@ export default function Analises() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <AdminCard
-          variant="gradient-green"
-          icon={TestTubes}
-          metric={kpiTotal}
-          title={t("kpis.total")}
-          caption={t("kpis.totalCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant="gradient-teal"
-          icon={CalendarClock}
-          metric={kpiScheduled}
-          title={t("kpis.scheduled")}
-          caption={t("kpis.scheduledCaption")}
-          stagger={2}
-        />
-        <AdminCard
-          variant="gradient-gold"
-          icon={Hourglass}
-          metric={kpiInProgress}
-          title={t("kpis.inProgress")}
-          caption={t("kpis.inProgressCaption")}
-          stagger={3}
-        />
-        <AdminCard
-          variant="gradient-green-gold"
-          icon={CheckCircle2}
-          metric={kpiConcluded}
-          title={t("kpis.concluded")}
-          caption={t("kpis.concludedCaption")}
-          stagger={4}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={TestTubes}
+            metric={kpiTotal}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-teal"
+            icon={CalendarClock}
+            metric={kpiScheduled}
+            title={t("kpis.scheduled")}
+            caption={t("kpis.scheduledCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-gold"
+            icon={Hourglass}
+            metric={kpiInProgress}
+            title={t("kpis.inProgress")}
+            caption={t("kpis.inProgressCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green-gold"
+            icon={CheckCircle2}
+            metric={kpiConcluded}
+            title={t("kpis.concluded")}
+            caption={t("kpis.concludedCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <DataTable
         columns={columns}

@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { FlaskConical, Eye, Pencil, Plus, Trash2, CheckCircle2, Layers } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -28,6 +29,7 @@ import {
   useUpdateLaboratorio,
 } from "@/hooks/queries/useLaboratorios";
 import type { LaboratorioDto } from "@/types/dto/laboratorio";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptLaboratorios from "@/i18n/locales/pt/admin/laboratorios.json";
 import enLaboratorios from "@/i18n/locales/en/admin/laboratorios.json";
@@ -54,6 +56,7 @@ export default function Laboratorios() {
   const { t, i18n: i18nInstance } = useTranslation("admin-laboratorios");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("laboratorios");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -195,32 +198,40 @@ export default function Laboratorios() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        <AdminCard
-          variant="gradient-green"
-          icon={FlaskConical}
-          metric={kpiTotal}
-          title={t("kpis.total")}
-          caption={t("kpis.totalCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant="gradient-teal"
-          icon={CheckCircle2}
-          metric={kpiActive}
-          title={t("kpis.active")}
-          caption={t("kpis.activeCaption")}
-          stagger={2}
-        />
-        <AdminCard
-          variant="gradient-gold"
-          icon={Layers}
-          metric={kpiTypes}
-          title={t("kpis.types")}
-          caption={t("kpis.typesCaption")}
-          stagger={3}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={FlaskConical}
+            metric={kpiTotal}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-teal"
+            icon={CheckCircle2}
+            metric={kpiActive}
+            title={t("kpis.active")}
+            caption={t("kpis.activeCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-gold"
+            icon={Layers}
+            metric={kpiTypes}
+            title={t("kpis.types")}
+            caption={t("kpis.typesCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <DataTable
         columns={columns}

@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { ClipboardList, Eye, Pencil, Plus, Trash2, FileText, Download, CheckCircle2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -33,6 +34,7 @@ import {
 import { useAnalisesList, useUpdateAnalise } from "@/hooks/queries/useAnalises";
 import type { ResultadoDto } from "@/types/dto/resultado";
 import type { AnaliseDto } from "@/types/dto/analise";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptResultados from "@/i18n/locales/pt/admin/resultados.json";
 import enResultados from "@/i18n/locales/en/admin/resultados.json";
@@ -56,6 +58,7 @@ export default function Resultados() {
   const { t } = useTranslation("admin-resultados");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("resultados");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -241,24 +244,31 @@ export default function Resultados() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        <AdminCard
-          variant="gradient-green"
-          icon={ClipboardList}
-          metric={kpiTotal}
-          title={t("kpis.total")}
-          caption={t("kpis.totalCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant={kpiConcludedWithoutResult > 0 ? "gradient-gold" : "gradient-teal"}
-          icon={CheckCircle2}
-          metric={kpiConcludedWithoutResult}
-          title={t("kpis.coverage")}
-          caption={t("kpis.coverageCaption")}
-          stagger={2}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={ClipboardList}
+            metric={kpiTotal}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant={kpiConcludedWithoutResult > 0 ? "gradient-gold" : "gradient-teal"}
+            icon={CheckCircle2}
+            metric={kpiConcludedWithoutResult}
+            title={t("kpis.coverage")}
+            caption={t("kpis.coverageCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <DataTable
         columns={columns}

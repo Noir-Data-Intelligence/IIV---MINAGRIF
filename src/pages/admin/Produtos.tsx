@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Pill, Syringe, Droplets, FlaskConical, Archive, Eye, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -31,6 +32,7 @@ import {
   useUpdateProduto,
 } from "@/hooks/queries/useProdutos";
 import type { ProdutoDto, ProdutoType } from "@/types/dto/produto";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptProdutos from "@/i18n/locales/pt/admin/produtos.json";
 import enProdutos from "@/i18n/locales/en/admin/produtos.json";
@@ -57,6 +59,7 @@ export default function Produtos() {
   const { t, i18n: i18nInstance } = useTranslation("produtos");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("produtos");
+  const prefersReducedMotion = useReducedMotion();
   const typeLabel = (type: string) => t(`types.${type}`, { defaultValue: type });
 
   const [tab, setTab] = useState("active");
@@ -238,19 +241,24 @@ export default function Produtos() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        {kpiCards.map((c, i) => (
-          <AdminCard
-            key={c.key}
-            title={c.label}
-            icon={c.icon}
-            metric={c.value}
-            caption={c.caption}
-            variant={c.variant}
-            stagger={(i + 1) as 1 | 2 | 3 | 4 | 5}
-          />
+      <motion.div
+        className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        {kpiCards.map((c) => (
+          <motion.div key={c.key} variants={prefersReducedMotion ? undefined : fadeInUp}>
+            <AdminCard
+              title={c.label}
+              icon={c.icon}
+              metric={c.value}
+              caption={c.caption}
+              variant={c.variant}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
