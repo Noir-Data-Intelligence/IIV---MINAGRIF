@@ -255,14 +255,13 @@ export default function Missoes() {
         initial={prefersReduced ? undefined : "hidden"}
         animate={prefersReduced ? undefined : "visible"}
       >
-        {kpiCards.map((c, i) => (
+        {kpiCards.map((c) => (
           <motion.div key={c.key} variants={prefersReduced ? undefined : fadeInUp}>
             <AdminCard
               title={c.label}
               icon={c.icon}
               metric={c.value}
               variant={c.variant}
-              stagger={(i + 1) as 1 | 2 | 3 | 4}
             />
           </motion.div>
         ))}
@@ -707,8 +706,11 @@ function GuideTab({ mission, canEdit }: { mission: MissionDto; canEdit: boolean 
 
   if (locked) {
     return (
-      <div className="p-4 rounded-md border bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4" /> {t("guide.locked")}
+      <div className="p-4 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-md shadow-amber-500/30">
+          <AlertTriangle className="h-4 w-4" />
+        </span>
+        {t("guide.locked")}
       </div>
     );
   }

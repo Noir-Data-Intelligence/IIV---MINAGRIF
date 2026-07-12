@@ -448,20 +448,20 @@ export default function Patrimonio() {
       {/* KPIs */}
       <motion.div
         className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-        variants={staggerContainer}
-        initial={reduceMotion ? false : "hidden"}
-        animate="visible"
+        variants={reduceMotion ? undefined : staggerContainer}
+        initial={reduceMotion ? undefined : "hidden"}
+        animate={reduceMotion ? undefined : "visible"}
       >
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={reduceMotion ? undefined : fadeInUp}>
           <AdminCard variant="gradient-green-gold" icon={Boxes} metric={kpis.total} title={t("kpis.totalAssets")} caption={t("kpis.totalAssetsCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={reduceMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={CircleDollarSign} metric={formatKwanza(kpis.value)} title={t("kpis.totalValue")} caption={t("kpis.totalValueCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={reduceMotion ? undefined : fadeInUp}>
           <AdminCard variant={kpis.attention > 0 ? "gradient-gold" : "glass"} icon={AlertTriangle} metric={kpis.attention} title={t("kpis.needsAttention")} caption={t("kpis.needsAttentionCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={reduceMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={CalendarClock} metric={kpis.upcoming} title={t("kpis.upcoming")} caption={t("kpis.upcomingCaption")} />
         </motion.div>
       </motion.div>

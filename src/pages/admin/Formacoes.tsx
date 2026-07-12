@@ -227,7 +227,7 @@ export default function Formacoes() {
         initial={prefersReduced ? undefined : "hidden"}
         animate={prefersReduced ? undefined : "visible"}
       >
-        {kpiCards.map((c, i) => (
+        {kpiCards.map((c) => (
           <motion.div key={c.key} variants={prefersReduced ? undefined : fadeInUp}>
             <AdminCard
               title={c.label}
@@ -235,7 +235,6 @@ export default function Formacoes() {
               metric={c.value}
               caption={c.caption}
               variant={c.variant}
-              stagger={(i + 1) as 1 | 2 | 3 | 4}
             />
           </motion.div>
         ))}
