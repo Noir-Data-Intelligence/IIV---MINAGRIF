@@ -7,6 +7,7 @@ import {
   FileStack, Plus, Upload, Download, Trash2, History, Send, CheckCircle2,
   XCircle, Eye, Calendar, AlertCircle, Pencil, Clock,
 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -39,6 +40,7 @@ import {
   useCreateDocVersion,
 } from "@/hooks/queries/useDocumentos";
 import type { DocStatus, DocumentoDto } from "@/types/dto/documento";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptDocumentos from "@/i18n/locales/pt/admin/documentos.json";
 import enDocumentos from "@/i18n/locales/en/admin/documentos.json";
@@ -92,6 +94,7 @@ export default function Documentos() {
   const { toast } = useToast();
   const { canWrite } = useUserRole();
   const canEdit = canWrite("documentos");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -364,32 +367,40 @@ export default function Documentos() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <AdminCard
-          variant="gradient-green"
-          icon={FileStack}
-          metric={kpiTotal}
-          title={t("kpis.total")}
-          caption={t("kpis.totalCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant={kpiPending > 0 ? "gradient-gold" : "gradient-teal"}
-          icon={Clock}
-          metric={kpiPending}
-          title={t("kpis.pending")}
-          caption={t("kpis.pendingCaption")}
-          stagger={2}
-        />
-        <AdminCard
-          variant={kpiExpiring > 0 ? "gradient-gold" : "gradient-teal"}
-          icon={AlertCircle}
-          metric={kpiExpiring}
-          title={t("kpis.expiring")}
-          caption={t("kpis.expiringCaption")}
-          stagger={3}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={FileStack}
+            metric={kpiTotal}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant={kpiPending > 0 ? "gradient-gold" : "gradient-teal"}
+            icon={Clock}
+            metric={kpiPending}
+            title={t("kpis.pending")}
+            caption={t("kpis.pendingCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            variant={kpiExpiring > 0 ? "gradient-gold" : "gradient-teal"}
+            icon={AlertCircle}
+            metric={kpiExpiring}
+            title={t("kpis.expiring")}
+            caption={t("kpis.expiringCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Select value={statusFilter} onValueChange={setStatusFilter}>

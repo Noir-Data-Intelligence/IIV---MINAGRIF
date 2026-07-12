@@ -20,7 +20,7 @@ import {
 import { useProcessesList } from "@/hooks/queries/useProcesses";
 import { useProcessTypesList } from "@/hooks/queries/useProcessTypes";
 import { formatNumber } from "@/lib/format";
-import { fadeIn } from "@/lib/motion";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptAnalitica from "@/i18n/locales/pt/admin/processos-analitica.json";
 import enAnalitica from "@/i18n/locales/en/admin/processos-analitica.json";
@@ -157,19 +157,24 @@ export default function ProcessosAnalitica() {
 
       <AdminPageHeader icon={BarChart3} title={t("page.title")} description={t("page.description")} />
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {kpiCards.map((c, i) => (
-          <AdminCard
-            key={c.key}
-            title={c.label}
-            icon={c.icon}
-            metric={c.value}
-            caption={c.caption}
-            variant={c.variant}
-            stagger={(i + 1) as 1 | 2 | 3 | 4}
-          />
+      <motion.div
+        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        {kpiCards.map((c) => (
+          <motion.div key={c.key} variants={prefersReduced ? undefined : fadeInUp}>
+            <AdminCard
+              title={c.label}
+              icon={c.icon}
+              metric={c.value}
+              caption={c.caption}
+              variant={c.variant}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AdminCard title={t("charts.byStatus")}>

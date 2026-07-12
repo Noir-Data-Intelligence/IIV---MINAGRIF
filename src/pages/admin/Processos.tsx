@@ -39,7 +39,7 @@ import { useEntityForm } from "@/hooks/useEntityForm";
 import { useProcessesList, useProcessStats, useCreateProcess } from "@/hooks/queries/useProcesses";
 import { useProcessTypesList } from "@/hooks/queries/useProcessTypes";
 import { PROCESS_PRIORITY, PROCESS_STATUS } from "@/lib/domain-enums";
-import { fadeIn } from "@/lib/motion";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import type { ProcessDto, ProcessPriority, ProcessStatus } from "@/types/dto/process";
 import i18n from "@/i18n";
 import ptProcessos from "@/i18n/locales/pt/admin/processos.json";
@@ -250,40 +250,49 @@ export default function Processos() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <AdminCard
-          variant="gradient-green"
-          icon={FolderOpen}
-          metric={stats?.abertos ?? 0}
-          title={t("kpis.open")}
-          caption={t("kpis.openCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant="gradient-teal"
-          icon={Loader2}
-          metric={stats?.emCurso ?? 0}
-          title={t("kpis.inProgress")}
-          caption={t("kpis.inProgressCaption")}
-          stagger={2}
-        />
-        <AdminCard
-          variant="gradient-green-gold"
-          icon={CheckCircle2}
-          metric={stats?.concluidos ?? 0}
-          title={t("kpis.completed")}
-          caption={t("kpis.completedCaption")}
-          stagger={3}
-        />
-        <AdminCard
-          variant="gradient-gold"
-          icon={Clock}
-          metric={stats?.atrasados ?? 0}
-          title={t("kpis.overdue")}
-          caption={t("kpis.overdueCaption")}
-          stagger={4}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={FolderOpen}
+            metric={stats?.abertos ?? 0}
+            title={t("kpis.open")}
+            caption={t("kpis.openCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-teal"
+            icon={Loader2}
+            metric={stats?.emCurso ?? 0}
+            title={t("kpis.inProgress")}
+            caption={t("kpis.inProgressCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green-gold"
+            icon={CheckCircle2}
+            metric={stats?.concluidos ?? 0}
+            title={t("kpis.completed")}
+            caption={t("kpis.completedCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-gold"
+            icon={Clock}
+            metric={stats?.atrasados ?? 0}
+            title={t("kpis.overdue")}
+            caption={t("kpis.overdueCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <Select value={statusFilter} onValueChange={setStatusFilter}>

@@ -49,7 +49,7 @@ import {
   useUpdateProcessType,
   useUpdateProcessTypeStep,
 } from "@/hooks/queries/useProcessTypes";
-import { fadeIn } from "@/lib/motion";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import type { AppRole } from "@/lib/permissions";
 import type { ProcessTypeDto, ProcessTypeStepDto } from "@/types/dto/processType";
 import i18n from "@/i18n";
@@ -176,32 +176,40 @@ export default function ProcessosTipos() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        <AdminCard
-          variant="gradient-green"
-          icon={Layers}
-          metric={kpiTotal}
-          title={t("kpis.total")}
-          caption={t("kpis.totalCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant="gradient-teal"
-          icon={CheckCircle2}
-          metric={kpiActive}
-          title={t("kpis.active")}
-          caption={t("kpis.activeCaption")}
-          stagger={2}
-        />
-        <AdminCard
-          variant="gradient-gold"
-          icon={XCircle}
-          metric={kpiInactive}
-          title={t("kpis.inactive")}
-          caption={t("kpis.inactiveCaption")}
-          stagger={3}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={Layers}
+            metric={kpiTotal}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-teal"
+            icon={CheckCircle2}
+            metric={kpiActive}
+            title={t("kpis.active")}
+            caption={t("kpis.activeCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-gold"
+            icon={XCircle}
+            metric={kpiInactive}
+            title={t("kpis.inactive")}
+            caption={t("kpis.inactiveCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <AdminCard loading={isLoading} isEmpty={!isLoading && types.length === 0} emptyMessage={t("list.empty")}>
         <Accordion type="multiple" className="space-y-2">
