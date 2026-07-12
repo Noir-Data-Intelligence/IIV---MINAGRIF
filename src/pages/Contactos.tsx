@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 import { useSubmitContactMessage } from "@/hooks/queries/useContactMessages";
+import { ANGOLA_PROVINCES, ANGOLA_VIEWBOX } from "@/data/angola-provinces";
 import type { ApiError } from "@/lib/http";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
@@ -40,47 +41,39 @@ function buildContactSchema(t: TFunction) {
 }
 
 /**
- * Estações no mapa interativo. `x`/`y` são percentagens dentro do contentor do
- * mapa, derivadas das coordenadas geográficas reais de cada cidade projectadas
- * no mesmo referencial do desenho SVG de Angola (viewBox 0 0 100 108,
- * lon 11.4–24.3 → x 0–100, lat -4.2–-18.3 → y 0–108).
+ * Estações do IIV ligadas às províncias do mapa real (nova divisão
+ * administrativa de 21 províncias — ver src/data/angola-provinces.ts).
+ * O marcador de cada estação é ancorado no centróide da respectiva província.
  */
 const estacoes = [
-  { nome: "Sede Nacional — Luanda", cidade: "Luanda", provincia: "Luanda", sede: true, x: 14.3, y: 35.5,
+  { provinciaId: "luanda", nome: "Sede Nacional — Luanda", cidade: "Luanda", provincia: "Luanda", sede: true,
     descricao: "Laboratórios centrais de referência, produção de vacinas e direcção-geral do Instituto." },
-  { nome: "Estação Regional do Huambo", cidade: "Huambo", provincia: "Huambo", sede: false, x: 33.6, y: 65.7,
+  { provinciaId: "huambo", nome: "Estação Regional do Huambo", cidade: "Huambo", provincia: "Huambo", sede: false,
     descricao: "Planalto Central — diagnóstico veterinário e apoio directo à pecuária das terras altas." },
-  { nome: "Estação Regional de Benguela", cidade: "Benguela", provincia: "Benguela", sede: false, x: 15.6, y: 64.2,
+  { provinciaId: "benguela", nome: "Estação Regional de Benguela", cidade: "Benguela", provincia: "Benguela", sede: false,
     descricao: "Litoral Sul — vigilância epidemiológica e apoio à avicultura do corredor de Benguela." },
-  { nome: "Estação Regional do Lubango", cidade: "Lubango", provincia: "Huíla", sede: false, x: 16.2, y: 82.1,
+  { provinciaId: "huila", nome: "Estação Regional do Lubango", cidade: "Lubango", provincia: "Huíla", sede: false,
     descricao: "Região Sul — sanidade do efectivo bovino e campanhas de vacinação transumante." },
-  { nome: "Estação Regional do Uíge", cidade: "Uíge", provincia: "Uíge", sede: false, x: 28.4, y: 26.1,
+  { provinciaId: "uige", nome: "Estação Regional do Uíge", cidade: "Uíge", provincia: "Uíge", sede: false,
     descricao: "Região Norte — controlo da tripanossomose e apoio à pecuária familiar." },
-  { nome: "Estação Regional de Malanje", cidade: "Malanje", provincia: "Malanje", sede: false, x: 38.3, y: 40.9,
+  { provinciaId: "malanje", nome: "Estação Regional de Malanje", cidade: "Malanje", provincia: "Malanje", sede: false,
     descricao: "Centro-Norte — análises laboratoriais de campo e extensão rural." },
-  { nome: "Estação Regional do Cuanza Sul", cidade: "Sumbe", provincia: "Cuanza Sul", sede: false, x: 18.9, y: 53.7,
+  { provinciaId: "cuanza-sul", nome: "Estação Regional do Cuanza Sul", cidade: "Sumbe", provincia: "Cuanza Sul", sede: false,
     descricao: "Litoral Centro — inspecção sanitária e apoio à produção leiteira." },
 ];
 
-/** Contorno simplificado de Angola (continente + enclave de Cabinda), no viewBox 0 0 100 108. */
-const ANGOLA_MAINLAND =
-  "M6.6,14.6 L15.5,12.7 L40.3,13.0 L43.0,22.2 L47.7,29.9 L61.6,28.7 L62.8,21.4 L71.3,21.1 " +
-  "L72.5,23.7 L81.0,23.7 L81.4,32.2 L80.2,40.6 L83.7,44.4 L84.5,52.5 L97.3,51.7 L98.1,55.2 " +
-  "L96.9,62.8 L98.1,65.9 L96.9,67.4 L81.8,67.4 L81.8,90.8 L83.3,95.0 L93.4,102.6 L77.5,105.7 " +
-  "L58.9,104.6 L19.8,101.1 L14.0,97.7 L8.9,100.0 L2.7,100.0 L2.9,91.9 L5.8,84.3 L7.4,78.9 " +
-  "L14.0,66.6 L15.5,62.8 L18.6,58.2 L19.0,53.6 L16.3,47.5 L14.3,41.4 L14.0,35.2 L12.2,30.6 " +
-  "L12.8,26.0 L9.3,20.7 Z";
-const ANGOLA_CABINDA =
-  "M4.8,6.1 L6.2,1.5 L10.1,1.7 L13.0,3.4 L11.6,6.9 L7.8,11.5 Z";
+const estacaoPorProvincia = new Map(estacoes.map((e) => [e.provinciaId, e]));
 
 export default function Contactos() {
   const { t } = useTranslation("contactos");
   const shouldReduceMotion = useReducedMotion();
   const { mutateAsync: submitMessage, isPending: submitting } = useSubmitContactMessage();
 
-  // Estação seleccionada no mapa interativo (painel de detalhe à esquerda).
-  const [estacaoIdx, setEstacaoIdx] = useState(0);
-  const estacaoActiva = estacoes[estacaoIdx];
+  // Província seleccionada no mapa interativo (painel de detalhe à esquerda).
+  // Se a província tiver estação do IIV mostra-a; senão mostra nota de cobertura.
+  const [provinciaId, setProvinciaId] = useState("luanda");
+  const provinciaActiva = ANGOLA_PROVINCES.find((p) => p.id === provinciaId)!;
+  const estacaoActiva = estacaoPorProvincia.get(provinciaId) ?? null;
 
   const contactSchema = useMemo(() => buildContactSchema(t), [t]);
 
@@ -146,6 +139,181 @@ export default function Contactos() {
         image={contactosHeroOffice}
         breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
+
+      {/* Estações regionais — mapa interativo de Angola (21 províncias) */}
+      <section className="py-24 bg-accent/30 overflow-hidden">
+        <div className="container">
+          <div className="mb-12 max-w-2xl">
+            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("estacoes.kicker")}</p>
+            <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("estacoes.title")}</h2>
+            <p className="mt-4 text-muted-foreground">{t("estacoes.lead")}</p>
+          </div>
+
+          <motion.div
+            className="grid gap-10 lg:grid-cols-12 items-center"
+            initial={shouldReduceMotion ? undefined : "hidden"}
+            whileInView={shouldReduceMotion ? undefined : "visible"}
+            viewport={{ once: true, amount: 0.2 }}
+            variants={shouldReduceMotion ? undefined : staggerContainer}
+          >
+            {/* Painel de informação — à esquerda */}
+            <motion.div
+              className="lg:col-span-5 order-2 lg:order-1"
+              variants={shouldReduceMotion ? undefined : fadeInUp}
+            >
+              <div
+                key={provinciaId}
+                className="relative overflow-hidden rounded-3xl border border-border/60 bg-card p-8 shadow-xl animate-fade-up"
+                aria-live="polite"
+              >
+                <div className="absolute -top-14 -right-14 h-40 w-40 rounded-full bg-[hsl(var(--iiv-gold))]/10 blur-3xl" />
+                {estacaoActiva ? (
+                  <>
+                    <div className="relative flex items-center gap-3 mb-5">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg text-primary-foreground ${estacaoActiva.sede ? "gradient-gold !text-secondary-foreground" : "gradient-green-soft"}`}>
+                        <MapPin className="h-5 w-5" strokeWidth={1.75} />
+                      </div>
+                      <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-3 py-1 kicker text-[hsl(var(--iiv-gold-text))]">
+                        {estacaoActiva.sede ? "Sede Nacional" : "Estação Regional"}
+                      </span>
+                    </div>
+                    <h3 className="relative font-serif text-2xl md:text-3xl leading-tight">{estacaoActiva.nome}</h3>
+                    <p className="relative text-sm text-muted-foreground mt-1 uppercase tracking-wider">
+                      {estacaoActiva.cidade} · Província de {estacaoActiva.provincia}
+                    </p>
+                    <p className="relative mt-4 text-muted-foreground leading-relaxed">{estacaoActiva.descricao}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="relative flex items-center gap-3 mb-5">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg bg-muted text-muted-foreground">
+                        <MapPin className="h-5 w-5" strokeWidth={1.75} />
+                      </div>
+                      <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 kicker text-muted-foreground">
+                        Província
+                      </span>
+                    </div>
+                    <h3 className="relative font-serif text-2xl md:text-3xl leading-tight">{provinciaActiva.name}</h3>
+                    <p className="relative mt-4 text-muted-foreground leading-relaxed">
+                      Sem estação própria — esta província é coberta pela estação regional mais próxima da rede do IIV.
+                    </p>
+                  </>
+                )}
+
+                {/* Selecção rápida (e alternativa acessível ao mapa) */}
+                <div className="relative mt-7 flex flex-wrap gap-2 border-t border-border/50 pt-5">
+                  {estacoes.map((e) => (
+                    <button
+                      key={e.provinciaId}
+                      type="button"
+                      onClick={() => setProvinciaId(e.provinciaId)}
+                      aria-pressed={e.provinciaId === provinciaId}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                        e.provinciaId === provinciaId
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      {e.cidade}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Mapa de Angola — à direita, com as 21 províncias e nomes */}
+            <motion.div
+              className="lg:col-span-7 order-1 lg:order-2"
+              variants={shouldReduceMotion ? undefined : fadeInUp}
+            >
+              <svg
+                viewBox={ANGOLA_VIEWBOX}
+                className="mx-auto h-auto w-full max-w-[620px]"
+                role="group"
+                aria-label="Mapa de Angola — 21 províncias; seleccione uma para ver a informação"
+              >
+                {ANGOLA_PROVINCES.map((p) => {
+                  const temEstacao = estacaoPorProvincia.has(p.id);
+                  const sede = estacaoPorProvincia.get(p.id)?.sede ?? false;
+                  const activa = p.id === provinciaId;
+                  return (
+                    <path
+                      key={p.id}
+                      d={p.d}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={temEstacao ? `${p.name} — estação do IIV` : p.name}
+                      aria-pressed={activa}
+                      onClick={() => setProvinciaId(p.id)}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") {
+                          ev.preventDefault();
+                          setProvinciaId(p.id);
+                        }
+                      }}
+                      className={`cursor-pointer outline-none transition-colors duration-200 stroke-background focus-visible:stroke-ring ${
+                        activa
+                          ? sede
+                            ? "fill-[hsl(var(--iiv-gold))]"
+                            : "fill-[hsl(var(--iiv-green))]"
+                          : temEstacao
+                          ? "fill-[hsl(var(--iiv-green))]/35 hover:fill-[hsl(var(--iiv-green))]/55"
+                          : "fill-[hsl(var(--iiv-green-light))] dark:fill-accent hover:fill-[hsl(var(--iiv-green))]/20"
+                      }`}
+                      strokeWidth={2}
+                      strokeLinejoin="round"
+                    />
+                  );
+                })}
+
+                {/* Nomes das 21 províncias (centróides) */}
+                {ANGOLA_PROVINCES.map((p) => {
+                  const activa = p.id === provinciaId;
+                  return (
+                    <text
+                      key={`label-${p.id}`}
+                      x={p.cx}
+                      y={p.cy}
+                      textAnchor="middle"
+                      paintOrder="stroke"
+                      strokeLinejoin="round"
+                      className={`pointer-events-none select-none font-sans text-[15px] font-semibold ${
+                        activa
+                          ? "fill-primary-foreground stroke-transparent"
+                          : "fill-foreground/75 stroke-[hsl(var(--background))] [stroke-width:3px]"
+                      }`}
+                    >
+                      {p.name}
+                    </text>
+                  );
+                })}
+
+                {/* Marcadores das estações (centróide da província) */}
+                {estacoes.map((e) => {
+                  const p = ANGOLA_PROVINCES.find((pp) => pp.id === e.provinciaId)!;
+                  const activa = e.provinciaId === provinciaId;
+                  return (
+                    <g key={`marker-${e.provinciaId}`} className="pointer-events-none" transform={`translate(${p.cx} ${p.cy - 22})`}>
+                      {activa && (
+                        <circle r={11} className={`${e.sede ? "fill-[hsl(var(--iiv-gold))]/25" : "fill-primary/25"}`} />
+                      )}
+                      <circle
+                        r={activa ? 7 : 5}
+                        className={`stroke-background [stroke-width:2.5px] transition-all ${e.sede ? "fill-[hsl(var(--iiv-gold))]" : "fill-[hsl(var(--iiv-green))]"}`}
+                      />
+                    </g>
+                  );
+                })}
+              </svg>
+
+              <p className="mt-3 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[hsl(var(--iiv-gold))]" /> Sede Nacional</span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[hsl(var(--iiv-green))]" /> Estação Regional</span>
+              </p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Form + info */}
       <section className="py-24">
@@ -216,163 +384,6 @@ export default function Contactos() {
                 </ul>
               </div>
             </motion.aside>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Mapa de localização */}
-      <section className="section-divider py-20">
-        <div className="container">
-          <div className="mb-10 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("map.kicker")}</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("map.title")}</h2>
-            <p className="mt-4 text-muted-foreground">{t("map.lead")}</p>
-          </div>
-          <div className="overflow-hidden rounded-2xl border border-border/60 shadow-elegant">
-            <iframe
-              title={t("map.iframeTitle")}
-              src="https://www.openstreetmap.org/export/embed.html?bbox=13.20%2C-8.85%2C13.30%2C-8.78&layer=mapnik&marker=-8.815%2C13.246"
-              loading="lazy"
-              className="w-full h-[420px] border-0"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground text-center">
-            {t("map.copyright")}{" "}
-            <a
-              href="https://www.openstreetmap.org/?mlat=-8.815&mlon=13.246#map=14/-8.815/13.246"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-foreground"
-            >
-              {t("map.viewFull")}
-            </a>
-          </p>
-        </div>
-      </section>
-
-      {/* Estações regionais — mapa interativo de Angola */}
-      <section className="section-divider py-24 bg-accent/30 overflow-hidden">
-        <div className="container">
-          <div className="mb-12 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("estacoes.kicker")}</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("estacoes.title")}</h2>
-            <p className="mt-4 text-muted-foreground">{t("estacoes.lead")}</p>
-          </div>
-
-          <motion.div
-            className="grid gap-10 lg:grid-cols-12 items-center"
-            initial={shouldReduceMotion ? undefined : "hidden"}
-            whileInView={shouldReduceMotion ? undefined : "visible"}
-            viewport={{ once: true, amount: 0.2 }}
-            variants={shouldReduceMotion ? undefined : staggerContainer}
-          >
-            {/* Painel de informação — à esquerda */}
-            <motion.div
-              className="lg:col-span-5 order-2 lg:order-1"
-              variants={shouldReduceMotion ? undefined : fadeInUp}
-            >
-              <div
-                key={estacaoActiva.nome}
-                className="relative overflow-hidden rounded-3xl border border-border/60 bg-card p-8 shadow-xl animate-fade-up"
-                aria-live="polite"
-              >
-                <div className="absolute -top-14 -right-14 h-40 w-40 rounded-full bg-[hsl(var(--iiv-gold))]/10 blur-3xl" />
-                <div className="relative flex items-center gap-3 mb-5">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg text-primary-foreground ${estacaoActiva.sede ? "gradient-gold !text-secondary-foreground" : "gradient-green-soft"}`}>
-                    <MapPin className="h-5 w-5" strokeWidth={1.75} />
-                  </div>
-                  <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-3 py-1 kicker text-[hsl(var(--iiv-gold-text))]">
-                    {estacaoActiva.sede ? "Sede Nacional" : "Estação Regional"}
-                  </span>
-                </div>
-                <h3 className="relative font-serif text-2xl md:text-3xl leading-tight">{estacaoActiva.nome}</h3>
-                <p className="relative text-sm text-muted-foreground mt-1 uppercase tracking-wider">
-                  {estacaoActiva.cidade} · Província de {estacaoActiva.provincia}
-                </p>
-                <p className="relative mt-4 text-muted-foreground leading-relaxed">{estacaoActiva.descricao}</p>
-
-                {/* Selecção rápida (e alternativa acessível ao mapa) */}
-                <div className="relative mt-7 flex flex-wrap gap-2 border-t border-border/50 pt-5">
-                  {estacoes.map((e, i) => (
-                    <button
-                      key={e.nome}
-                      type="button"
-                      onClick={() => setEstacaoIdx(i)}
-                      aria-pressed={i === estacaoIdx}
-                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                        i === estacaoIdx
-                          ? "bg-primary text-primary-foreground shadow-md"
-                          : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                      }`}
-                    >
-                      {e.cidade}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Mapa de Angola — à direita */}
-            <motion.div
-              className="lg:col-span-7 order-1 lg:order-2"
-              variants={shouldReduceMotion ? undefined : fadeInUp}
-            >
-              <div className="relative mx-auto max-w-[540px] aspect-[100/108]" role="group" aria-label="Mapa de Angola com as estações do IIV">
-                <svg
-                  viewBox="0 0 100 108"
-                  preserveAspectRatio="none"
-                  className="absolute inset-0 h-full w-full"
-                  aria-hidden="true"
-                >
-                  <path
-                    d={ANGOLA_MAINLAND}
-                    className="fill-[hsl(var(--iiv-green-light))] dark:fill-accent stroke-[hsl(var(--iiv-green))]/50"
-                    strokeWidth="0.4"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d={ANGOLA_CABINDA}
-                    className="fill-[hsl(var(--iiv-green-light))] dark:fill-accent stroke-[hsl(var(--iiv-green))]/50"
-                    strokeWidth="0.4"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-
-                {estacoes.map((e, i) => {
-                  const activa = i === estacaoIdx;
-                  return (
-                    <button
-                      key={e.nome}
-                      type="button"
-                      onClick={() => setEstacaoIdx(i)}
-                      aria-label={`${e.nome} — ver informação`}
-                      aria-pressed={activa}
-                      style={{ left: `${e.x}%`, top: `${e.y}%` }}
-                      className="group absolute -translate-x-1/2 -translate-y-1/2 p-2 focus:outline-none"
-                    >
-                      {activa && !shouldReduceMotion && (
-                        <span className={`absolute inset-1 rounded-full animate-ping opacity-40 ${e.sede ? "bg-[hsl(var(--iiv-gold))]" : "bg-primary"}`} />
-                      )}
-                      <span
-                        className={`relative block rounded-full border-2 border-background shadow-lg transition-all duration-300 group-hover:scale-125 group-focus-visible:ring-2 group-focus-visible:ring-ring ${
-                          activa ? "h-5 w-5" : "h-3.5 w-3.5"
-                        } ${e.sede ? "gradient-gold" : activa ? "gradient-green" : "bg-primary/70"}`}
-                      />
-                      <span
-                        className={`absolute left-1/2 top-full -translate-x-1/2 mt-0.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold transition-opacity ${
-                          activa
-                            ? "bg-primary text-primary-foreground opacity-100"
-                            : "bg-card/90 text-foreground border border-border/60 opacity-0 group-hover:opacity-100"
-                        }`}
-                      >
-                        {e.cidade}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
           </motion.div>
         </div>
       </section>
