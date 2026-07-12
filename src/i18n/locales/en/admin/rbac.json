@@ -6,6 +6,16 @@
   "actions": {
     "reload": "Reload"
   },
+  "kpis": {
+    "modules": "Configurable Modules",
+    "modulesCaption": "Areas with access control",
+    "roles": "System Roles",
+    "rolesCaption": "Available profiles",
+    "assignedUsers": "Users with Role",
+    "assignedUsersCaption": "{{count}} in total",
+    "unsaved": "Unsaved Changes",
+    "unsavedCaption": "In the permissions matrix"
+  },
   "tabs": {
     "matrix": "Permissions Matrix",
     "users": "User Assignment"

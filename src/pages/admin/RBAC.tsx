@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Shield, Save, UserPlus, Trash2, Search, RefreshCw, Eye, Pencil, RotateCcw,
+  Shield, Save, UserPlus, Trash2, Search, RefreshCw, Eye, Pencil, RotateCcw, Boxes, Users,
 } from "lucide-react";
 import {
   ALL_MODULES, ALL_ROLES, MODULE_LABEL, ROLE_LABEL, ROLE_PERMISSIONS,
@@ -35,6 +36,7 @@ import {
 } from "@/hooks/queries/useRbac";
 import type { PermissionEntryDto } from "@/types/dto/rbac";
 import { cn } from "@/lib/utils";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptRbac from "@/i18n/locales/pt/admin/rbac.json";
 import enRbac from "@/i18n/locales/en/admin/rbac.json";
@@ -69,6 +71,7 @@ const toEntry = (r: PermRow): PermissionEntryDto => ({
 export default function RBAC() {
   const { t } = useTranslation("rbac");
   const { toast } = useToast();
+  const prefersReducedMotion = useReducedMotion();
 
   // Origem dos dados: camada mock via react-query (substitui as 3 queries Supabase).
   const permsQuery = usePermissionsMatrix();
@@ -259,6 +262,13 @@ export default function RBAC() {
     return out;
   }, [matrix]);
 
+  // KPIs de topo — panorama rápido do estado do RBAC (módulos, papéis, cobertura
+  // de atribuição e alterações por gravar), à semelhança do Painel de Controlo.
+  const usersWithRole = useMemo(
+    () => assignments.filter((a) => (a.roles ?? []).length > 0).length,
+    [assignments],
+  );
+
   function isCellDirty(role: AppRole, mod: ModuleKey) {
     const k = keyOf(role, mod);
     const a = matrix[k], b = baseline[k];
@@ -279,6 +289,51 @@ export default function RBAC() {
             {t("actions.reload")}
           </Button>
         </AdminPageHeader>
+
+        {/* KPIs — panorama rápido do estado do RBAC */}
+        <motion.div
+          className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+          variants={prefersReducedMotion ? undefined : staggerContainer}
+          initial={prefersReducedMotion ? undefined : "hidden"}
+          animate={prefersReducedMotion ? undefined : "visible"}
+        >
+          <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+            <AdminCard
+              icon={Boxes}
+              metric={ALL_MODULES.length}
+              title={t("kpis.modules")}
+              caption={t("kpis.modulesCaption")}
+              variant="gradient-green"
+            />
+          </motion.div>
+          <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+            <AdminCard
+              icon={Shield}
+              metric={ALL_ROLES.length}
+              title={t("kpis.roles")}
+              caption={t("kpis.rolesCaption")}
+              variant="gradient-gold"
+            />
+          </motion.div>
+          <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+            <AdminCard
+              icon={Users}
+              metric={usersWithRole}
+              title={t("kpis.assignedUsers")}
+              caption={t("kpis.assignedUsersCaption", { count: assignments.length })}
+              variant="gradient-teal"
+            />
+          </motion.div>
+          <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+            <AdminCard
+              icon={Save}
+              metric={dirtyCount}
+              title={t("kpis.unsaved")}
+              caption={t("kpis.unsavedCaption")}
+              variant="glass"
+            />
+          </motion.div>
+        </motion.div>
 
         <Tabs defaultValue="matrix" className="space-y-4">
           <TabsList>

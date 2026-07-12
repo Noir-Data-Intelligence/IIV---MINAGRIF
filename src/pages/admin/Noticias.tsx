@@ -3,9 +3,11 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Newspaper, Pencil, Plus, Star, Trash2, ExternalLink } from "lucide-react";
+import { CheckCircle2, Clock, Newspaper, Pencil, Plus, Star, Trash2, ExternalLink, UploadCloud } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { RowActions, type RowAction } from "@/components/admin/RowActions";
 import { WriteGuard } from "@/components/WriteGuard";
@@ -22,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEntityForm } from "@/hooks/useEntityForm";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import {
   useCreateNoticia,
   useDeleteNoticia,
@@ -79,6 +82,7 @@ export default function Noticias() {
   const { toast } = useToast();
   const { canWrite } = useUserRole();
   const canEdit = canWrite("noticias");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -92,6 +96,18 @@ export default function Noticias() {
     perPage: pagination.pageSize,
     search: search || undefined,
   });
+
+  // Leitura auxiliar (perPage alto), só para agregar os KPIs do topo — não
+  // interfere com a paginação server-side da tabela. Mesmo padrão de
+  // Dashboard.tsx para agregações client-side.
+  const { data: allData } = useNoticiasList({ page: 1, perPage: 1000 });
+  const stats = useMemo(() => {
+    const items = allData?.data ?? [];
+    const total = allData?.meta.total ?? items.length;
+    const published = items.filter((i) => i.published).length;
+    const destaque = items.filter((i) => i.destaque).length;
+    return { total, published, draft: Math.max(total - published, 0), destaque };
+  }, [allData]);
 
   const createNoticia = useCreateNoticia();
   const updateNoticia = useUpdateNoticia();
@@ -198,9 +214,13 @@ export default function Noticias() {
         enableSorting: false,
         cell: ({ row }) =>
           row.original.image_path ? (
-            <img src={row.original.image_path} alt="" className="h-10 w-14 rounded object-cover" />
+            <img
+              src={row.original.image_path}
+              alt=""
+              className="h-10 w-14 rounded-lg object-cover shadow-sm ring-1 ring-border/60"
+            />
           ) : (
-            <div className="h-10 w-14 rounded bg-muted" />
+            <div className="h-10 w-14 rounded-lg bg-muted shadow-sm" />
           ),
       },
       {
@@ -287,20 +307,42 @@ export default function Noticias() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <DataTable
-        columns={columns}
-        data={data?.data ?? []}
-        loading={isLoading}
-        pageCount={data?.meta.lastPage ?? 0}
-        pagination={pagination}
-        onPaginationChange={setPagination}
-        rowCount={data?.meta.total}
-        globalFilter={search}
-        onGlobalFilterChange={setSearch}
-        searchPlaceholder={t("table.searchPlaceholder")}
-        emptyMessage={t("table.empty")}
-        renderRowActions={renderRowActions}
-      />
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={Newspaper} metric={stats.total} title="Total de Notícias" caption="Registadas no sistema" variant="gradient-green" />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={CheckCircle2} metric={stats.published} title="Publicadas" caption="Visíveis no portal público" variant="gradient-gold" />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={Clock} metric={stats.draft} title="Rascunhos" caption="Ainda não publicadas" variant="gradient-teal" />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={Star} metric={stats.destaque} title="Em Destaque" caption="Marcadas para relevo" variant="glass" />
+        </motion.div>
+      </motion.div>
+
+      <div className="rounded-2xl bg-card shadow-sm hover:shadow-xl transition-all duration-300 p-2 sm:p-4 animate-fade-up">
+        <DataTable
+          columns={columns}
+          data={data?.data ?? []}
+          loading={isLoading}
+          pageCount={data?.meta.lastPage ?? 0}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          rowCount={data?.meta.total}
+          globalFilter={search}
+          onGlobalFilterChange={setSearch}
+          searchPlaceholder={t("table.searchPlaceholder")}
+          emptyMessage={t("table.empty")}
+          renderRowActions={renderRowActions}
+        />
+      </div>
 
       <EntityFormDialog
         open={formOpen}
@@ -308,7 +350,14 @@ export default function Noticias() {
           setFormOpen(o);
           if (!o) setFile(null);
         }}
-        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        title={
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg gradient-green-soft text-primary-foreground shadow-md">
+              <Newspaper className="h-4 w-4" />
+            </span>
+            <span className="font-serif text-lg">{editItem ? t("dialog.editTitle") : t("dialog.createTitle")}</span>
+          </span>
+        }
         form={entityForm}
         submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
         submittingLabel={t("form.submitting")}
@@ -409,8 +458,11 @@ export default function Noticias() {
               )}
             />
 
-            <div>
-              <Label>
+            <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4 space-y-2">
+              <Label className="flex items-center gap-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg gradient-green-soft text-primary-foreground shadow-md">
+                  <UploadCloud className="h-3.5 w-3.5" />
+                </span>
                 {t("form.labels.image")}{" "}
                 {editItem?.image_path && (
                   <span className="text-xs text-muted-foreground">{t("form.imageKeepHint")}</span>
@@ -418,7 +470,11 @@ export default function Noticias() {
               </Label>
               <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               {editItem?.image_path && !file && (
-                <img src={editItem.image_path} alt="" className="mt-2 h-32 rounded-md object-cover" />
+                <img
+                  src={editItem.image_path}
+                  alt=""
+                  className="mt-2 h-32 w-full max-w-xs rounded-xl object-cover shadow-md ring-1 ring-border/60"
+                />
               )}
             </div>
 

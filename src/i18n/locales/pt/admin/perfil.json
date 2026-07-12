@@ -7,6 +7,15 @@
     "personalData": "Dados Pessoais",
     "changePassword": "Alterar Senha"
   },
+  "hero": {
+    "rolePrefix": "Perfil"
+  },
+  "security": {
+    "tipsTitle": "Boas práticas",
+    "tip1": "Use pelo menos 8 caracteres, misturando letras e números.",
+    "tip2": "Não reutilize a senha de outras contas ou serviços.",
+    "tip3": "Altere a sua senha periodicamente para maior segurança."
+  },
   "avatar": {
     "noName": "Sem nome",
     "upload": "Carregar foto",

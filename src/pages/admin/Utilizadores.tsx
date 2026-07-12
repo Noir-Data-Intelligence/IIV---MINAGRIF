@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Pencil, Shield, Trash2, UserPlus, Users } from "lucide-react";
+import { Building2, Pencil, Shield, ShieldCheck, Trash2, UserPlus, Users, UserX } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { RowActions, type RowAction } from "@/components/admin/RowActions";
 import { WriteGuard } from "@/components/WriteGuard";
@@ -26,9 +28,21 @@ import { useUsersList, useUpdateUser, useDeleteUser } from "@/hooks/queries/useU
 import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
 import type { UserDto } from "@/types/dto/user";
 import { ALL_ROLES, ROLE_LABEL, type AppRole } from "@/lib/permissions";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 import i18n from "@/i18n";
 import ptUtilizadores from "@/i18n/locales/pt/admin/utilizadores.json";
 import enUtilizadores from "@/i18n/locales/en/admin/utilizadores.json";
+
+// Tons por papel — mesma paleta usada na Matriz de Permissões (RBAC.tsx), para que
+// os badges de papel sejam visualmente consistentes entre as duas páginas do grupo "Geral".
+const ROLE_TONE: Record<AppRole, string> = {
+  admin: "bg-primary/10 text-primary border-primary/30",
+  diretor: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  gestor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  tecnico: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30",
+  colaborador: "bg-muted text-muted-foreground border-border",
+};
 
 // Namespace "utilizadores" registado em runtime, mesmo padrão de Departamentos.tsx
 // (src/i18n/index.ts só regista "common"/"nav" — ver comentário lá).
@@ -48,6 +62,7 @@ export default function Utilizadores() {
   const { toast } = useToast();
   const { canWrite } = useUserRole();
   const canEdit = canWrite("utilizadores");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -64,6 +79,11 @@ export default function Utilizadores() {
     departmentId: deptFilter !== "all" ? deptFilter : undefined,
   });
 
+  // Conjunto não filtrado — apenas para os KPIs do topo, para que os cartões
+  // reflictam sempre o universo total de utilizadores, independentemente dos
+  // filtros activos na tabela abaixo (mesmo padrão do Painel de Controlo).
+  const { data: allUsers = [] } = useUsersList({});
+
   // Departamentos: usados no filtro, na coluna "Departamentos" (lookup de nome)
   // e nas checkboxes do dialog de edição. perPage alto para trazer "todos" —
   // o mock não pagina de facto um conjunto tão pequeno.
@@ -73,6 +93,14 @@ export default function Utilizadores() {
     () => new Map(departments.map((d) => [d.id, d.name])),
     [departments],
   );
+
+  const kpis = useMemo(() => {
+    const total = allUsers.length;
+    const admins = allUsers.filter((u) => u.roles.includes("admin")).length;
+    const withoutDept = allUsers.filter((u) => u.departmentIds.length === 0).length;
+    const withoutRole = allUsers.filter((u) => u.roles.length === 0).length;
+    return { total, admins, withoutDept, withoutRole };
+  }, [allUsers]);
 
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
@@ -161,7 +189,7 @@ export default function Utilizadores() {
               <span className="text-xs text-muted-foreground">{t("table.noRoles")}</span>
             )}
             {row.original.roles.map((r) => (
-              <Badge key={r} variant="secondary" className="text-xs">{ROLE_LABEL[r]}</Badge>
+              <Badge key={r} variant="outline" className={cn("text-xs border", ROLE_TONE[r])}>{ROLE_LABEL[r]}</Badge>
             ))}
           </div>
         ),
@@ -218,7 +246,57 @@ export default function Utilizadores() {
         </Button>
       </AdminPageHeader>
 
-      <div className="flex flex-col md:flex-row gap-3">
+      {/* KPIs — visão rápida do universo de utilizadores, independente dos filtros da tabela */}
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            icon={Users}
+            metric={kpis.total}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption", { count: departments.length })}
+            variant="gradient-green"
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            icon={ShieldCheck}
+            metric={kpis.admins}
+            title={t("kpis.admins")}
+            caption={t("kpis.adminsCaption")}
+            variant="gradient-gold"
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            icon={Building2}
+            metric={kpis.withoutDept}
+            title={t("kpis.noDept")}
+            caption={t("kpis.noDeptCaption")}
+            variant="gradient-teal"
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            icon={UserX}
+            metric={kpis.withoutRole}
+            title={t("kpis.noRole")}
+            caption={t("kpis.noRoleCaption")}
+            variant="glass"
+          />
+        </motion.div>
+      </motion.div>
+
+      <motion.div
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+        variants={prefersReducedMotion ? undefined : fadeInUp}
+        className="flex flex-col md:flex-row gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm"
+      >
         <Select
           value={roleFilter}
           onValueChange={(v) => { setRoleFilter(v); resetToFirstPage(); }}
@@ -239,7 +317,7 @@ export default function Utilizadores() {
             {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
           </SelectContent>
         </Select>
-      </div>
+      </motion.div>
 
       <DataTable
         columns={columns}
@@ -263,8 +341,10 @@ export default function Utilizadores() {
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" />
+            <DialogTitle className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg gradient-green-soft text-primary-foreground shadow-sm">
+                <UserPlus className="h-4 w-4" />
+              </span>
               {t("dialog.editTitle")}
             </DialogTitle>
             <DialogDescription>{t("dialog.editDescription")}</DialogDescription>
@@ -292,7 +372,7 @@ export default function Utilizadores() {
                 <Label className="mb-2 block">{t("form.labels.roles")}</Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 rounded-lg border p-3">
                   {ALL_ROLES.map((r) => (
-                    <label key={r} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <label key={r} className="flex items-center gap-2 text-sm cursor-pointer rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors">
                       <Checkbox
                         checked={draftRoles.has(r)}
                         onCheckedChange={() => setDraftRoles((s) => toggleSet(s, r))}
@@ -310,7 +390,7 @@ export default function Utilizadores() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-3 max-h-48 overflow-y-auto">
                     {departments.map((d) => (
-                      <label key={d.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <label key={d.id} className="flex items-center gap-2 text-sm cursor-pointer rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors">
                         <Checkbox
                           checked={draftDepts.has(d.id)}
                           onCheckedChange={() => setDraftDepts((s) => toggleSet(s, d.id))}

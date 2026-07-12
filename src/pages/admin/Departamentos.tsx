@@ -3,9 +3,11 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Building2, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { Building2, Eye, FileText, FileX2, Pencil, Plus, Trash2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { RowActions, type RowAction } from "@/components/admin/RowActions";
 import { WriteGuard } from "@/components/WriteGuard";
@@ -25,6 +27,7 @@ import {
   useUpdateDepartamento,
 } from "@/hooks/queries/useDepartamentos";
 import type { DepartamentoDto } from "@/types/dto/departamento";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptDepartamentos from "@/i18n/locales/pt/admin/departamentos.json";
 import enDepartamentos from "@/i18n/locales/en/admin/departamentos.json";
@@ -56,6 +59,7 @@ export default function Departamentos() {
   const { t, i18n: i18nInstance } = useTranslation("departamentos");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("departamentos");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -69,6 +73,18 @@ export default function Departamentos() {
     perPage: pagination.pageSize,
     search: search || undefined,
   });
+
+  // Conjunto completo (sem paginação nem pesquisa) — apenas para alimentar os
+  // KPIs do topo, à semelhança do padrão usado em Utilizadores.tsx.
+  const { data: allDepartamentosPage } = useDepartamentosList({ page: 1, perPage: 200 });
+  const allDepartamentos = useMemo(() => allDepartamentosPage?.data ?? [], [allDepartamentosPage]);
+
+  const kpis = useMemo(() => {
+    const total = allDepartamentosPage?.meta.total ?? allDepartamentos.length;
+    const withDescription = allDepartamentos.filter((d) => !!d.description?.trim()).length;
+    const withoutDescription = allDepartamentos.length - withDescription;
+    return { total, withDescription, withoutDescription };
+  }, [allDepartamentos, allDepartamentosPage]);
 
   const createDepartamento = useCreateDepartamento();
   const updateDepartamento = useUpdateDepartamento();
@@ -156,6 +172,42 @@ export default function Departamentos() {
         </WriteGuard>
       </AdminPageHeader>
 
+      {/* KPIs — panorama rápido da estrutura organizacional */}
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            icon={Building2}
+            metric={kpis.total}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption")}
+            variant="gradient-green"
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            icon={FileText}
+            metric={kpis.withDescription}
+            title={t("kpis.withDescription")}
+            caption={t("kpis.withDescriptionCaption")}
+            variant="gradient-gold"
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            icon={FileX2}
+            metric={kpis.withoutDescription}
+            title={t("kpis.withoutDescription")}
+            caption={t("kpis.withoutDescriptionCaption")}
+            variant="glass"
+          />
+        </motion.div>
+      </motion.div>
+
       <DataTable
         columns={columns}
         data={data?.data ?? []}
@@ -225,11 +277,16 @@ export default function Departamentos() {
       <Dialog open={!!viewItem} onOpenChange={(o) => !o && setViewItem(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-serif">{t("dialog.detailsTitle")}</DialogTitle>
+            <DialogTitle className="flex items-center gap-3 font-serif">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg gradient-green-soft text-primary-foreground shadow-sm">
+                <Building2 className="h-4 w-4" />
+              </span>
+              {t("dialog.detailsTitle")}
+            </DialogTitle>
           </DialogHeader>
           {viewItem && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
                 <div>
                   <span className="text-muted-foreground">{t("details.name")}:</span>
                   <p className="font-medium">{viewItem.name}</p>

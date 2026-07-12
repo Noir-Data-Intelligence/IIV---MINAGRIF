@@ -3,9 +3,11 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { ExternalLink, FileText, Pencil, Plus, ScrollText, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, ExternalLink, FileText, Pencil, Plus, ScrollText, Trash2, UploadCloud } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { RowActions, type RowAction } from "@/components/admin/RowActions";
 import { WriteGuard } from "@/components/WriteGuard";
@@ -21,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEntityForm } from "@/hooks/useEntityForm";
 import { useUserRole } from "@/hooks/useUserRole";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import {
   useCreateLegislacao,
   useDeleteLegislacao,
@@ -78,6 +81,7 @@ export default function Legislacao() {
   const { t } = useTranslation("admin-legislacao");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("legislacao");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -94,6 +98,17 @@ export default function Legislacao() {
     perPage: pagination.pageSize,
     search: search || undefined,
   });
+
+  // Leitura auxiliar (perPage alto), só para agregar os KPIs do topo —
+  // não interfere com a paginação server-side da tabela acima. Mesmo padrão
+  // usado em Dashboard.tsx para agregações client-side.
+  const { data: allData } = useLegislacaoAdminList({ page: 1, perPage: 1000 });
+  const stats = useMemo(() => {
+    const items = allData?.data ?? [];
+    const total = allData?.meta.total ?? items.length;
+    const published = items.filter((i) => i.published).length;
+    return { total, published, draft: Math.max(total - published, 0) };
+  }, [allData]);
 
   const createLegislacao = useCreateLegislacao();
   const updateLegislacao = useUpdateLegislacao();
@@ -211,11 +226,13 @@ export default function Legislacao() {
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.pdf")} />,
         cell: ({ row }) =>
           row.original.pdfUrl ? (
-            <span className="inline-flex items-center gap-1 text-xs text-primary">
-              <FileText className="h-3.5 w-3.5" /> {t("table.pdfAvailable")}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+              <FileText className="h-3 w-3" /> {t("table.pdfAvailable")}
             </span>
           ) : (
-            <span className="text-xs text-muted-foreground">{t("table.pdfNone")}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+              {t("table.pdfNone")}
+            </span>
           ),
       },
     ],
@@ -254,25 +271,51 @@ export default function Legislacao() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <DataTable
-        columns={columns}
-        data={data?.data ?? []}
-        loading={isLoading}
-        pageCount={data?.meta.lastPage ?? 0}
-        pagination={pagination}
-        onPaginationChange={setPagination}
-        rowCount={data?.meta.total}
-        globalFilter={search}
-        onGlobalFilterChange={setSearch}
-        searchPlaceholder={t("table.searchPlaceholder")}
-        emptyMessage={t("table.empty")}
-        renderRowActions={renderRowActions}
-      />
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={ScrollText} metric={stats.total} title="Total de Diplomas" caption="Registados no sistema" variant="gradient-green" />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={CheckCircle2} metric={stats.published} title="Publicados" caption="Visíveis no portal público" variant="gradient-gold" />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={Clock} metric={stats.draft} title="Rascunhos" caption="Ainda não publicados" variant="glass" />
+        </motion.div>
+      </motion.div>
+
+      <div className="rounded-2xl bg-card shadow-sm hover:shadow-xl transition-all duration-300 p-2 sm:p-4 animate-fade-up">
+        <DataTable
+          columns={columns}
+          data={data?.data ?? []}
+          loading={isLoading}
+          pageCount={data?.meta.lastPage ?? 0}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          rowCount={data?.meta.total}
+          globalFilter={search}
+          onGlobalFilterChange={setSearch}
+          searchPlaceholder={t("table.searchPlaceholder")}
+          emptyMessage={t("table.empty")}
+          renderRowActions={renderRowActions}
+        />
+      </div>
 
       <EntityFormDialog
         open={formOpen}
         onOpenChange={handleFormOpenChange}
-        title={editItem ? t("dialog.editTitle") : t("dialog.createTitle")}
+        title={
+          <span className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg gradient-green-soft text-primary-foreground shadow-md">
+              <ScrollText className="h-4 w-4" />
+            </span>
+            <span className="font-serif text-lg">{editItem ? t("dialog.editTitle") : t("dialog.createTitle")}</span>
+          </span>
+        }
         form={entityForm}
         submitLabel={editItem ? t("form.submitEdit") : t("form.submitCreate")}
         submittingLabel={t("form.submitting")}
@@ -366,8 +409,11 @@ export default function Legislacao() {
 
             {/* Upload de PDF fora do RHF/zod — mock usa apenas o NOME do ficheiro
                 como pdfUrl (sem upload real). TODO Fase 4: upload real para Laravel Storage. */}
-            <div>
-              <Label>
+            <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4 space-y-2">
+              <Label className="flex items-center gap-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg gradient-green-soft text-primary-foreground shadow-md">
+                  <UploadCloud className="h-3.5 w-3.5" />
+                </span>
                 {t("form.labels.pdf")}{" "}
                 {editItem?.pdfUrl && (
                   <span className="text-xs text-muted-foreground">{t("form.pdfKeepHint")}</span>

@@ -3,15 +3,21 @@ import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { ROLE_LABEL } from "@/lib/permissions";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Save, Loader2, KeyRound, Upload, Trash2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  User, Save, Loader2, KeyRound, Upload, Trash2, Mail, Phone, ShieldCheck, IdCard,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { fadeInUp } from "@/lib/motion";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 import { usePerfilQuery, useUpdatePerfil } from "@/hooks/queries/usePerfil";
 import i18n from "@/i18n";
 import ptPerfil from "@/i18n/locales/pt/admin/perfil.json";
@@ -28,6 +34,7 @@ export default function Perfil() {
   // Identificação do utilizador autenticado — fora do âmbito desta migração,
   // mantém-se em Supabase Auth (ver useAuth()).
   const { user } = useAuth();
+  const { role } = useUserRole();
   const { toast } = useToast();
   const prefersReduced = useReducedMotion();
 
@@ -143,53 +150,89 @@ export default function Perfil() {
     ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
 
+  const securityTips = [t("security.tip1"), t("security.tip2"), t("security.tip3")];
+
   return (
-    <div className="space-y-6 max-w-2xl">
+    <motion.div
+      className="space-y-6 max-w-3xl"
+      variants={prefersReduced ? undefined : staggerContainer}
+      initial={prefersReduced ? undefined : "hidden"}
+      animate={prefersReduced ? undefined : "visible"}
+    >
       <AdminPageHeader
         icon={User}
         title={t("page.title")}
         description={t("page.description")}
       />
 
-      <motion.div initial={prefersReduced ? false : "hidden"} animate="visible" variants={fadeInUp}>
-        <AdminCard title={t("card.personalData")} icon={User} loading={isLoading}>
-          <div className="space-y-6">
-            {/* Avatar */}
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20 text-lg">
-                {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">{fullName || t("avatar.noName")}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" disabled={uploadingAvatar} asChild>
-                    <label className="cursor-pointer">
-                      {uploadingAvatar ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
-                      {t("avatar.upload")}
-                      <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
-                    </label>
-                  </Button>
-                  {avatarUrl && (
-                    <Button size="sm" variant="ghost" onClick={handleAvatarRemove} disabled={uploadingAvatar} className="text-destructive hover:text-destructive">
-                      <Trash2 className="mr-2 h-3 w-3" /> {t("avatar.remove")}
-                    </Button>
+      {/* Hero de perfil — banner com gradiente + avatar sobreposto */}
+      <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm hover:shadow-xl transition-all duration-300">
+          <div className="relative h-28 gradient-green-soft">
+            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+            <div className="absolute -bottom-16 left-1/3 h-32 w-32 rounded-full bg-[hsl(var(--iiv-gold))]/25 blur-2xl" />
+          </div>
+          <div className="relative px-6 pb-6">
+            <div className="flex flex-col gap-4 -mt-12 sm:flex-row sm:items-end sm:gap-5">
+              {isLoading ? (
+                <Skeleton className="h-24 w-24 rounded-full ring-4 ring-card shrink-0" />
+              ) : (
+                <Avatar className="h-24 w-24 text-xl ring-4 ring-card shadow-lg shrink-0">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
+                  <AvatarFallback className="gradient-green-soft text-primary-foreground font-semibold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+              <div className="min-w-0 flex-1 pb-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-lg font-serif font-semibold text-foreground truncate">
+                    {fullName || t("avatar.noName")}
+                  </p>
+                  {role && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-[11px] font-medium px-2.5 py-0.5">
+                      <ShieldCheck className="h-3 w-3" />
+                      {t("hero.rolePrefix")}: {ROLE_LABEL[role]}
+                    </span>
                   )}
                 </div>
+                <p className="text-sm text-muted-foreground truncate flex items-center gap-1.5 mt-1">
+                  <Mail className="h-3.5 w-3.5 shrink-0" /> {user?.email}
+                </p>
+              </div>
+              <div className="flex gap-2 pb-1 shrink-0">
+                <Button size="sm" variant="outline" disabled={uploadingAvatar} asChild>
+                  <label className="cursor-pointer">
+                    {uploadingAvatar ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
+                    {t("avatar.upload")}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+                  </label>
+                </Button>
+                {avatarUrl && (
+                  <Button size="sm" variant="ghost" onClick={handleAvatarRemove} disabled={uploadingAvatar} className="text-destructive hover:text-destructive">
+                    <Trash2 className="mr-2 h-3 w-3" /> {t("avatar.remove")}
+                  </Button>
+                )}
               </div>
             </div>
+          </div>
+        </div>
+      </motion.div>
 
-            {/* Form */}
+      <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+        <AdminCard title={t("card.personalData")} icon={IdCard} loading={isLoading}>
+          <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="email">{t("form.labels.email")}</Label>
+                <Label htmlFor="email" className="flex items-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground" /> {t("form.labels.email")}
+                </Label>
                 <Input id="email" value={user?.email || ""} disabled className="bg-muted/50" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fullName">{t("form.labels.fullName")}</Label>
+                <Label htmlFor="fullName" className="flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-muted-foreground" /> {t("form.labels.fullName")}
+                </Label>
                 <Input
                   id="fullName"
                   value={fullName}
@@ -198,7 +241,9 @@ export default function Perfil() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">{t("form.labels.phone")}</Label>
+                <Label htmlFor="phone" className="flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {t("form.labels.phone")}
+                </Label>
                 <Input
                   id="phone"
                   value={phone}
@@ -218,40 +263,60 @@ export default function Perfil() {
         </AdminCard>
       </motion.div>
 
-      <motion.div initial={prefersReduced ? false : "hidden"} animate="visible" variants={fadeInUp}>
+      <motion.div variants={prefersReduced ? undefined : fadeInUp}>
         <AdminCard title={t("card.changePassword")} icon={KeyRound}>
-          <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">{t("password.labels.newPassword")}</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={t("password.placeholders.newPassword")}
-                />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">{t("password.labels.newPassword")}</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder={t("password.placeholders.newPassword")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">{t("password.labels.confirmPassword")}</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder={t("password.placeholders.confirmPassword")}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">{t("password.labels.confirmPassword")}</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder={t("password.placeholders.confirmPassword")}
-                />
+              <div className="flex justify-end">
+                <Button onClick={handleChangePassword} disabled={changingPassword}>
+                  {changingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                  {t("password.submit")}
+                </Button>
               </div>
             </div>
-            <div className="flex justify-end">
-              <Button onClick={handleChangePassword} disabled={changingPassword}>
-                {changingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                {t("password.submit")}
-              </Button>
+
+            {/* Dicas de segurança */}
+            <div className={cn("rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3")}>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <span className="flex h-5 w-5 items-center justify-center rounded-md gradient-green-soft text-primary-foreground shadow-sm shrink-0">
+                  <ShieldCheck className="h-3 w-3" />
+                </span>
+                {t("security.tipsTitle")}
+              </p>
+              <ul className="space-y-2">
+                {securityTips.map((tip, i) => (
+                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
+                    <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                    {tip}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </AdminCard>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }

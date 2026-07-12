@@ -8,6 +8,16 @@
     "edit": "Edit",
     "delete": "Delete"
   },
+  "kpis": {
+    "total": "Total Users",
+    "totalCaption": "{{count}} departments",
+    "admins": "Administrators",
+    "adminsCaption": "With administrator role",
+    "noDept": "No Department",
+    "noDeptCaption": "Awaiting assignment",
+    "noRole": "No Role",
+    "noRoleCaption": "No permissions assigned"
+  },
   "table": {
     "name": "Name",
     "roles": "Roles",

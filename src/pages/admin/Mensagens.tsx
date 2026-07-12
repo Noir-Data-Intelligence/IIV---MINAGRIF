@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Check, Eye, Mail, MessageSquare, Trash2 } from "lucide-react";
+import { Check, Eye, Inbox, Mail, MessageSquare, Trash2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { RowActions, type RowAction } from "@/components/admin/RowActions";
 import { DataTable, DataTableColumnHeader } from "@/components/data-table";
@@ -12,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import {
   useContactMessagesList,
   useDeleteContactMessage,
@@ -37,6 +40,7 @@ export default function MensagensAdmin() {
   const { canWrite } = useUserRole();
   const canDelete = canWrite("mensagens");
   const { toast } = useToast();
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [viewItem, setViewItem] = useState<ContactMessageDto | null>(null);
@@ -53,6 +57,18 @@ export default function MensagensAdmin() {
 
   const rows = data?.data ?? [];
   const unread = rows.filter((m) => !m.lida).length;
+
+  // Leitura auxiliar (perPage alto), só para agregar os KPIs do topo — não
+  // interfere com a paginação server-side da tabela. Mesmo padrão de
+  // Dashboard.tsx para agregações client-side.
+  const { data: allData } = useContactMessagesList({ page: 1, perPage: 1000 });
+  const stats = useMemo(() => {
+    const items = allData?.data ?? [];
+    const total = allData?.meta.total ?? items.length;
+    const unreadTotal = items.filter((m) => !m.lida).length;
+    const responded = items.filter((m) => m.respondida).length;
+    return { total, unread: unreadTotal, responded };
+  }, [allData]);
 
   const openView = (m: ContactMessageDto) => {
     setViewItem(m);

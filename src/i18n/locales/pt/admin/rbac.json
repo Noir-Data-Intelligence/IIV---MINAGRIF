@@ -6,6 +6,16 @@
   "actions": {
     "reload": "Recarregar"
   },
+  "kpis": {
+    "modules": "Módulos Configuráveis",
+    "modulesCaption": "Áreas com controlo de acesso",
+    "roles": "Papéis do Sistema",
+    "rolesCaption": "Perfis disponíveis",
+    "assignedUsers": "Utilizadores com Papel",
+    "assignedUsersCaption": "{{count}} no total",
+    "unsaved": "Alterações por Guardar",
+    "unsavedCaption": "Na matriz de permissões"
+  },
   "tabs": {
     "matrix": "Matriz de Permissões",
     "users": "Atribuição a Utilizadores"

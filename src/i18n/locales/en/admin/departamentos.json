@@ -9,6 +9,14 @@
     "edit": "Edit",
     "delete": "Delete"
   },
+  "kpis": {
+    "total": "Total Departments",
+    "totalCaption": "Active organizational structure",
+    "withDescription": "With Description",
+    "withDescriptionCaption": "Documented departments",
+    "withoutDescription": "Without Description",
+    "withoutDescriptionCaption": "Not yet documented"
+  },
   "form": {
     "labels": {
       "name": "Name",

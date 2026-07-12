@@ -9,6 +9,14 @@
     "edit": "Editar",
     "delete": "Eliminar"
   },
+  "kpis": {
+    "total": "Total de Departamentos",
+    "totalCaption": "Estrutura organizacional activa",
+    "withDescription": "Com Descrição",
+    "withDescriptionCaption": "Departamentos documentados",
+    "withoutDescription": "Sem Descrição",
+    "withoutDescriptionCaption": "Por documentar"
+  },
   "form": {
     "labels": {
       "name": "Nome",

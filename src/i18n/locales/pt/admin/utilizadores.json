@@ -8,6 +8,16 @@
     "edit": "Editar",
     "delete": "Eliminar"
   },
+  "kpis": {
+    "total": "Total de Utilizadores",
+    "totalCaption": "{{count}} departamentos",
+    "admins": "Administradores",
+    "adminsCaption": "Com papel de administrador",
+    "noDept": "Sem Departamento",
+    "noDeptCaption": "A aguardar atribuição",
+    "noRole": "Sem Papel",
+    "noRoleCaption": "Sem permissões atribuídas"
+  },
   "table": {
     "name": "Nome",
     "roles": "Papéis",

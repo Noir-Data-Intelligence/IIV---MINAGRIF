@@ -10,7 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Play, FileDown, AlertCircle, CheckCircle2, Contrast, Ruler, RefreshCw } from "lucide-react";
+import {
+  ShieldCheck, Play, FileDown, AlertCircle, CheckCircle2, Contrast, Ruler, RefreshCw,
+  AlertTriangle, ListChecks,
+} from "lucide-react";
 import { auditRoute, summarise, type RouteAuditResult } from "@/lib/a11yAudit";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -55,9 +58,9 @@ const VIEWPORT_SIZES = {
 type ViewportKey = keyof typeof VIEWPORT_SIZES;
 
 const impactColor: Record<string, string> = {
-  critical: "bg-destructive/15 text-destructive border-destructive/30",
-  serious: "bg-orange-500/15 text-orange-600 border-orange-500/30 dark:text-orange-400",
-  moderate: "bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-300",
+  critical: "bg-destructive text-white border-transparent shadow-sm",
+  serious: "bg-orange-600 text-white border-transparent shadow-sm",
+  moderate: "bg-amber-500 text-white border-transparent shadow-sm",
   minor: "bg-muted text-muted-foreground border-border",
 };
 
@@ -217,15 +220,22 @@ export default function Acessibilidade() {
       </AdminPageHeader>
 
       {running && (
-        <AdminCard>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">
-                {t("progress.analyzing", { current: current || t("progress.analyzingFallback") })}
-              </span>
-              <span className="text-muted-foreground">{progress}%</span>
+        <AdminCard className="border-primary/25">
+          <div className="flex items-center gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl gradient-green-soft text-primary-foreground shadow-md">
+              <RefreshCw className="h-5 w-5 animate-spin" />
             </div>
-            <Progress value={progress} />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="font-medium truncate">
+                  {t("progress.analyzing", { current: current || t("progress.analyzingFallback") })}
+                </span>
+                <span className="shrink-0 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-0.5">
+                  {progress}%
+                </span>
+              </div>
+              <Progress value={progress} className="h-2" />
+            </div>
           </div>
         </AdminCard>
       )}
@@ -239,6 +249,7 @@ export default function Acessibilidade() {
         <motion.div variants={fadeInUp}>
           <AdminCard
             variant="gradient-green-gold"
+            icon={ListChecks}
             metric={totalIssues}
             title={t("kpi.totalIssues.title")}
             caption={t("kpi.totalIssues.caption", { scanned: results.length, total: ROUTES.length })}
@@ -247,6 +258,7 @@ export default function Acessibilidade() {
         <motion.div variants={fadeInUp}>
           <AdminCard
             variant="glass"
+            icon={Contrast}
             metric={summary.contraste}
             title={t("kpi.contrast.title")}
             caption={t("kpi.contrast.caption")}
@@ -255,6 +267,7 @@ export default function Acessibilidade() {
         <motion.div variants={fadeInUp}>
           <AdminCard
             variant="glass"
+            icon={Ruler}
             metric={summary.tamanho}
             title={t("kpi.sizes.title")}
             caption={t("kpi.sizes.caption")}
@@ -262,7 +275,8 @@ export default function Acessibilidade() {
         </motion.div>
         <motion.div variants={fadeInUp}>
           <AdminCard
-            variant="glass"
+            variant="gradient-gold"
+            icon={AlertTriangle}
             metric={summary.critical + summary.serious}
             title={t("kpi.criticalSerious.title")}
             caption={t("kpi.criticalSerious.caption", { critical: summary.critical })}
@@ -304,17 +318,23 @@ export default function Acessibilidade() {
                       <AccordionItem
                         key={r.path}
                         value={r.path}
-                        className="border border-border/60 rounded-lg px-3 bg-card/40"
+                        className="border border-border/60 rounded-xl px-3 bg-card/40 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/30"
                       >
                         <AccordionTrigger className="hover:no-underline py-3">
                           <div className="flex flex-1 items-center justify-between gap-3 pr-3">
                             <div className="flex items-center gap-3 min-w-0">
                               {r.error ? (
-                                <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive text-white shadow-sm">
+                                  <AlertCircle className="h-3.5 w-3.5" />
+                                </span>
                               ) : count === 0 ? (
-                                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg gradient-green-soft text-primary-foreground shadow-sm">
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                </span>
                               ) : (
-                                <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm">
+                                  <AlertCircle className="h-3.5 w-3.5" />
+                                </span>
                               )}
                               <div className="text-left min-w-0">
                                 <p className="text-sm font-medium truncate">{r.label}</p>
@@ -335,7 +355,7 @@ export default function Acessibilidade() {
                           ) : (
                             <div className="space-y-3">
                               {filtered.map((v) => (
-                                <div key={v.id} className="rounded-md border border-border/60 p-3 bg-background/40">
+                                <div key={v.id} className="rounded-xl border border-border/60 p-3 bg-background/40 shadow-sm hover:shadow-md transition-all duration-300">
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
                                       <p className="text-sm font-semibold font-serif">{v.help}</p>

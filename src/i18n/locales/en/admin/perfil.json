@@ -7,6 +7,15 @@
     "personalData": "Personal Data",
     "changePassword": "Change Password"
   },
+  "hero": {
+    "rolePrefix": "Role"
+  },
+  "security": {
+    "tipsTitle": "Best practices",
+    "tip1": "Use at least 8 characters, mixing letters and numbers.",
+    "tip2": "Don't reuse the password from other accounts or services.",
+    "tip3": "Change your password periodically for extra security."
+  },
   "avatar": {
     "noName": "No name",
     "upload": "Upload photo",
