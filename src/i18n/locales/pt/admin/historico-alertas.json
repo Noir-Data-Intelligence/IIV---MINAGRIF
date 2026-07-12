@@ -7,6 +7,12 @@
     "export": "Exportar",
     "clear": "Limpar"
   },
+  "kpi": {
+    "total": "Total de Alertas",
+    "pendente": "Pendentes",
+    "emCurso": "Em Curso",
+    "resolvido": "Resolvidos"
+  },
   "filters": {
     "title": "Filtros",
     "metric": "Métrica",

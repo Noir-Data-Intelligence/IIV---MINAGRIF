@@ -19,7 +19,7 @@ import { axisTickStyle, buildChartConfig, chartColors, formatAxisNumber, NoDataO
 import { useTableExport } from "@/hooks/useTableExport";
 import { usePagination } from "@/hooks/usePagination";
 import { fadeIn } from "@/lib/motion";
-import { Bell, Download, Trash2, ArrowUpRight, UserPlus } from "lucide-react";
+import { Bell, Download, Trash2, ArrowUpRight, UserPlus, Clock, RefreshCw, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -120,6 +120,20 @@ export default function HistoricoAlertas() {
   const trendHasData = useMemo(() => trend.some((d) => d.total > 0), [trend]);
   const trendConfig = useMemo(() => buildChartConfig(["total"], { total: t("trend.series") }), [t]);
 
+  // Query sem filtros — panorama global do módulo, independente dos filtros
+  // aplicados à tabela (mesmo padrão usado em Utilizadores.tsx para os KPIs).
+  const statsQuery = useAlertHistoryList({ page: 1, perPage: 1000 });
+  const statsRows = useMemo(() => statsQuery.data?.data ?? [], [statsQuery.data]);
+  const kpis = useMemo(
+    () => ({
+      total: statsQuery.data?.meta.total ?? statsRows.length,
+      pendente: statsRows.filter((r) => r.actionStatus === "pendente").length,
+      emCurso: statsRows.filter((r) => r.actionStatus === "em_curso").length,
+      resolvido: statsRows.filter((r) => r.actionStatus === "resolvido").length,
+    }),
+    [statsQuery.data, statsRows],
+  );
+
   const updateMutation = useUpdateAlertHistory();
   const clearMutation = useClearAlertHistory();
 
@@ -204,6 +218,14 @@ export default function HistoricoAlertas() {
           <Trash2 className="h-4 w-4" /> {t("actions.clear")}
         </Button>
       </AdminPageHeader>
+
+      {/* KPIs — panorama global do módulo, independente dos filtros da tabela */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <AdminCard icon={Bell} metric={kpis.total} title={t("kpi.total")} variant="gradient-green" />
+        <AdminCard icon={Clock} metric={kpis.pendente} title={t("kpi.pendente")} variant="gradient-gold" />
+        <AdminCard icon={RefreshCw} metric={kpis.emCurso} title={t("kpi.emCurso")} variant="glass" />
+        <AdminCard icon={CheckCircle2} metric={kpis.resolvido} title={t("kpi.resolvido")} variant="glass" />
+      </div>
 
       {/* Filtros */}
       <AdminCard title={t("filters.title")} icon={Bell}>

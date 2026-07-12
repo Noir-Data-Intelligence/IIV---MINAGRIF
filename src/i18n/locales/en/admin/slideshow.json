@@ -20,6 +20,12 @@
     "searchPlaceholder": "Search slides...",
     "emptyCell": "—"
   },
+  "kpi": {
+    "total": "Total Slides",
+    "published": "Published",
+    "draft": "Drafts",
+    "nextOrder": "Next Order"
+  },
   "badge": {
     "published": "Published",
     "draft": "Draft"

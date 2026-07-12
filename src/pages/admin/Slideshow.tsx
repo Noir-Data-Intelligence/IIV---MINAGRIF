@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { motion, useReducedMotion } from "framer-motion";
 import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ExternalLink, Images, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Eye, EyeOff, Hash, Images, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { RowActions, type RowAction } from "@/components/admin/RowActions";
@@ -20,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEntityForm } from "@/hooks/useEntityForm";
 import { useUserRole } from "@/hooks/useUserRole";
+import { fadeInUp, staggerContainer } from "@/lib/motion";
 import {
   useCreateHeroSlide,
   useDeleteHeroSlide,
@@ -113,6 +116,7 @@ export default function Slideshow() {
   const { t } = useTranslation("slideshow");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("slideshow");
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -157,6 +161,18 @@ export default function Slideshow() {
   const suggestedNextOrder = useMemo(
     () => (rows.length ? Math.max(...rows.map((s) => s.sortOrder)) + 1 : 1),
     [rows],
+  );
+
+  // Panorama rápido do slideshow — calculado sobre a página actual (tipicamente
+  // cabem todos os slides numa única página, dado o volume reduzido deste módulo).
+  const kpis = useMemo(
+    () => ({
+      total: data?.meta.total ?? rows.length,
+      published: rows.filter((s) => s.published).length,
+      draft: rows.filter((s) => !s.published).length,
+      nextOrder: suggestedNextOrder,
+    }),
+    [data?.meta.total, rows, suggestedNextOrder],
   );
 
   const entityForm = useEntityForm({
@@ -325,6 +341,27 @@ export default function Slideshow() {
           </Button>
         </WriteGuard>
       </AdminPageHeader>
+
+      {/* KPIs — panorama rápido do slideshow da home */}
+      <motion.div
+        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={Images} metric={kpis.total} title={t("kpi.total")} variant="gradient-green" />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={Eye} metric={kpis.published} title={t("kpi.published")} variant="gradient-gold" />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={EyeOff} metric={kpis.draft} title={t("kpi.draft")} variant="glass" />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard icon={Hash} metric={kpis.nextOrder} title={t("kpi.nextOrder")} variant="glass" />
+        </motion.div>
+      </motion.div>
 
       <DataTable
         columns={columns}

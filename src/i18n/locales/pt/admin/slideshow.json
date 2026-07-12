@@ -20,6 +20,12 @@
     "searchPlaceholder": "Pesquisar slides...",
     "emptyCell": "—"
   },
+  "kpi": {
+    "total": "Total de Slides",
+    "published": "Publicados",
+    "draft": "Rascunhos",
+    "nextOrder": "Próxima Ordem"
+  },
   "badge": {
     "published": "Publicado",
     "draft": "Rascunho"
