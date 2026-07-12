@@ -115,6 +115,7 @@ export default function Legislacao() {
             </div>
           ) : (
             <motion.ul
+              className="space-y-4"
               variants={shouldReduceMotion ? undefined : staggerContainer}
               initial={shouldReduceMotion ? false : "hidden"}
               whileInView={shouldReduceMotion ? undefined : "visible"}
@@ -124,7 +125,7 @@ export default function Legislacao() {
                 <motion.li
                   key={l.id}
                   variants={shouldReduceMotion ? undefined : fadeInUp}
-                  className="grid grid-cols-12 gap-6 items-center py-8 border-b border-border/40 first:border-t group hover:bg-accent/20 transition-colors -mx-4 px-4 rounded-xl"
+                  className="grid grid-cols-12 gap-6 items-center p-6 rounded-2xl border border-border/60 bg-card shadow-sm hover:shadow-xl hover:-translate-y-0.5 group transition-all duration-300"
                 >
                   <div className="col-span-2">
                     <Link to={`/legislacao/${l.slug}`} className="block">
@@ -139,7 +140,9 @@ export default function Legislacao() {
                   </div>
                   <div className="col-span-10 md:col-span-7">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="kicker text-[hsl(var(--iiv-gold-text))]">{tipoLabels[l.tipo] ?? l.tipo}</span>
+                      <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 kicker text-[hsl(var(--iiv-gold-text))]">
+                        {tipoLabels[l.tipo] ?? l.tipo}
+                      </span>
                       <span className="font-mono text-[11px] text-muted-foreground">{l.ano}</span>
                     </div>
                     <Link to={`/legislacao/${l.slug}`}>
