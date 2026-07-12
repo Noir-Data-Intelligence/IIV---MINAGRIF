@@ -44,7 +44,7 @@ import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
 import { useLaboratoriosList } from "@/hooks/queries/useLaboratorios";
 import { AUDIT_STATUS } from "@/lib/domain-enums";
 import { generateInstitutionalPdf } from "@/lib/generateInstitutionalPdf";
-import { fadeIn } from "@/lib/motion";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import type { AuditoriaDto } from "@/types/dto/auditoria";
 import i18n from "@/i18n";
 import ptAuditorias from "@/i18n/locales/pt/admin/auditorias.json";
@@ -290,32 +290,40 @@ export default function Auditorias() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        <AdminCard
-          variant="gradient-green"
-          icon={ClipboardCheck}
-          metric={kpiTotal}
-          title={t("kpis.total")}
-          caption={t("kpis.totalCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant="gradient-teal"
-          icon={CheckCircle2}
-          metric={kpiCompleted}
-          title={t("kpis.completed")}
-          caption={t("kpis.completedCaption")}
-          stagger={2}
-        />
-        <AdminCard
-          variant="gradient-gold"
-          icon={CalendarClock}
-          metric={kpiPending}
-          title={t("kpis.pending")}
-          caption={t("kpis.pendingCaption")}
-          stagger={3}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={ClipboardCheck}
+            metric={kpiTotal}
+            title={t("kpis.total")}
+            caption={t("kpis.totalCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-teal"
+            icon={CheckCircle2}
+            metric={kpiCompleted}
+            title={t("kpis.completed")}
+            caption={t("kpis.completedCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-gold"
+            icon={CalendarClock}
+            metric={kpiPending}
+            title={t("kpis.pending")}
+            caption={t("kpis.pendingCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <DataTable
         columns={columns}

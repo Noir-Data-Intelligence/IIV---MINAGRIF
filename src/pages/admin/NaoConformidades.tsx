@@ -44,7 +44,7 @@ import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
 import { useAuditoriasList } from "@/hooks/queries/useAuditorias";
 import { SEVERITY_LEVEL, NC_STATUS } from "@/lib/domain-enums";
 import { generateInstitutionalPdf } from "@/lib/generateInstitutionalPdf";
-import { fadeIn } from "@/lib/motion";
+import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
 import type { NaoConformidadeDto } from "@/types/dto/naoConformidade";
 import i18n from "@/i18n";
 import ptNaoConformidades from "@/i18n/locales/pt/admin/nao-conformidades.json";
@@ -319,32 +319,40 @@ export default function NaoConformidades() {
         </WriteGuard>
       </AdminPageHeader>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        <AdminCard
-          variant="gradient-green"
-          icon={AlertTriangle}
-          metric={kpiOpen}
-          title={t("kpis.open")}
-          caption={t("kpis.openCaption")}
-          stagger={1}
-        />
-        <AdminCard
-          variant="gradient-gold"
-          icon={ShieldAlert}
-          metric={kpiCritical}
-          title={t("kpis.critical")}
-          caption={t("kpis.criticalCaption")}
-          stagger={2}
-        />
-        <AdminCard
-          variant="gradient-teal"
-          icon={CalendarX}
-          metric={kpiOverdue}
-          title={t("kpis.overdue")}
-          caption={t("kpis.overdueCaption")}
-          stagger={3}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-3"
+        variants={prefersReduced ? undefined : staggerContainer}
+        initial={prefersReduced ? undefined : "hidden"}
+        animate={prefersReduced ? undefined : "visible"}
+      >
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-green"
+            icon={AlertTriangle}
+            metric={kpiOpen}
+            title={t("kpis.open")}
+            caption={t("kpis.openCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-gold"
+            icon={ShieldAlert}
+            metric={kpiCritical}
+            title={t("kpis.critical")}
+            caption={t("kpis.criticalCaption")}
+          />
+        </motion.div>
+        <motion.div variants={prefersReduced ? undefined : fadeInUp}>
+          <AdminCard
+            variant="gradient-teal"
+            icon={CalendarX}
+            metric={kpiOverdue}
+            title={t("kpis.overdue")}
+            caption={t("kpis.overdueCaption")}
+          />
+        </motion.div>
+      </motion.div>
 
       <DataTable
         columns={columns}

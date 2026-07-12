@@ -74,7 +74,7 @@ export default function Inseminacao() {
   const { canWrite } = useUserRole();
   const { toast } = useToast();
   const canEdit = canWrite("inseminacao");
-  const reduceMotion = useReducedMotion();
+  const prefersReducedMotion = useReducedMotion();
 
   const { data: centers = [], isLoading: loadingCenters } = useCentrosList();
   const { data: breeders = [], isLoading: loadingBreeders } = useReprodutoresList();
@@ -251,20 +251,20 @@ export default function Inseminacao() {
 
       <motion.div
         className="grid gap-4 grid-cols-2 lg:grid-cols-4"
-        variants={staggerContainer}
-        initial={reduceMotion ? false : "hidden"}
-        animate="visible"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
       >
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="gradient-green-gold" icon={Building2} metric={kpis.activeBreeders} title={t("kpi.activeBreeders")} caption={t("kpi.activeBreedersCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={FlaskConical} metric={kpis.totalDoses} title={t("kpi.doses")} caption={t("kpi.dosesCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={Activity} metric={`${kpis.rate}%`} title={t("kpi.rate")} caption={t("kpi.rateCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant={kpis.lowTanks > 0 ? "gradient-gold" : "glass"} icon={AlertTriangle} metric={kpis.lowTanks} title={t("kpi.lowTanks")} caption={t("kpi.lowTanksCaption")} />
         </motion.div>
       </motion.div>

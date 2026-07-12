@@ -109,7 +109,7 @@ export default function Animais() {
   const { t, i18n: i18nInstance } = useTranslation("animais");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("animais");
-  const reduceMotion = useReducedMotion();
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -309,20 +309,20 @@ export default function Animais() {
 
       <motion.div
         className="grid gap-4 grid-cols-2 lg:grid-cols-4"
-        variants={staggerContainer}
-        initial={reduceMotion ? false : "hidden"}
-        animate="visible"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
       >
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="gradient-green-gold" icon={Rabbit} metric={stats.total} title={t("kpi.total")} caption={t("kpi.totalCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={Activity} metric={stats.active} title={t("kpi.active")} caption={t("kpi.activeCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={Beef} metric={stats.males} title={t("kpi.males")} caption={t("kpi.malesCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={Baby} metric={stats.females} title={t("kpi.females")} caption={t("kpi.femalesCaption")} />
         </motion.div>
       </motion.div>

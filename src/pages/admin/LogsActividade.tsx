@@ -247,11 +247,11 @@ export default function LogsActividade() {
 
       <motion.div
         className="grid gap-4 grid-cols-1 sm:grid-cols-2"
-        variants={staggerContainer}
-        initial={reduceMotion ? false : "hidden"}
-        animate="visible"
+        variants={reduceMotion ? undefined : staggerContainer}
+        initial={reduceMotion ? undefined : "hidden"}
+        animate={reduceMotion ? undefined : "visible"}
       >
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={reduceMotion ? undefined : fadeInUp}>
           <AdminCard
             variant="gradient-green-gold"
             icon={Shield}
@@ -260,7 +260,7 @@ export default function LogsActividade() {
             caption={t("kpi.total.caption")}
           />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={reduceMotion ? undefined : fadeInUp}>
           <AdminCard
             variant="glass"
             icon={AlertOctagon}

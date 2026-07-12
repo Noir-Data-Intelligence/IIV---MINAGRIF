@@ -62,7 +62,7 @@ export default function Estacoes() {
   const { t, i18n: i18nInstance } = useTranslation("estacoes");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("estacoes");
-  const reduceMotion = useReducedMotion();
+  const prefersReducedMotion = useReducedMotion();
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
@@ -208,17 +208,17 @@ export default function Estacoes() {
 
       <motion.div
         className="grid gap-4 grid-cols-1 sm:grid-cols-3"
-        variants={staggerContainer}
-        initial={reduceMotion ? false : "hidden"}
-        animate="visible"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
       >
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="gradient-green-gold" icon={MapPin} metric={stats.total} title={t("kpi.total")} caption={t("kpi.totalCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={Power} metric={stats.active} title={t("kpi.active")} caption={t("kpi.activeCaption")} />
         </motion.div>
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={Layers} metric={stats.types} title={t("kpi.types")} caption={t("kpi.typesCaption")} />
         </motion.div>
       </motion.div>
