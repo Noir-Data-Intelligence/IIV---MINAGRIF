@@ -728,7 +728,7 @@ export default function Dashboard() {
                 to={`/admin/painel/${c.key}`}
                 aria-label={`Ver detalhes: ${c.label}`}
                 className={cn(
-                  "group relative flex items-center gap-4 rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "group relative flex items-center gap-5 rounded-2xl p-6 min-h-[7.5rem] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isGradient
                     ? `${c.variant} border-0 text-primary-foreground shadow-lg`
                     : "bg-card border border-border/60 shadow-sm",
@@ -739,19 +739,19 @@ export default function Dashboard() {
                 )}
                 <div
                   className={cn(
-                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3",
+                    "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3",
                     isGradient ? "bg-white/15 backdrop-blur-sm" : "gradient-green-soft text-primary-foreground shadow-md",
                   )}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={1.75} />
+                  <Icon className="h-6 w-6" strokeWidth={1.75} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-3xl font-serif leading-none tracking-tight">{c.value}</p>
-                  <p className={cn("text-xs mt-1.5 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
+                  <p className="text-3xl xl:text-4xl font-serif leading-none tracking-tight">{c.value}</p>
+                  <p className={cn("text-sm mt-2 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
                     {c.label}
                   </p>
                   {c.caption && (
-                    <p className={cn("text-[10px] mt-0.5 truncate", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                    <p className={cn("text-xs mt-0.5 truncate", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
                       {c.caption}
                     </p>
                   )}

@@ -90,26 +90,26 @@ export function AdminCard({
         {isGradient && (
           <div className="absolute -top-10 -right-10 h-28 w-28 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         )}
-        <CardContent className="p-5 relative flex items-center gap-4">
+        <CardContent className="p-6 min-h-[7.5rem] relative flex items-center gap-5">
           {Icon && (
             <div
               className={cn(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3",
+                "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3",
                 isGradient ? "bg-white/15 backdrop-blur-sm" : "gradient-green-soft text-primary-foreground shadow-md"
               )}
             >
-              <Icon className="h-5 w-5" strokeWidth={1.75} />
+              <Icon className="h-6 w-6" strokeWidth={1.75} />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className={cn("text-3xl font-serif leading-none tracking-tight", isGradient ? "" : "text-foreground")}>{metric}</p>
+            <p className={cn("text-3xl xl:text-4xl font-serif leading-none tracking-tight", isGradient ? "" : "text-foreground")}>{metric}</p>
             {title && (
-              <p className={cn("text-xs mt-1.5 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
+              <p className={cn("text-sm mt-2 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
                 {title}
               </p>
             )}
             {caption && (
-              <p className={cn("text-[10px] mt-0.5 truncate", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
+              <p className={cn("text-xs mt-0.5 truncate", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
                 {caption}
               </p>
             )}
