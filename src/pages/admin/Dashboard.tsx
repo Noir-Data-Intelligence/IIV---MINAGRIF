@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ROLE_LABEL, type AppRole } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { KPISkeleton, CardSkeleton } from "@/components/admin/LoadingStates";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,8 +21,8 @@ import {
 import { toast } from "sonner";
 import {
   Users, Activity, Boxes, Truck, TrendingUp,
-  LayoutDashboard, AlertTriangle, PackageX, CalendarClock, Settings2, RotateCcw, BellOff, EyeOff,
-  ChevronRight, X, type LucideIcon,
+  AlertTriangle, PackageX, CalendarClock, Settings2, RotateCcw, BellOff, EyeOff,
+  ChevronRight, X, ArrowUpRight, ArrowDownRight, type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -153,12 +152,21 @@ const calcTrend = (current: number, previous: number): Trend => {
 const MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { role } = useUserRole();
   const activeRole: AppRole = role ?? "colaborador";
   const roleKpis = KPIS_BY_ROLE[activeRole];
   const roleCharts = CHARTS_BY_ROLE[activeRole];
 
   const prefersReducedMotion = useReducedMotion();
+
+  // Saudação por hora do dia + data por extenso, para o hero do painel.
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 19 ? "Boa tarde" : "Boa noite";
+  const firstName = user?.email?.split("@")[0] ?? "";
+  const todayLabel = new Date().toLocaleDateString("pt-PT", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
 
   // ---- Fontes de dados (hooks migrados, agregação client-side) ----
   const analisesQuery = useAnalisesList({ page: 1, perPage: 1000 });
@@ -469,7 +477,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div className="space-y-8">
-      <AdminPageHeader icon={LayoutDashboard} title="Painel de Controlo" description="Visão geral do sistema de gestão do IIV" />
+      <div className="rounded-3xl gradient-green h-40 animate-pulse opacity-60" />
       <KPISkeleton count={8} />
       <div className="grid gap-5 lg:grid-cols-3">
         <CardSkeleton /><CardSkeleton /><CardSkeleton />
@@ -482,18 +490,37 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <AdminPageHeader
-        icon={LayoutDashboard}
-        title="Painel de Controlo"
-        description={`${ROLE_INTRO[activeRole]} · perfil ${ROLE_LABEL[activeRole]}`}
-      >
-        <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" onClick={openPrefs} className="gap-2">
-              <Settings2 className="h-4 w-4" />
-              Personalizar
-            </Button>
-          </DialogTrigger>
+      {/* HERO DE BOAS-VINDAS — substitui o cabeçalho genérico por uma saudação
+          pessoal com data, estado do sistema e acesso à personalização. */}
+      <div className="relative overflow-hidden rounded-3xl gradient-green text-primary-foreground shadow-xl animate-fade-up">
+        <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-[hsl(var(--iiv-gold))]/20 blur-3xl" />
+        <div className="absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-primary-foreground/5 blur-3xl" />
+        <div className="relative p-7 md:p-9 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="kicker text-[hsl(var(--iiv-gold))] capitalize">{todayLabel}</p>
+            <h1 className="font-serif text-3xl md:text-4xl mt-3 leading-tight">
+              {greeting}, <span className="capitalize">{firstName}</span>
+            </h1>
+            <p className="text-sm opacity-75 mt-2 max-w-xl">
+              {ROLE_INTRO[activeRole]} · perfil {ROLE_LABEL[activeRole]}
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-xs font-medium">
+              <span className="h-2 w-2 rounded-full bg-[hsl(var(--iiv-gold))] animate-pulse" />
+              Sistema operacional · dados em tempo real
+            </div>
+          </div>
+          <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openPrefs}
+                className="gap-2 shrink-0 border-primary-foreground/25 bg-white/10 text-primary-foreground hover:bg-white/20 hover:text-primary-foreground backdrop-blur-sm"
+              >
+                <Settings2 className="h-4 w-4" />
+                Personalizar
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="font-serif">Personalizar Painel</DialogTitle>
@@ -566,8 +593,9 @@ export default function Dashboard() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
-      </AdminPageHeader>
+          </Dialog>
+        </div>
+      </div>
 
       {/* Alerts — limiares configuráveis */}
       {(() => {
@@ -611,7 +639,7 @@ export default function Dashboard() {
               variants={prefersReducedMotion ? undefined : staggerContainer}
               initial={prefersReducedMotion ? undefined : "hidden"}
               animate={prefersReducedMotion ? undefined : "visible"}
-              className="grid grid-cols-1 gap-4 md:grid-cols-2"
+              className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
             >
               {active.map((k) => {
                 const meta = ALERT_META[k];
@@ -621,54 +649,43 @@ export default function Dashboard() {
                 const t = thresholds[k];
                 return (
                   <motion.div key={k} variants={prefersReducedMotion ? undefined : fadeInUp}>
-                    <Card className={cn("relative overflow-hidden rounded-2xl shadow-elegant", tone.card)}>
+                    {/* Tira compacta: tudo numa linha — ícone, métrica, valor, ações */}
+                    <div className={cn("relative overflow-hidden rounded-2xl border shadow-sm flex items-center gap-4 p-4 pl-5", tone.card)}>
                       <span className={cn("absolute inset-y-0 left-0 w-1", tone.accent)} aria-hidden="true" />
-                      <CardContent className="p-5 pl-6 sm:p-6 sm:pl-7">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3">
-                            <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", tone.iconWrap)}>
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0 pt-0.5">
-                              <p className="text-sm font-semibold leading-tight text-foreground">{meta.label}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">{meta.caption}</p>
-                            </div>
-                          </div>
-                          <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide", tone.badge)}>
-                            {tone.badgeLabel}
-                          </span>
-                        </div>
-
-                        <div className="mt-5 flex items-baseline gap-2">
-                          <span className={cn("text-4xl font-serif font-semibold leading-none", tone.value)}>{value}</span>
-                          <span className="text-xs text-muted-foreground">/ limiar {t}</span>
-                        </div>
-
-                        <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
-                          <Link
-                            to={`/admin/painel/${k}`}
-                            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline underline-offset-2"
-                          >
-                            Ver detalhes <ChevronRight className="h-3 w-3" />
-                          </Link>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground">
-                                <EyeOff className="h-3 w-3" /> Marcar como visto
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
-                              <DropdownMenuLabel className="text-xs">Silenciar por...</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => ackAlert(k, 1)}>1 hora</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => ackAlert(k, 4)}>4 horas</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => ackAlert(k, 24)}>24 horas</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => ackAlert(k, 24 * 7)}>7 dias</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", tone.iconWrap)}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold leading-tight text-foreground truncate">{meta.label}</p>
+                        <p className="mt-1 flex items-baseline gap-1.5">
+                          <span className={cn("text-2xl font-serif font-semibold leading-none", tone.value)}>{value}</span>
+                          <span className="text-[11px] text-muted-foreground">/ limiar {t}</span>
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <Link
+                          to={`/admin/painel/${k}`}
+                          className="inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline underline-offset-2"
+                        >
+                          Detalhes <ChevronRight className="h-3 w-3" />
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 px-1.5 gap-1 text-[11px] text-muted-foreground hover:text-foreground" aria-label={`Silenciar alerta ${meta.label}`}>
+                              <EyeOff className="h-3 w-3" /> Visto
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuLabel className="text-xs">Silenciar por...</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => ackAlert(k, 1)}>1 hora</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => ackAlert(k, 4)}>4 horas</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => ackAlert(k, 24)}>24 horas</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => ackAlert(k, 24 * 7)}>7 dias</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
                   </motion.div>
                 );
               })}
@@ -695,27 +712,70 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* KPI Cards — operational metrics */}
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-        {kpis.map((c, i) => (
-          <Link
-            key={c.label}
-            to={`/admin/painel/${c.key}`}
-            className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-transform hover:-translate-y-0.5"
-            aria-label={`Ver detalhes: ${c.label}`}
-          >
-            <AdminCard
-              title={c.label}
-              icon={c.icon}
-              metric={c.value}
-              caption={c.caption}
-              trend={c.trend}
-              variant={c.variant}
-              stagger={(i + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}
-            />
-          </Link>
-        ))}
-      </div>
+      {/* KPI Cards — layout horizontal (ícone à esquerda, número grande) */}
+      <motion.div
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+        variants={prefersReducedMotion ? undefined : staggerContainer}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : "visible"}
+      >
+        {kpis.map((c) => {
+          const Icon = c.icon;
+          const isGradient = c.variant !== "glass";
+          return (
+            <motion.div key={c.key} variants={prefersReducedMotion ? undefined : fadeInUp}>
+              <Link
+                to={`/admin/painel/${c.key}`}
+                aria-label={`Ver detalhes: ${c.label}`}
+                className={cn(
+                  "group relative flex items-center gap-4 rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isGradient
+                    ? `${c.variant} border-0 text-primary-foreground shadow-lg`
+                    : "bg-card border border-border/60 shadow-sm",
+                )}
+              >
+                {isGradient && (
+                  <div className="absolute -top-10 -right-10 h-28 w-28 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+                )}
+                <div
+                  className={cn(
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3",
+                    isGradient ? "bg-white/15 backdrop-blur-sm" : "gradient-green-soft text-primary-foreground shadow-md",
+                  )}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={1.75} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-3xl font-serif leading-none tracking-tight">{c.value}</p>
+                  <p className={cn("text-xs mt-1.5 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
+                    {c.label}
+                  </p>
+                  {c.caption && (
+                    <p className={cn("text-[10px] mt-0.5 truncate", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                      {c.caption}
+                    </p>
+                  )}
+                </div>
+                {c.trend && (
+                  <span
+                    className={cn(
+                      "absolute top-3 right-3 flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                      isGradient
+                        ? "bg-white/15 text-primary-foreground"
+                        : c.trend.direction === "up"
+                        ? "bg-primary/10 text-primary"
+                        : "bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    {c.trend.direction === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {c.trend.value}
+                  </span>
+                )}
+              </Link>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
       {/* Charts row 1 — análises */}
       {(allowedCharts.has("monthlyAnalyses") || allowedCharts.has("analysisStatus")) && (

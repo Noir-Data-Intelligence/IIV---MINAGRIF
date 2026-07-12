@@ -74,56 +74,60 @@ export function AdminCard({
   const isGradient = variant !== "glass";
   const isKpi = metric !== undefined;
 
-  // KPI compact card
+  // KPI horizontal — ícone à esquerda, número grande à direita (mesmo layout
+  // do Painel reconstruído, para que todos os grupos admin partilhem o visual novo).
   if (isKpi) {
     return (
       <Card
         className={cn(
-          "shadow-elegant rounded-xl overflow-hidden relative group hover-lift animate-fade-up",
+          "rounded-2xl overflow-hidden relative group animate-fade-up transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl",
+          isGradient ? "shadow-lg" : "shadow-sm border-border/60",
           variantClass[variant],
           stagger && `stagger-${stagger}`,
           className
         )}
       >
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 shimmer-bg pointer-events-none" />
-        <CardContent className="p-5 relative">
-          <div className="flex items-center justify-between mb-3">
-            {Icon && (
-              <div
-                className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-xl backdrop-blur-sm transition-transform duration-300 group-hover:scale-105",
-                  isGradient ? "bg-white/15" : "gradient-green-soft text-primary-foreground shadow-md"
-                )}
-              >
-                <Icon className="h-5 w-5" strokeWidth={1.75} />
-              </div>
+        {isGradient && (
+          <div className="absolute -top-10 -right-10 h-28 w-28 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+        )}
+        <CardContent className="p-5 relative flex items-center gap-4">
+          {Icon && (
+            <div
+              className={cn(
+                "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3",
+                isGradient ? "bg-white/15 backdrop-blur-sm" : "gradient-green-soft text-primary-foreground shadow-md"
+              )}
+            >
+              <Icon className="h-5 w-5" strokeWidth={1.75} />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className={cn("text-3xl font-serif leading-none tracking-tight", isGradient ? "" : "text-foreground")}>{metric}</p>
+            {title && (
+              <p className={cn("text-xs mt-1.5 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
+                {title}
+              </p>
             )}
-            {trend && (
-              <div
-                className={cn(
-                  "flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full",
-                  isGradient
-                    ? "bg-white/15 text-primary-foreground"
-                    : trend.direction === "up"
-                    ? "bg-primary/10 text-primary"
-                    : "bg-destructive/10 text-destructive"
-                )}
-              >
-                {trend.direction === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {trend.value}
-              </div>
+            {caption && (
+              <p className={cn("text-[10px] mt-0.5 truncate", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                {caption}
+              </p>
             )}
           </div>
-          <p className={cn("text-3xl font-serif leading-none", isGradient ? "" : "text-foreground")}>{metric}</p>
-          {title && (
-            <p className={cn("text-xs mt-2 font-medium", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
-              {title}
-            </p>
-          )}
-          {caption && (
-            <p className={cn("text-[10px] mt-0.5", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
-              {caption}
-            </p>
+          {trend && (
+            <div
+              className={cn(
+                "absolute top-3 right-3 flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                isGradient
+                  ? "bg-white/15 text-primary-foreground"
+                  : trend.direction === "up"
+                  ? "bg-primary/10 text-primary"
+                  : "bg-destructive/10 text-destructive"
+              )}
+            >
+              {trend.direction === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+              {trend.value}
+            </div>
           )}
         </CardContent>
       </Card>

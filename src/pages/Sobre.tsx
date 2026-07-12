@@ -105,35 +105,54 @@ export default function Sobre() {
         </div>
       </section>
 
-      {/* TIMELINE */}
-      <section className="section-divider py-24 bg-accent/30">
+      {/* TIMELINE HORIZONTAL — círculos ligados por uma linha contínua */}
+      <section className="section-divider py-24 bg-accent/30 overflow-hidden">
         <div className="container">
-          <div className="mb-14">
-            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("timeline.kicker")}</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5">{t("timeline.title")}</h2>
+          <div className="mb-16 text-center">
+            <p className="kicker text-[hsl(var(--iiv-gold-text))] justify-center inline-flex"><span className="editorial-rule mr-3" /> {t("timeline.kicker")}</p>
+            <h2 className="font-serif text-3xl md:text-5xl mt-5">{t("timeline.title")}</h2>
           </div>
+
           <motion.div
-            className="space-y-12"
+            className="relative"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
           >
-            {timeline.map((item) => (
-              <motion.div
-                key={item.year}
-                variants={revealVariants}
-                className="grid gap-6 md:grid-cols-12 items-start border-t border-border/40 pt-10"
-              >
-                <div className="md:col-span-3">
-                  <p className="font-serif text-5xl md:text-6xl text-primary tracking-tight">{item.year}</p>
-                </div>
-                <div className="md:col-span-8 md:col-start-5">
-                  <h3 className="font-serif text-xl md:text-2xl mb-3">{item.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed max-w-2xl">{item.text}</p>
-                </div>
-              </motion.div>
-            ))}
+            {/* Linha contínua: horizontal em desktop (atravessa os círculos),
+                vertical em mobile (à esquerda, os itens empilham). */}
+            <div className="hidden lg:block absolute top-7 left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-[hsl(var(--iiv-green))] via-[hsl(var(--iiv-gold))] to-[hsl(var(--iiv-green))]" />
+            <div className="lg:hidden absolute top-0 bottom-0 left-7 w-0.5 bg-gradient-to-b from-[hsl(var(--iiv-green))] via-[hsl(var(--iiv-gold))] to-[hsl(var(--iiv-green))]" />
+
+            <div className="grid gap-10 lg:gap-4 lg:grid-cols-5">
+              {timeline.map((item, i) => {
+                const isLast = i === timeline.length - 1;
+                return (
+                  <motion.div
+                    key={item.year}
+                    variants={revealVariants}
+                    className="relative flex lg:flex-col items-start lg:items-center gap-5 lg:gap-0 lg:text-center"
+                  >
+                    {/* Círculo na linha */}
+                    <div
+                      className={`relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-4 border-background shadow-lg transition-transform duration-300 hover:scale-110 ${
+                        isLast ? "gradient-gold text-secondary-foreground" : "gradient-green text-primary-foreground"
+                      }`}
+                    >
+                      <span className="h-2.5 w-2.5 rounded-full bg-current" />
+                    </div>
+                    <div className="lg:mt-6 lg:px-3">
+                      <p className={`font-serif text-4xl tracking-tight ${isLast ? "text-[hsl(var(--iiv-gold-text))]" : "text-primary"}`}>
+                        {item.year}
+                      </p>
+                      <h3 className="font-serif text-lg leading-tight mt-2">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed mt-2">{item.text}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
           </motion.div>
         </div>
       </section>
