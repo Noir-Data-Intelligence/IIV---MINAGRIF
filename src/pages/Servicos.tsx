@@ -64,8 +64,8 @@ export default function Servicos() {
         breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
-      <section className="py-24">
-        <div className="container space-y-24">
+      <section className="py-16 md:py-20">
+        <div className="space-y-4">
           {servicos.map((s, i) => {
             const reverse = i % 2 === 1;
             const { icon: Icon, image } = servicoMeta[i];
@@ -76,10 +76,13 @@ export default function Servicos() {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-80px" }}
-                className="grid gap-10 lg:grid-cols-2 items-center pb-24 border-b border-border/40 last:border-b-0 last:pb-0"
+                className={i % 2 === 1 ? "bg-accent/20" : ""}
               >
-                <motion.div variants={revealVariants} className={reverse ? "lg:order-2" : ""}>
-                  <div className="overflow-hidden rounded-2xl">
+                <div className="container">
+                <div className="grid gap-10 lg:grid-cols-2 items-center py-16 md:py-20">
+                <motion.div variants={revealVariants} className={reverse ? "lg:order-2 relative" : "relative"}>
+                  <div className="absolute -inset-4 -z-10 rounded-[2rem] gradient-green-gold opacity-[0.07] blur-2xl" />
+                  <div className="overflow-hidden rounded-2xl shadow-xl">
                     <img src={image} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
                   </div>
                 </motion.div>
@@ -112,6 +115,8 @@ export default function Servicos() {
                     </Link>
                   </Button>
                 </motion.div>
+                </div>
+                </div>
               </motion.article>
             );
           })}
