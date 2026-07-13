@@ -22,10 +22,14 @@ async function enableMocking() {
   return worker.start({ onUnhandledRequest: "bypass" });
 }
 
-enableMocking().then(() => {
-  createRoot(document.getElementById("root")!).render(
-    <HelmetProvider>
-      <App />
-    </HelmetProvider>,
-  );
-});
+enableMocking()
+  .catch((error) => {
+    console.error("Falha ao iniciar o MSW, a continuar sem mocks:", error);
+  })
+  .finally(() => {
+    createRoot(document.getElementById("root")!).render(
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>,
+    );
+  });
