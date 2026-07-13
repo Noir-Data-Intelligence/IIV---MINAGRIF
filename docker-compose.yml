@@ -1,0 +1,17 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SITE_URL: ${VITE_SITE_URL:-https://www.iiv.gov.ao}
+        VITE_API_MOCK: ${VITE_API_MOCK:-true}
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    image: iiv-minagrif:latest
+    container_name: iiv-minagrif
+    ports:
+      - "8080:80"
+    restart: unless-stopped
