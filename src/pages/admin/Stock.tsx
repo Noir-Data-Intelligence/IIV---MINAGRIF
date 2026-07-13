@@ -466,8 +466,8 @@ export default function Stock() {
   const kpiCards = [
     { key: "totalItems", icon: Package, label: t("kpis.totalItems"), value: kpis.total, caption: t("kpis.totalItemsCaption"), variant: "gradient-green-gold" as const },
     { key: "totalValue", icon: Coins, label: t("kpis.totalValue"), value: formatKwanza(kpis.totalValue), caption: t("kpis.totalValueCaption"), variant: "gradient-teal" as const },
-    { key: "belowMin", icon: AlertTriangle, label: t("kpis.belowMin"), value: kpis.belowMin, caption: t("kpis.belowMinCaption"), variant: (kpis.belowMin > 0 ? "gradient-gold" : "glass") as const },
-    { key: "expiring", icon: CalendarClock, label: t("kpis.expiring"), value: kpis.expiring, caption: t("kpis.expiringCaption"), variant: (kpis.expiring > 0 ? "gradient-gold" : "glass") as const },
+    { key: "belowMin", icon: AlertTriangle, label: t("kpis.belowMin"), value: kpis.belowMin, caption: t("kpis.belowMinCaption"), variant: kpis.belowMin > 0 ? "gradient-gold" as const : "glass" as const },
+    { key: "expiring", icon: CalendarClock, label: t("kpis.expiring"), value: kpis.expiring, caption: t("kpis.expiringCaption"), variant: kpis.expiring > 0 ? "gradient-gold" as const : "glass" as const },
   ];
 
   return (

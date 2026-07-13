@@ -529,7 +529,8 @@ function EvaluationDetail({
   const { toast } = useToast();
 
   const { data: ev, isLoading } = useEvaluation(evaluationId);
-  const { data: criterias = [] } = useCriteriasList(ev ? { cycleId: ev.cycleId, perPage: 100 } : { perPage: 100 });
+  const { data: criteriasPage } = useCriteriasList(ev ? { cycleId: ev.cycleId, perPage: 100 } : { perPage: 100 });
+  const criterias = criteriasPage?.data ?? [];
   const { data: scores = [] } = useScores(evaluationId);
   const { data: history = [], isLoading: historyLoading } = useHistory(evaluationId);
 

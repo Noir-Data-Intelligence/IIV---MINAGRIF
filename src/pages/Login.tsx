@@ -191,8 +191,9 @@ export default function Login() {
             <Link to="/registar" className="font-medium text-primary hover:underline">{t("requestAccess")}</Link>
           </p>
 
-          {/* Quick access demo credentials — visível apenas em desenvolvimento, nunca no build de produção */}
-          {import.meta.env.DEV && (
+          {/* Quick access demo credentials — visível em dev local OU sempre que a build corre
+              contra a camada mock (VITE_API_MOCK=true), nunca contra um backend real */}
+          {(import.meta.env.DEV || import.meta.env.VITE_API_MOCK === "true") && (
             <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("demo.title")}</p>
               <div className="grid gap-1.5">

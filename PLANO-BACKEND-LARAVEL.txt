@@ -10,6 +10,12 @@
                 4 auth + ~45 admin) a consumir uma camada de servicos +
                 React Query + MSW (mock), acessibilidade WCAG 2.1 AA validada
                 (0 ocorrencias/15 rotas) e redesign visual (Fase 4) aplicado.
+                ACTUALIZACAO: a dependencia de Supabase foi removida por
+                completo do frontend (`@supabase/supabase-js` desinstalado,
+                `src/integrations/supabase/` apagado) — Auth e o Assistente
+                (chat), que antes falavam directamente com Supabase, agora
+                tambem tem contrato mock completo (Seccoes 2 e 2.5). Este
+                documento ja reflecte esse estado.
  Fonte de verdade do contrato: src/services/api/endpoints.ts (rotas),
                 src/types/dto/*.ts (44 ficheiros, um por dominio/grupo de
                 dominios), src/mocks/handlers/*.ts (comportamento esperado
@@ -33,14 +39,21 @@
     documentos). Construir o backend Laravel e, por isso, um exercicio de
     IMPLEMENTAR um contrato ja especificado, nao de o desenhar do zero.
 
-    A UNICA excepcao e a AUTENTICACAO: o modulo de login/registo/recuperacao de
-    senha (Login.tsx, Registar.tsx, RecuperarSenha.tsx, RedefinirSenha.tsx,
-    useAuth.tsx, useUserRole.tsx) ainda fala directamente com o Supabase Auth
-    (supabase.auth.signInWithPassword, etc.) — ficou FORA do âmbito da
-    migracao para mocks (decisao da Fase 2). Isto significa que a autenticacao
-    tem de ser DESENHADA DE RAIZ em Laravel (Sanctum), replicando apenas o
-    COMPORTAMENTO observavel que o frontend espera (ver Seccao 2), sem uma
-    tabela Supabase de referencia 1:1 como existe para os restantes ~44 dominios.
+    ACTUALIZACAO (pos-Fase 2): a excepcao da AUTENTICACAO foi fechada. O modulo
+    de login/registo/recuperacao de senha (Login.tsx, Registar.tsx,
+    RecuperarSenha.tsx, RedefinirSenha.tsx, Perfil.tsx, useAuth.tsx,
+    useUserRole.tsx) e mais 3 componentes que ainda falavam directamente com o
+    Supabase (NotificationCenter.tsx, GlobalSearch.tsx, ChatWidget.tsx) foram
+    todos migrados para a mesma camada services/api + MSW do resto da app —
+    ver `src/services/api/auth.ts` + `src/mocks/handlers/auth.ts` (contrato
+    completo, Seccao 2) e `src/mocks/handlers/chatAssistant.ts` (Seccao 2.5).
+    `@supabase/supabase-js` foi desinstalado e `src/integrations/supabase/`
+    apagado — o frontend HOJE nao tem nenhuma dependencia de Supabase, nem em
+    build-time nem em runtime. Autenticacao continua a ser DESENHADA DE RAIZ em
+    Laravel (Sanctum) do lado do backend real — nao existe uma tabela Supabase
+    de referencia 1:1 como existe para os restantes ~44 dominios — mas o
+    CONTRATO que o Laravel tem de replicar ja esta implementado e testado no
+    mock (ver Seccao 2.2), nao apenas especificado em prosa.
 
     Este plano cobre: arquitectura Laravel, autenticacao/RBAC, modelo de dados
     completo (~44 dominios), mapeamento de rotas, regras de negocio dos 4
@@ -118,32 +131,69 @@
 2. AUTENTICACAO E AUTORIZACAO (desenhado de raiz — sem tabela Supabase de origem)
 ------------------------------------------------------------------------------------
 
-  2.1 O QUE O FRONTEND JA ASSUME (levantado em Login.tsx, Registar.tsx,
-      RecuperarSenha.tsx, RedefinirSenha.tsx, useAuth.tsx)
-      - Login por email + password (`supabase.auth.signInWithPassword`).
-      - Registo cria conta (verificar se o frontend exige confirmacao por
-        email antes do 1º login — validar contra Registar.tsx; se sim,
-        replicar com Laravel's `MustVerifyEmail`).
-      - Recuperar senha: pedido de reset por email (link com token).
-      - Redefinir senha: formulario com o token do link, define nova password.
-      - Sessao: `useAuth` expoe `{ user, session, loading, signOut }` — o
-        Laravel Sanctum SPA cobre isto directamente (cookie de sessao +
-        `GET /api/user` para hidratar o estado no arranque da app).
-      - Logout: limpa tb a cache local de role (`clearUserRoleCache`).
+  2.1 O QUE O FRONTEND JA FAZ HOJE (implementado contra o mock — ver
+      `src/services/api/auth.ts` + `src/mocks/handlers/auth.ts`; consumido por
+      Login.tsx, Registar.tsx, RecuperarSenha.tsx, RedefinirSenha.tsx,
+      Perfil.tsx, useAuth.tsx, useUserRole.tsx)
+      - Login por email + password (`POST /login`). Contas demo mantidas
+        (admin@iiv.demo / admin123, e equivalentes para tecnico/gestor/
+        diretor/colaborador — password mock = `<primeiro papel>123`).
+      - Registo cria conta com papel "colaborador" por omissao, SEM
+        confirmacao por email (o mock nao implementa `MustVerifyEmail` —
+        decisao a confirmar com o produto antes do Laravel real; se for
+        necessario, e um acrescento ao contrato, nao uma mudanca).
+      - Recuperar senha: pedido de reset por email (`POST /forgot-password`);
+        o mock gera um token e um link `/redefinir-senha?token=...&email=...`
+        (sem envio real de email, o link e impresso na consola em modo DEV —
+        `console.info`). O Laravel real substitui isto por Laravel Mail.
+      - Redefinir senha: RedefinirSenha.tsx LÊ `token`/`email` da QUERYSTRING
+        do link (`useSearchParams`), NAO de uma sessao Supabase no hash da
+        URL como na versao antiga — `POST /reset-password { token, email,
+        password }`.
+      - Mudar password (autenticado): Perfil.tsx usa
+        `PATCH /user/password { password }` — rota nova, nao existia na
+        versao anterior deste documento (era feita via `supabase.auth.
+        updateUser`, sem equivalente REST explicito).
+      - Sessao: `useAuth` expoe `{ user, loading, signOut, refresh }`, onde
+        `user` e directamente um `UserDto` (sem `session` separado — o
+        Supabase `User`/`Session` desapareceram). No arranque da app e apos
+        login/registo, chama `GET /user` para hidratar/recarregar o estado.
+      - Logout: `POST /logout` + limpa o token local.
 
-  2.2 ROTAS DE AUTENTICACAO A CRIAR
-      GET  /sanctum/csrf-cookie   (fora do prefixo /api — obrigatorio antes
-                                    do 1º POST, padrao Sanctum SPA)
-      POST /api/login             { email, password } -> 204 + cookie sessao
-      POST /api/logout             -> 204
-      POST /api/register          { fullName, email, password,
+      IMPORTANTE (mock vs. alvo real): como o MSW nao consegue definir
+      cookies httpOnly reais de forma fiável em todos os cenarios de teste,
+      o mock aproxima a sessao com um TOKEN SIMPLES (`= user.id`) devolvido
+      no corpo do login/registo e guardado em `localStorage`
+      (`AUTH_TOKEN_STORAGE_KEY` em `src/lib/http.ts`), reenviado como
+      `Authorization: Bearer <token>` em cada pedido (ver interceptor de
+      `http.ts`). ISTO NAO E O DESENHO ALVO — o Laravel real deve continuar a
+      implementar Sanctum SPA cookie-based (ver 2.2 e 2.4), tal como ja
+      estava planeado; quando essa integracao acontecer, o injector de
+      `Authorization` em `http.ts` deixa de ser necessario
+      (basta remover esse bloco do interceptor — o cookie viaja sozinho via
+      `withCredentials: true`) e pode ser removido sem qualquer outra
+      mudanca no frontend.
+
+  2.2 ROTAS DE AUTENTICACAO
+      GET   /sanctum/csrf-cookie   (fora do prefixo /api — obrigatorio antes
+                                     do 1º POST, padrao Sanctum SPA; SEM
+                                     equivalente no mock actual, que nao usa
+                                     cookies — ver nota acima)
+      POST  /api/login             { email, password } -> 204 + cookie sessao
+                                     (mock: 200 + { token, user })
+      POST  /api/logout             -> 204
+      POST  /api/register          { fullName, email, password,
                                      password_confirmation } -> 201
-      POST /api/forgot-password   { email } -> 204 (sempre 204 mesmo se o
+                                     (mock: 201 + { user }, papel "colaborador")
+      POST  /api/forgot-password   { email } -> 204 (sempre 204 mesmo se o
                                      email nao existir — nao revelar)
-      POST /api/reset-password    { token, email, password,
+      POST  /api/reset-password    { token, email, password,
                                      password_confirmation } -> 204
-      GET  /api/user               -> UserDto do utilizador autenticado
-                                       (mesma forma do resource /api/users/{id})
+      PATCH /api/user/password     { password } -> 204 (autenticado; muda a
+                                     propria password — rota nova, ver 2.1)
+      GET   /api/user               -> UserDto do utilizador autenticado
+                                       (mesma forma do resource /api/users/{id},
+                                       agora incluindo `email`)
 
   2.3 TABELAS
       users
@@ -154,7 +204,13 @@
         user_id (fk users), role (enum: admin|diretor|gestor|tecnico|
                  colaborador), timestamps                — a UI (useUserRole)
         so usa o primeiro por ordem alfabetica quando ha varios, mas o
-        schema permite multiplos por design)
+        schema permite multiplos por design).
+        IMPORTANTE: `GET /user` tem de devolver `roles` JA CONSOLIDADO no
+        `UserDto` (array, resolvido via eager-load de `user_roles`) — o
+        frontend (`useUserRole.tsx`, funcao `primaryRole()` em
+        `src/lib/permissions.ts`) deriva o papel principal directamente de
+        `user.roles` e NAO faz nenhum pedido separado a um endpoint de
+        "papel do utilizador actual"; nao criar um.
       user_departments             (pivot)
         user_id (fk users), department_id (fk departments)
       role_permissions
@@ -179,6 +235,37 @@
       - Admin tem sempre `canView`/`canWrite` = true (mesma regra hardcoded
         de `canView()`/`canWrite()` em permissions.ts — nao depender so da
         tabela para o admin, e um safety net deliberado no frontend a manter).
+
+  2.5 ASSISTENTE (CHAT) — desenhado de raiz, sem tabela Supabase de origem
+      `ChatWidget.tsx` (renderizado so dentro de `AdminLayout.tsx` — feature
+      exclusivamente autenticada) falava directamente com uma Supabase Edge
+      Function (`supabase/functions/chat-assistant/index.ts`, que faz proxy
+      para um modelo de LLM). Foi migrado para:
+
+        POST /api/chat-assistant   { messages: [{ role, content }] }
+                                    -> stream SSE (Content-Type:
+                                    text/event-stream), 1 chunk por token/
+                                    fragmento, formato OpenAI-like:
+                                      data: {"choices":[{"delta":
+                                        {"content":"..."}}]}\n\n
+                                    ...
+                                      data: [DONE]\n\n
+
+      Middleware: `auth:sanctum` (rota so usada por utilizadores autenticados
+      no admin; nao expor publicamente).
+
+      O mock (`src/mocks/handlers/chatAssistant.ts`) devolve uma resposta
+      fixa em streaming simulado (sem LLM real) — serve para validar que o
+      cliente (parser SSE em `ChatWidget.tsx`, linhas de leitura de
+      `ReadableStream`) funciona, mas NAO substitui a integracao real. O
+      Laravel tem de implementar esta rota como proxy para um provedor de
+      LLM (ex: OpenAI, Anthropic, ou o mesmo provedor que a Edge Function
+      Supabase original usava — consultar
+      `supabase/functions/chat-assistant/index.ts`, mantido no repo como
+      referencia), devolvendo o streaming no MESMO formato SSE acima para
+      nao obrigar a alterar `ChatWidget.tsx`. Sugestao de implementacao:
+      `StreamedResponse` do Laravel com `Content-Type: text/event-stream` e
+      flush incremental à medida que os chunks chegam do provedor de LLM.
 
 
 ------------------------------------------------------------------------------------
@@ -306,6 +393,20 @@
       { data: T[], meta: { total, page, perPage, totalPages } } — este é o
       envelope que TODOS os hooks `use*List` do frontend esperam.
 
+      NAO CRIAR um endpoint `/search` agregado: `GlobalSearch.tsx` (Cmd+K)
+      NAO tem — nem precisa de — rota propria. Faz fan-out client-side,
+      chamando em paralelo os `search` de cada `services/api/*.ts` ja
+      migrado (produtos, lotes, laboratorios, documentos, processos, etc.,
+      cada um com `perPage: 5`) e filtra client-side quando o modulo nao
+      suporta `search` no servidor (caso de `contact-messages`, que so tem
+      `page`/`perPage` — ver `ContactMessageListParams`). Se `search` estiver
+      bem implementado em CADA endpoint individual (ponto acima), a pesquisa
+      global funciona sem qualquer rota adicional.
+
+      Auth e Assistente (Seccoes 2.2 e 2.5) NAO seguem o padrao RESTful
+      indexado por recurso acima — sao rotas de accao pontual, ja mapeadas
+      integralmente nessas seccoes.
+
   4.3 ACOES ESPECIAIS A REPLICAR EXACTAMENTE (efeitos colaterais no servidor)
       - POST /processos                -> gera `code` (ex: PRC-2026-0001),
         instancia process_steps a partir de process_type_steps, activa a
@@ -405,11 +506,15 @@
       aprovada, documento rejeitado). Usar Laravel Notifications
       (`Notification::send`) com o canal `database` a escrever directamente
       na tabela ja no formato do `NotificationDto`.
-    - Polling vs. tempo-real: o frontend actual (`NotificationCenter.tsx`)
-      nao usa WebSockets — confirmar se faz polling periodico; se sim,
-      manter assim inicialmente (mais simples), com Laravel Echo +
-      Reverb/Pusher como evolucao futura opcional (nao bloqueante para o
-      lancamento).
+    - Polling vs. tempo-real: CONFIRMADO — `NotificationCenter.tsx` e
+      `Notificacoes.tsx` nao usam WebSockets nem Supabase Realtime (a
+      subscricao `postgres_changes` que existia foi removida na migracao).
+      Ambos usam `useNotificationsList()` (`src/hooks/queries/
+      useNotifications.ts`) com `refetchInterval: 15000` (React Query) —
+      polling a cada 15s. Manter assim no Laravel real (basta que
+      `GET /notifications` seja rapido o suficiente para polling frequente);
+      Laravel Echo + Reverb/Pusher fica como evolucao futura opcional, nao
+      bloqueante para o lancamento nem para paridade com o frontend actual.
     - Alertas do dashboard (stock critico, lotes a expirar, nao-
       conformidades abertas, analises pendentes — ver ALERT_META em
       `Dashboard.tsx`): calcular via Scheduled Job diario
@@ -450,7 +555,15 @@
     `ROLE_PERMISSIONS` em `src/lib/permissions.ts` (5 papeis x ~38 modulos).
     Criar pelo menos 1 utilizador de demonstracao por papel (admin, diretor,
     gestor, tecnico, colaborador) com credenciais previsiveis para QA —
-    mesmo padrao das "contas demo" ja visiveis em Login.tsx.
+    mesmo padrao das "contas demo" ja visiveis em Login.tsx. O mock
+    (`src/mocks/fixtures/authCredentials.ts`) usa a convencao
+    `<email>@iiv.demo` / `<primeiro papel por ordem alfabetica>123`
+    (ex: `admin@iiv.demo` / `admin123`) para os 5 utilizadores-papel — o
+    Seeder Laravel deve reproduzir as MESMAS credenciais para nao quebrar o
+    painel de acesso rapido em desenvolvimento (`Login.tsx`, bloco
+    `DEMO_ACCOUNTS`, visivel so em `import.meta.env.DEV`).
+    O Assistente (2.5) nao tem fixture/seed proprio — nao e dados, e uma
+    integracao com um provedor de LLM externo.
 
 
 ------------------------------------------------------------------------------------
@@ -471,6 +584,20 @@
     - Desligar o MSW: remover o `worker.start()` condicional (ver
       `src/mocks/browser.ts` ou equivalente) atras de uma flag de ambiente,
       nunca em producao.
+    - Desligar a aproximacao de sessao por token: quando o Sanctum SPA
+      cookie-based estiver a funcionar de ponta a ponta, remover o bloco do
+      interceptor de request em `src/lib/http.ts` que injecta
+      `Authorization: Bearer <token>` a partir de `localStorage`
+      (`AUTH_TOKEN_STORAGE_KEY`) — era so a aproximacao usada pelo mock
+      (ver 2.1). Sem este passo, o frontend continua a enviar um header
+      `Authorization` inofensivo mas desnecessario.
+    - Variaveis `VITE_SUPABASE_*` (PROJECT_ID/PUBLISHABLE_KEY/URL): JA
+      REMOVIDAS de `.env`, `.env.example`, `Dockerfile` e `docker-compose.yml`
+      — o frontend nao tem mais nenhuma dependencia de Supabase (nem
+      `@supabase/supabase-js` no `package.json`). Nao ha nada a fazer aqui
+      nesta Onda de cutover; a pasta `supabase/` (migrations SQL + Edge
+      Functions) fica no repo so como referencia historica do schema
+      original para o desenho das migrations Laravel (Seccao 3).
 
 
 ------------------------------------------------------------------------------------
@@ -484,8 +611,11 @@
     a transicao: o `onUnhandledRequest` do MSW so intercepta o que nao
     tiver sido explicitamente "passthrough").
 
-      Onda 1 — Fundacao:       Auth (Sec. 2) + Utilizadores + RBAC +
-                                Departamentos (pre-requisito de tudo o resto)
+      Onda 1 — Fundacao:       Auth (Sec. 2, contrato JA mockado e testado —
+                                falta so a implementacao Laravel real) +
+                                Assistente/Chat (Sec. 2.5) + Utilizadores +
+                                RBAC + Departamentos (pre-requisito de tudo
+                                o resto)
       Onda 2 — Geral:          Notificacoes, Dashboard prefs/alerts,
                                 Legislacao, Noticias, Hero Slides,
                                 Contact Messages, Public Stats
@@ -503,9 +633,11 @@
       Onda 10 — Investigacao & BI: Investigacao (linhas/projectos/
                                 publicacoes), Avaliacoes (+ workflow, Sec. 5.3)
       Onda 11 — Cutover final: desligar MSW, apontar VITE_API_URL para
-                                Laravel em todos os ambientes, remover
-                                dependencias Supabase remanescentes
-                                (`@supabase/supabase-js`, `src/integrations/supabase/`).
+                                Laravel em todos os ambientes, remover o
+                                injector de token mock em `http.ts` (ver
+                                Seccao 10 — as dependencias Supabase em si
+                                ja foram removidas do frontend, nao ha nada
+                                pendente nesse ponto).
 
 
 ------------------------------------------------------------------------------------
@@ -524,3 +656,17 @@
       `role_permissions` seedado reproduz exactamente `ROLE_PERMISSIONS`
       de `src/lib/permissions.ts` (teste de paridade automatizado, correndo
       os dois conjuntos de dados lado a lado se possivel).
+    - Testes de autenticacao (Sec. 2.2): login com credenciais validas/
+      invalidas, registo com email duplicado (-> 422), forgot/reset-password
+      (incluindo token invalido/expirado -> 422, e forgot-password devolver
+      sempre 204 mesmo com email inexistente — nao revelar), change-password
+      autenticado, e `GET /user` sem sessao -> 401.
+    - `src/test/missions-bpm-workflow.test.ts` e
+      `src/test/evaluations-workflow.test.ts` FORAM REMOVIDOS (testavam RLS
+      do Postgres/Supabase directamente contra uma base de dados real, que
+      deixou de existir com a migracao). Os equivalentes em Laravel sao
+      Feature/Policy tests (Pest/PHPUnit) contra os `EnsureModulePermission`
+      + Policies (Sec. 2.4) dos modulos Missoes e Avaliacoes — cobrir os
+      MESMOS cenarios que esses ficheiros cobriam (papel sem permissao de
+      escrita bloqueado, transicoes de workflow restritas a determinados
+      papeis) em vez de os portar directamente.

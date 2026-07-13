@@ -8,7 +8,17 @@ services:
         VITE_API_MOCK: ${VITE_API_MOCK:-true}
         VITE_API_URL: ${VITE_API_URL:-/api}
     image: iiv-minagrif:latest
-    container_name: iiv-minagrif
-    ports:
-      - "8080:80"
+    container_name: iiv
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.iiv.rule=Host(`iiv.noirdataintelligence.com`)"
+      - "traefik.http.routers.iiv.entrypoints=websecure"
+      - "traefik.http.routers.iiv.tls=true"
+      - "traefik.http.routers.iiv.tls.certresolver=<CERTRESOLVER>"
+      - "traefik.http.services.iiv.loadbalancer.server.port=80"
     restart: unless-stopped
+networks:
+  proxy:
+    external: true

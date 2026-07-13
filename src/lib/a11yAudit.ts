@@ -121,7 +121,7 @@ export async function auditRoute(
     const axe = win.axe;
     if (!axe) throw new Error("Falhou a injecção do motor de auditoria.");
 
-    const results = await withTimeout(
+    const results = await withTimeout<any>(
       axe.run(doc, {
         runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
         resultTypes: ["violations", "passes", "incomplete"],

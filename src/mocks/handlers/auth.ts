@@ -87,11 +87,12 @@ export const authHandlers = [
     if (user) {
       const token = Math.random().toString(36).slice(2);
       setResetToken(user.email, token);
-      if (import.meta.env.DEV) {
-        const link = `${window.location.origin}/redefinir-senha?token=${token}&email=${encodeURIComponent(user.email)}`;
-        // eslint-disable-next-line no-console
-        console.info(`[mock] Link de recuperação de password (${user.email}):`, link);
-      }
+      // Este handler só corre quando VITE_API_MOCK="true" (main.tsx só arranca o
+      // MSW nesse caso) — não há envio de email real em nenhum ambiente onde este
+      // código executa, por isso o link fica sempre visível na consola.
+      const link = `${window.location.origin}/redefinir-senha?token=${token}&email=${encodeURIComponent(user.email)}`;
+      // eslint-disable-next-line no-console
+      console.info(`[mock] Link de recuperação de password (${user.email}):`, link);
     }
     return new HttpResponse(null, { status: 204 });
   }),
