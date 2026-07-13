@@ -14,6 +14,20 @@
  * entrada real seguindo exactamente o padrão de `noticias`.
  */
 export const endpoints = {
+  // --- AUTENTICAÇÃO ---------------------------------------------------------
+  auth: {
+    login: "/login",
+    logout: "/logout",
+    register: "/register",
+    forgotPassword: "/forgot-password",
+    resetPassword: "/reset-password",
+    changePassword: "/user/password",
+    user: "/user",
+  },
+  chatAssistant: {
+    send: "/chat-assistant",
+  },
+
   // --- GERAL --------------------------------------------------------------
   noticias: {
     list: "/noticias",
@@ -304,11 +318,9 @@ export const endpoints = {
   // INVESTIGAÇÃO & BI — migrado por completo, ver secção acima (BI é só
   //   agregação de leitura sobre os módulos já migrados, sem endpoints próprios)
   //
-  // AUTH (ver secção 3.2)
-  //   login:      "/login"   (POST)
-  //   logout:     "/logout"  (POST)
-  //   user:       "/user"    (GET)
-  //   csrfCookie: "/sanctum/csrf-cookie" (fora do prefixo /api, se cookie-based)
+  // AUTH — migrado por completo, ver bloco `auth` acima (secção 3.2 do PLANO).
+  //   Em modo mock não há `GET /sanctum/csrf-cookie` real (cookie-based Sanctum
+  //   é simulado por um token Bearer em localStorage — ver `src/lib/http.ts`).
 } as const;
 
 export default endpoints;

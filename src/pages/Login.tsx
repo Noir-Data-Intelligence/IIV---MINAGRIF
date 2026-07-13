@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import i18n from "@/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { login } from "@/services/api/auth";
+import { useAuth } from "@/hooks/useAuth";
+import type { ApiError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,17 +52,23 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { refresh } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-
-    if (error) {
-      toast({ title: t("toast.loginErrorTitle"), description: error.message, variant: "destructive" });
-    } else {
+    try {
+      await login(email, password);
+      await refresh();
       navigate("/admin");
+    } catch (error) {
+      toast({
+        title: t("toast.loginErrorTitle"),
+        description: (error as ApiError).message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

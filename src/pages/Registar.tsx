@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import i18n from "@/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { register } from "@/services/api/auth";
+import type { ApiError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,21 +47,18 @@ export default function Registar() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-
-    if (error) {
-      toast({ title: t("toast.errorTitle"), description: error.message, variant: "destructive" });
-    } else {
+    try {
+      await register(fullName, email, password);
       toast({ title: t("toast.successTitle"), description: t("toast.successDescription") });
       navigate("/login");
+    } catch (error) {
+      toast({
+        title: t("toast.errorTitle"),
+        description: (error as ApiError).message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

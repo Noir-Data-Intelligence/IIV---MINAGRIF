@@ -1,3 +1,5 @@
+import type { PermissionEntryDto } from "@/types/dto/rbac";
+
 export type AppRole = "admin" | "tecnico" | "gestor" | "diretor" | "colaborador";
 
 export type ModuleKey =
@@ -153,7 +155,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
 type Matrix = Record<AppRole, { view: Set<ModuleKey>; write: Set<ModuleKey> }>;
 let DYNAMIC_MATRIX: Matrix | null = null;
 
-export function setDynamicPermissions(rows: Array<{ role: AppRole; module: string; can_view: boolean; can_write: boolean }>) {
+export function setDynamicPermissions(rows: PermissionEntryDto[]) {
   const next: Matrix = {
     admin: { view: new Set(), write: new Set() },
     diretor: { view: new Set(), write: new Set() },
@@ -162,10 +164,9 @@ export function setDynamicPermissions(rows: Array<{ role: AppRole; module: strin
     colaborador: { view: new Set(), write: new Set() },
   };
   for (const r of rows) {
-    const m = r.module as ModuleKey;
     if (!next[r.role]) continue;
-    if (r.can_view) next[r.role].view.add(m);
-    if (r.can_write) next[r.role].write.add(m);
+    if (r.canView) next[r.role].view.add(r.module);
+    if (r.canWrite) next[r.role].write.add(r.module);
   }
   // Admin is always full access — safety net
   for (const m of ALL) {
@@ -202,3 +203,9 @@ export const ROLE_LABEL: Record<AppRole, string> = {
 };
 
 export const ALL_ROLES: AppRole[] = ["admin", "diretor", "gestor", "tecnico", "colaborador"];
+
+/** Papel principal de um utilizador com vários papéis: o primeiro por ordem alfabética. */
+export function primaryRole(roles: AppRole[]): AppRole | null {
+  if (roles.length === 0) return null;
+  return [...roles].sort()[0];
+}

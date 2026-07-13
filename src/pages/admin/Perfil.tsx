@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { changePassword } from "@/services/api/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ROLE_LABEL } from "@/lib/permissions";
@@ -31,8 +31,6 @@ if (!i18n.hasResourceBundle("en", "admin-perfil"))
 
 export default function Perfil() {
   const { t } = useTranslation("admin-perfil");
-  // Identificação do utilizador autenticado — fora do âmbito desta migração,
-  // mantém-se em Supabase Auth (ver useAuth()).
   const { user } = useAuth();
   const { role } = useUserRole();
   const { toast } = useToast();
@@ -55,7 +53,7 @@ export default function Perfil() {
     setAvatarUrl(perfil.avatarUrl || null);
   }, [perfil]);
 
-  // --- Alteração de password — MANTÉM-SE em Supabase Auth, fora do âmbito ---
+  // --- Alteração de password ---
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
@@ -119,8 +117,6 @@ export default function Perfil() {
     }
   };
 
-  // Alteração de password: lógica intocada, continua a falar directamente com
-  // o Supabase Auth (fora do âmbito da migração para a camada mock).
   const handleChangePassword = async () => {
     if (!newPassword || !confirmPassword) {
       toast({ title: t("toast.error"), description: t("toast.passwordFillAll"), variant: "destructive" });
@@ -135,14 +131,15 @@ export default function Perfil() {
       return;
     }
     setChangingPassword(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setChangingPassword(false);
-    if (error) {
-      toast({ title: t("toast.error"), description: t("toast.passwordError"), variant: "destructive" });
-    } else {
+    try {
+      await changePassword(newPassword);
       toast({ title: t("toast.passwordChanged"), description: t("toast.passwordChangedDescription") });
       setNewPassword("");
       setConfirmPassword("");
+    } catch {
+      toast({ title: t("toast.error"), description: t("toast.passwordError"), variant: "destructive" });
+    } finally {
+      setChangingPassword(false);
     }
   };
 

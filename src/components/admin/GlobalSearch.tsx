@@ -5,7 +5,24 @@ import {
   CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
 import { useUserRole } from "@/hooks/useUserRole";
-import { supabase } from "@/integrations/supabase/client";
+import { listUsers } from "@/services/api/users";
+import { listProdutos } from "@/services/api/produtos";
+import { listLotes } from "@/services/api/lotes";
+import { listPlanos } from "@/services/api/planeamento";
+import { listDistribuicoes } from "@/services/api/distribuicao";
+import { listLaboratorios } from "@/services/api/laboratorios";
+import { listInsumos } from "@/services/api/insumos";
+import { listDepartamentos } from "@/services/api/departamentos";
+import { listEstacoes } from "@/services/api/estacoes";
+import { listDocumentos } from "@/services/api/documentos";
+import { listProcesses } from "@/services/api/processes";
+import { listNaoConformidades } from "@/services/api/naoConformidades";
+import { listAuditorias } from "@/services/api/auditorias";
+import { listAnalises } from "@/services/api/analises";
+import { listNoticias } from "@/services/api/noticias";
+import { listLegislacaoAdmin } from "@/services/api/legislacao";
+import { listContactMessages } from "@/services/api/contactMessages";
+import { listHeroSlidesAdmin } from "@/services/api/heroSlides";
 import {
   LayoutDashboard, Users, Building2, FlaskConical, TestTubes, ClipboardList,
   Package, Pill, Boxes, CalendarRange, Truck, MapPin, ClipboardCheck,
@@ -111,191 +128,200 @@ export function GlobalSearch({ open, onOpenChange }: Props) {
     }
     setSearching(true);
     const handle = setTimeout(async () => {
-      const ilike = `%${q}%`;
       try {
         const tasks: Array<Promise<DataHit[]>> = [];
 
         if (canView("utilizadores")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("profiles").select("user_id, full_name")
-              .ilike("full_name", ilike).limit(5);
-            return (data ?? []).map((u: any) => ({
-              id: u.user_id, label: u.full_name || "Sem nome",
-              path: `/admin/utilizadores?focus=${u.user_id}`, icon: Users, group: "Utilizadores",
-            }));
-          })());
+          tasks.push(
+            listUsers({ search: q }).then((rows) =>
+              rows.slice(0, 5).map((u) => ({
+                id: u.id, label: u.fullName || "Sem nome",
+                path: `/admin/utilizadores?focus=${u.id}`, icon: Users, group: "Utilizadores",
+              })),
+            ),
+          );
         }
         if (canView("produtos")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("products").select("id, name, product_type")
-              .or(`name.ilike.${ilike},description.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((p: any) => ({
-              id: p.id, label: p.name, sub: p.product_type,
-              path: `/admin/produtos?focus=${p.id}`, icon: Pill, group: "Produtos",
-            }));
-          })());
+          tasks.push(
+            listProdutos({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((p) => ({
+                id: p.id, label: p.name, sub: p.productType,
+                path: `/admin/produtos?focus=${p.id}`, icon: Pill, group: "Produtos",
+              })),
+            ),
+          );
         }
         if (canView("lotes")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("production_batches").select("id, batch_number, status").ilike("batch_number", ilike).limit(5);
-            return (data ?? []).map((b: any) => ({
-              id: b.id, label: b.batch_number, sub: b.status,
-              path: `/admin/lotes?focus=${b.id}`, icon: Boxes, group: "Lotes",
-            }));
-          })());
+          tasks.push(
+            listLotes({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((b) => ({
+                id: b.id, label: b.batchNumber, sub: b.status,
+                path: `/admin/lotes?focus=${b.id}`, icon: Boxes, group: "Lotes",
+              })),
+            ),
+          );
         }
         if (canView("planeamento")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("production_plans")
-              .select("id, status, planned_start, planned_end, products(name)")
-              .or(`notes.ilike.${ilike},status.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((pl: any) => ({
-              id: pl.id, label: pl.products?.name || "Plano",
-              sub: `${pl.status} · ${pl.planned_start} → ${pl.planned_end}`,
-              path: `/admin/planeamento?focus=${pl.id}`, icon: CalendarRange, group: "Planeamento",
-            }));
-          })());
+          tasks.push(
+            listPlanos({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((pl) => ({
+                id: pl.id, label: "Plano",
+                sub: `${pl.status} · ${pl.plannedStart} → ${pl.plannedEnd}`,
+                path: `/admin/planeamento?focus=${pl.id}`, icon: CalendarRange, group: "Planeamento",
+              })),
+            ),
+          );
         }
         if (canView("distribuicao")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("batch_distributions")
-              .select("id, destination, quantity, distribution_date")
-              .ilike("destination", ilike).limit(5);
-            return (data ?? []).map((d: any) => ({
-              id: d.id, label: d.destination, sub: `${d.quantity} un · ${d.distribution_date}`,
-              path: `/admin/distribuicao?focus=${d.id}`, icon: Truck, group: "Distribuições",
-            }));
-          })());
+          tasks.push(
+            listDistribuicoes({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((d) => ({
+                id: d.id, label: d.destination, sub: `${d.quantity} un · ${d.distributionDate}`,
+                path: `/admin/distribuicao?focus=${d.id}`, icon: Truck, group: "Distribuições",
+              })),
+            ),
+          );
         }
         if (canView("laboratorios")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("laboratories").select("id, name, type, description")
-              .or(`name.ilike.${ilike},description.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((l: any) => ({
-              id: l.id, label: l.name, sub: l.type,
-              path: `/admin/laboratorios?focus=${l.id}`, icon: FlaskConical, group: "Laboratórios",
-            }));
-          })());
+          tasks.push(
+            listLaboratorios({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((l) => ({
+                id: l.id, label: l.name, sub: l.type,
+                path: `/admin/laboratorios?focus=${l.id}`, icon: FlaskConical, group: "Laboratórios",
+              })),
+            ),
+          );
         }
         if (canView("insumos")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("lab_supplies").select("id, name, quantity, unit").ilike("name", ilike).limit(5);
-            return (data ?? []).map((s: any) => ({
-              id: s.id, label: s.name, sub: `${s.quantity} ${s.unit}`,
-              path: `/admin/insumos?focus=${s.id}`, icon: Package, group: "Insumos",
-            }));
-          })());
+          tasks.push(
+            listInsumos({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((s) => ({
+                id: s.id, label: s.name, sub: `${s.quantity} ${s.unit}`,
+                path: `/admin/insumos?focus=${s.id}`, icon: Package, group: "Insumos",
+              })),
+            ),
+          );
         }
         if (canView("departamentos")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("departments").select("id, name, description")
-              .or(`name.ilike.${ilike},description.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((d: any) => ({
-              id: d.id, label: d.name, sub: d.description || undefined,
-              path: `/admin/departamentos?focus=${d.id}`, icon: Building2, group: "Departamentos",
-            }));
-          })());
+          tasks.push(
+            listDepartamentos({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((d) => ({
+                id: d.id, label: d.name, sub: d.description || undefined,
+                path: `/admin/departamentos?focus=${d.id}`, icon: Building2, group: "Departamentos",
+              })),
+            ),
+          );
         }
         if (canView("estacoes")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("stations").select("id, name, location, station_type")
-              .or(`name.ilike.${ilike},location.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((s: any) => ({
-              id: s.id, label: s.name, sub: `${s.station_type}${s.location ? " · " + s.location : ""}`,
-              path: `/admin/estacoes?focus=${s.id}`, icon: MapPin, group: "Estações",
-            }));
-          })());
+          tasks.push(
+            listEstacoes({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((s) => ({
+                id: s.id, label: s.name, sub: `${s.stationType}${s.location ? " · " + s.location : ""}`,
+                path: `/admin/estacoes?focus=${s.id}`, icon: MapPin, group: "Estações",
+              })),
+            ),
+          );
         }
         if (canView("documentos")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("documents").select("id, title, status")
-              .or(`title.ilike.${ilike},description.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((d: any) => ({
-              id: d.id, label: d.title, sub: d.status,
-              path: `/admin/documentos?focus=${d.id}`, icon: FileStack, group: "Documentos",
-            }));
-          })());
+          tasks.push(
+            listDocumentos({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((d) => ({
+                id: d.id, label: d.title, sub: d.status,
+                path: `/admin/documentos?focus=${d.id}`, icon: FileStack, group: "Documentos",
+              })),
+            ),
+          );
         }
         if (canView("processos")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("processes").select("id, code, title, status")
-              .or(`code.ilike.${ilike},title.ilike.${ilike},description.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((p: any) => ({
-              id: p.id, label: `${p.code} · ${p.title}`, sub: p.status,
-              path: `/admin/processos/${p.id}`, icon: Workflow, group: "Processos",
-            }));
-          })());
+          tasks.push(
+            listProcesses({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((p) => ({
+                id: p.id, label: `${p.code} · ${p.title}`, sub: p.status,
+                path: `/admin/processos/${p.id}`, icon: Workflow, group: "Processos",
+              })),
+            ),
+          );
         }
         if (canView("nao-conformidades")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("nonconformities").select("id, title, status, severity")
-              .or(`title.ilike.${ilike},description.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((n: any) => ({
-              id: n.id, label: n.title, sub: `${n.severity} · ${n.status}`,
-              path: `/admin/nao-conformidades?focus=${n.id}`, icon: AlertTriangle, group: "Não-Conformidades",
-            }));
-          })());
+          tasks.push(
+            listNaoConformidades({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((n) => ({
+                id: n.id, label: n.title, sub: `${n.severity} · ${n.status}`,
+                path: `/admin/nao-conformidades?focus=${n.id}`, icon: AlertTriangle, group: "Não-Conformidades",
+              })),
+            ),
+          );
         }
         if (canView("auditorias")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("quality_audits").select("id, title, status, auditor")
-              .or(`title.ilike.${ilike},auditor.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((a: any) => ({
-              id: a.id, label: a.title, sub: `${a.auditor} · ${a.status}`,
-              path: `/admin/auditorias?focus=${a.id}`, icon: ClipboardCheck, group: "Auditorias",
-            }));
-          })());
+          tasks.push(
+            listAuditorias({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((a) => ({
+                id: a.id, label: a.title, sub: `${a.auditor} · ${a.status}`,
+                path: `/admin/auditorias?focus=${a.id}`, icon: ClipboardCheck, group: "Auditorias",
+              })),
+            ),
+          );
         }
         if (canView("analises")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("lab_analyses").select("id, client_name, analysis_type, status")
-              .or(`client_name.ilike.${ilike},analysis_type.ilike.${ilike},animal_species.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((a: any) => ({
-              id: a.id, label: a.client_name, sub: `${a.analysis_type} · ${a.status}`,
-              path: `/admin/analises?focus=${a.id}`, icon: TestTubes, group: "Análises",
-            }));
-          })());
+          tasks.push(
+            listAnalises({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((a) => ({
+                id: a.id, label: a.clientName, sub: `${a.analysisType} · ${a.status}`,
+                path: `/admin/analises?focus=${a.id}`, icon: TestTubes, group: "Análises",
+              })),
+            ),
+          );
         }
         if (canView("noticias")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("noticias").select("id, slug, titulo, categoria, published")
-              .or(`titulo.ilike.${ilike},resumo.ilike.${ilike},conteudo.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((n: any) => ({
-              id: n.id, label: n.titulo,
-              sub: `${n.categoria}${n.published ? "" : " · rascunho"}`,
-              path: `/admin/noticias?focus=${n.id}`, icon: Newspaper, group: "Notícias",
-            }));
-          })());
+          tasks.push(
+            listNoticias({ page: 1, perPage: 5, search: q }).then(({ data }) =>
+              data.map((n) => ({
+                id: n.id, label: n.titulo,
+                sub: `${n.categoria}${n.published ? "" : " · rascunho"}`,
+                path: `/admin/noticias?focus=${n.id}`, icon: Newspaper, group: "Notícias",
+              })),
+            ),
+          );
         }
         if (canView("legislacao")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("legislation").select("id, titulo, tipo, ano, num")
-              .or(`titulo.ilike.${ilike},descricao.ilike.${ilike},num.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((l: any) => ({
-              id: l.id, label: l.titulo, sub: `${l.tipo} ${l.num}/${l.ano}`,
-              path: `/admin/legislacao?focus=${l.id}`, icon: Scale, group: "Legislação",
-            }));
-          })());
+          tasks.push(
+            listLegislacaoAdmin({ page: 1, perPage: 5, search: q }).then(({ data }) =>
+              data.map((l) => ({
+                id: l.id, label: l.titulo, sub: `${l.tipo} ${l.num}/${l.ano}`,
+                path: `/admin/legislacao?focus=${l.id}`, icon: Scale, group: "Legislação",
+              })),
+            ),
+          );
         }
         if (canView("mensagens")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("contact_messages").select("id, nome, assunto, email, lida")
-              .or(`nome.ilike.${ilike},assunto.ilike.${ilike},email.ilike.${ilike},mensagem.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((m: any) => ({
-              id: m.id, label: m.assunto, sub: `${m.nome} · ${m.email}${m.lida ? "" : " · nova"}`,
-              path: `/admin/mensagens?focus=${m.id}`, icon: Mail, group: "Mensagens",
-            }));
-          })());
+          tasks.push(
+            listContactMessages({ page: 1, perPage: 50 }).then(({ data }) => {
+              const ql = q.toLowerCase();
+              return data
+                .filter(
+                  (m) =>
+                    m.nome.toLowerCase().includes(ql) ||
+                    m.assunto.toLowerCase().includes(ql) ||
+                    m.email.toLowerCase().includes(ql) ||
+                    m.mensagem.toLowerCase().includes(ql),
+                )
+                .slice(0, 5)
+                .map((m) => ({
+                  id: m.id, label: m.assunto, sub: `${m.nome} · ${m.email}${m.lida ? "" : " · nova"}`,
+                  path: `/admin/mensagens?focus=${m.id}`, icon: Mail, group: "Mensagens",
+                }));
+            }),
+          );
         }
         if (canView("slideshow")) {
-          tasks.push((async () => {
-            const { data } = await supabase.from("hero_slides").select("id, title, kicker, subtitle")
-              .or(`title.ilike.${ilike},kicker.ilike.${ilike},subtitle.ilike.${ilike}`).limit(5);
-            return (data ?? []).map((s: any) => ({
-              id: s.id, label: s.title, sub: s.kicker,
-              path: `/admin/slideshow?focus=${s.id}`, icon: Images, group: "Slideshow",
-            }));
-          })());
+          tasks.push(
+            listHeroSlidesAdmin({ page: 1, perPage: 5, search: q }).then(({ data }) =>
+              data.map((s) => ({
+                id: s.id, label: s.title, sub: s.kicker,
+                path: `/admin/slideshow?focus=${s.id}`, icon: Images, group: "Slideshow",
+              })),
+            ),
+          );
         }
 
         const results = await Promise.all(tasks);

@@ -1,9 +1,10 @@
-import { Fragment, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Fragment, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import i18n from "@/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { resetPassword } from "@/services/api/auth";
+import type { ApiError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,22 +40,12 @@ export default function RedefinirSenha() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Supabase coloca a sessão de recuperação no hash da URL
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
-        setHasRecoverySession(true);
-      }
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setHasRecoverySession(true);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+  const email = searchParams.get("email");
+  const hasRecoverySession = !!token && !!email;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,16 +57,20 @@ export default function RedefinirSenha() {
       toast({ title: t("toast.mismatchTitle"), description: t("toast.mismatchDescription"), variant: "destructive" });
       return;
     }
+    if (!token || !email) return;
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-
-    if (error) {
-      toast({ title: t("toast.errorTitle"), description: error.message, variant: "destructive" });
-    } else {
+    try {
+      await resetPassword(token, email, password);
       toast({ title: t("toast.successTitle"), description: t("toast.successDescription") });
-      await supabase.auth.signOut();
       navigate("/login");
+    } catch (error) {
+      toast({
+        title: t("toast.errorTitle"),
+        description: (error as ApiError).message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

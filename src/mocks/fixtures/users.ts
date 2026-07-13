@@ -14,6 +14,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0001",
     fullName: "Fernando Kianda Ndala",
+    email: "admin@iiv.demo",
     phone: "+244 923 145 782",
     createdAt: "2023-02-14T09:15:00.000Z",
     roles: ["admin"],
@@ -22,6 +23,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0002",
     fullName: "Isabel Muxito Capingala",
+    email: "gestor@iiv.demo",
     phone: "+244 912 337 401",
     createdAt: "2023-03-05T11:00:00.000Z",
     roles: ["gestor"],
@@ -30,6 +32,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0003",
     fullName: "João Baptista Sachiwo",
+    email: "tecnico@iiv.demo",
     phone: "+244 934 682 219",
     createdAt: "2023-03-20T14:30:00.000Z",
     roles: ["tecnico"],
@@ -38,6 +41,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0004",
     fullName: "Adélia Kapenda Tchissola",
+    email: "adelia.tchissola@iiv.gov.ao",
     phone: "+244 945 210 673",
     createdAt: "2023-04-02T08:45:00.000Z",
     roles: ["tecnico"],
@@ -46,6 +50,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0005",
     fullName: "Manuel Sozinho Bumba",
+    email: "diretor@iiv.demo",
     phone: "+244 916 578 934",
     createdAt: "2023-04-18T10:20:00.000Z",
     roles: ["diretor"],
@@ -54,6 +59,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0006",
     fullName: "Rosa Ngueve Chissano",
+    email: "colaborador@iiv.demo",
     phone: "+244 927 843 012",
     createdAt: "2023-05-09T13:10:00.000Z",
     roles: ["colaborador"],
@@ -62,6 +68,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0007",
     fullName: "Domingos Alberto Muanza",
+    email: "domingos.muanza@iiv.gov.ao",
     phone: "+244 938 461 590",
     createdAt: "2023-05-25T09:50:00.000Z",
     roles: ["tecnico", "colaborador"],
@@ -70,6 +77,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0008",
     fullName: "Guilhermina Sapalo Dilolwa",
+    email: "guilhermina.dilolwa@iiv.gov.ao",
     phone: "+244 913 296 748",
     createdAt: "2023-06-12T15:40:00.000Z",
     roles: ["colaborador"],
@@ -78,6 +86,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0009",
     fullName: "Ernesto Palanca Zua",
+    email: "ernesto.zua@iiv.gov.ao",
     phone: "+244 949 720 385",
     createdAt: "2023-06-30T08:00:00.000Z",
     roles: ["gestor"],
@@ -86,6 +95,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0010",
     fullName: "Cristina Mabeco Sengue",
+    email: "cristina.sengue@iiv.gov.ao",
     phone: "+244 921 065 437",
     createdAt: "2023-07-14T12:25:00.000Z",
     roles: ["colaborador"],
@@ -94,6 +104,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0011",
     fullName: "Vicente Kalombo Tchivinda",
+    email: "vicente.tchivinda@iiv.gov.ao",
     phone: "+244 936 152 908",
     createdAt: "2023-08-01T09:35:00.000Z",
     roles: ["tecnico"],
@@ -102,6 +113,7 @@ export let usersFixtures: UserDto[] = [
   {
     id: "usr-0012",
     fullName: "Filomena Ussumane Cachimbombo",
+    email: "filomena.cachimbombo@iiv.gov.ao",
     phone: "+244 917 480 261",
     createdAt: "2023-08-20T14:05:00.000Z",
     roles: ["colaborador"],

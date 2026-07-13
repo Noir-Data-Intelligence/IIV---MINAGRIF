@@ -1,52 +1,42 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { clearUserRoleCache } from "@/hooks/useUserRole";
-import type { User, Session } from "@supabase/supabase-js";
-
+import { getCurrentUser, logout as logoutApi } from "@/services/api/auth";
+import type { UserDto } from "@/types/dto/user";
 
 interface AuthContext {
-  user: User | null;
-  session: Session | null;
+  user: UserDto | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  /** Recarrega a sessão a partir do token em localStorage — chamar após login/registo. */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContext>({
   user: null,
-  session: null,
   loading: true,
   signOut: async () => {},
+  refresh: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<UserDto | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const refresh = async () => {
+    const current = await getCurrentUser();
+    setUser(current);
+  };
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    refresh().finally(() => setLoading(false));
   }, []);
 
   const signOut = async () => {
-    clearUserRoleCache();
-    await supabase.auth.signOut();
+    await logoutApi();
+    setUser(null);
   };
 
-
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signOut, refresh }}>
       {children}
     </AuthContext.Provider>
   );

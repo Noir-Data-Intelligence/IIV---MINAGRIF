@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, X, Sparkles, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { endpoints } from "@/services/api/endpoints";
 import { useToast } from "@/hooks/use-toast";
 
 interface Msg { role: "user" | "assistant"; content: string }
@@ -35,15 +35,10 @@ export function ChatWidget() {
     setLoading(true);
 
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-assistant`;
-      const { data: { session } } = await supabase.auth.getSession();
+      const url = `${import.meta.env.VITE_API_URL}${endpoints.chatAssistant.send}`;
       const res = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: next.map(m => ({ role: m.role, content: m.content })),
         }),

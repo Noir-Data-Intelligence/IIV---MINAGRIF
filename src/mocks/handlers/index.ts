@@ -1,3 +1,5 @@
+import { authHandlers } from "@/mocks/handlers/auth";
+import { chatAssistantHandlers } from "@/mocks/handlers/chatAssistant";
 import { noticiasHandlers } from "@/mocks/handlers/noticias";
 import { legislacaoHandlers } from "@/mocks/handlers/legislacao";
 import { departamentosHandlers } from "@/mocks/handlers/departamentos";
@@ -48,6 +50,8 @@ import { dashboardAlertAcksHandlers } from "@/mocks/handlers/dashboardAlertAcks"
  * acrescenta-se ao spread (ex: `...legislacaoHandlers`).
  */
 export const handlers = [
+  ...authHandlers,
+  ...chatAssistantHandlers,
   ...noticiasHandlers,
   ...legislacaoHandlers,
   ...departamentosHandlers,

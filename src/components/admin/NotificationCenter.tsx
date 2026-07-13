@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import {
+  useNotificationsList,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+  useDeleteNotification,
+  useClearAllNotifications,
+} from "@/hooks/queries/useNotifications";
+import type { NotificationType } from "@/types/dto/notification";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -9,18 +15,6 @@ import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, CheckCircle2
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
-
-type NotificationType = "info" | "sucesso" | "aviso" | "erro";
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: NotificationType;
-  link: string | null;
-  read: boolean;
-  created_at: string;
-}
 
 const typeMeta: Record<NotificationType, { icon: any; color: string; bg: string }> = {
   info:    { icon: Info,         color: "text-white", bg: "bg-sky-500 shadow-md shadow-sky-500/30" },
@@ -30,72 +24,20 @@ const typeMeta: Record<NotificationType, { icon: any; color: string; bg: string 
 };
 
 export function NotificationCenter() {
-  const { user } = useAuth();
-  const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useNotificationsList();
+  const items = useMemo(() => (data ?? []).slice(0, 20), [data]);
+  const markReadMutation = useMarkNotificationRead();
+  const markAllReadMutation = useMarkAllNotificationsRead();
+  const deleteMutation = useDeleteNotification();
+  const clearAllMutation = useClearAllNotifications();
 
   const unreadCount = useMemo(() => items.filter((n) => !n.read).length, [items]);
 
-  // Initial fetch + realtime subscription
-  useEffect(() => {
-    if (!user) return;
-
-    const load = async () => {
-      const { data } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      setItems((data ?? []) as Notification[]);
-      setLoading(false);
-    };
-    load();
-
-    const channel = supabase
-      .channel(`notifications:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setItems((curr) => [payload.new as Notification, ...curr].slice(0, 20));
-          } else if (payload.eventType === "UPDATE") {
-            setItems((curr) => curr.map((n) => (n.id === (payload.new as any).id ? (payload.new as Notification) : n)));
-          } else if (payload.eventType === "DELETE") {
-            setItems((curr) => curr.filter((n) => n.id !== (payload.old as any).id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-  const markRead = async (id: string) => {
-    setItems((curr) => curr.map((n) => (n.id === id ? { ...n, read: true } : n)));
-    await supabase.from("notifications").update({ read: true }).eq("id", id);
-  };
-
-  const markAllRead = async () => {
-    if (!user || unreadCount === 0) return;
-    setItems((curr) => curr.map((n) => ({ ...n, read: true })));
-    await supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false);
-  };
-
-  const removeOne = async (id: string) => {
-    setItems((curr) => curr.filter((n) => n.id !== id));
-    await supabase.from("notifications").delete().eq("id", id);
-  };
-
-  const clearAll = async () => {
-    if (!user || items.length === 0) return;
-    setItems([]);
-    await supabase.from("notifications").delete().eq("user_id", user.id);
-  };
+  const markRead = (id: string) => markReadMutation.mutate(id);
+  const markAllRead = () => { if (unreadCount > 0) markAllReadMutation.mutate(); };
+  const removeOne = (id: string) => deleteMutation.mutate(id);
+  const clearAll = () => { if (items.length > 0) clearAllMutation.mutate(); };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -165,7 +107,7 @@ export function NotificationCenter() {
                       </div>
                       <p className="text-[12px] text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
                       <p className="text-[10px] text-muted-foreground mt-1.5">
-                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: pt })}
+                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: pt })}
                       </p>
                     </div>
                   </div>

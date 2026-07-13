@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import i18n from "@/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { forgotPassword } from "@/services/api/auth";
+import type { ApiError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,15 +44,17 @@ export default function RecuperarSenha() {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/redefinir-senha`,
-    });
-    setLoading(false);
-
-    if (error) {
-      toast({ title: t("toast.errorTitle"), description: error.message, variant: "destructive" });
-    } else {
+    try {
+      await forgotPassword(email);
       toast({ title: t("toast.successTitle"), description: t("toast.successDescription") });
+    } catch (error) {
+      toast({
+        title: t("toast.errorTitle"),
+        description: (error as ApiError).message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

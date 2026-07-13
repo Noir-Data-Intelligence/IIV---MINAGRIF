@@ -38,6 +38,9 @@ interface LaravelValidationBody {
   errors?: Record<string, string[]>;
 }
 
+/** Chave usada para persistir o token de sessão mock entre refreshes do browser. */
+export const AUTH_TOKEN_STORAGE_KEY = "mock_auth_token";
+
 export const http: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   // Cookie-based Sanctum (Fase 4): envia/recebe o cookie de sessão httpOnly.
@@ -51,14 +54,18 @@ export const http: AxiosInstance = axios.create({
 
 // --- Interceptor de request -------------------------------------------------
 http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // TODO Fase 4: injectar Authorization/cookie quando Sanctum estiver activo.
-  // Em cookie-based (Opção A) o cookie httpOnly viaja automaticamente graças a
-  // `withCredentials: true` — basta garantir o header X-XSRF-TOKEN. Em modo
-  // token (Opção B) ler o bearer token do storage e fazer:
-  //   config.headers.set("Authorization", `Bearer ${token}`);
-  // Deixado explícito aqui para ser o único ponto de injecção de auth.
+  // Modo mock (Opção B do comentário original): a "sessão" é um token simples
+  // guardado em localStorage por `services/api/auth.ts` no login/registo, já
+  // que os handlers MSW não têm cookies httpOnly reais para persistir sessão
+  // entre refreshes. Quando o backend Laravel real (Sanctum cookie-based)
+  // existir, isto passa a não ser necessário — o cookie viaja sozinho graças a
+  // `withCredentials: true`.
   if (!config.headers) {
     config.headers = new AxiosHeaders();
+  }
+  const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  if (token) {
+    config.headers.set("Authorization", `Bearer ${token}`);
   }
   return config;
 });

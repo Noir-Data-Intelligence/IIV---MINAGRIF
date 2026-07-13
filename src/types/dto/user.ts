@@ -14,6 +14,7 @@ import type { AppRole } from "@/lib/permissions";
 export interface UserDto {
   id: string;
   fullName: string;
+  email: string;
   phone: string | null;
   createdAt: string;
   roles: AppRole[];
