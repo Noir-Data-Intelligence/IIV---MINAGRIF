@@ -126,7 +126,7 @@ export default function LegislacaoDetalhe() {
                 </div>
 
                 <p className="relative kicker text-muted-foreground">{t("detail.numberPrefix")}</p>
-                <p className="relative font-serif text-4xl md:text-5xl text-primary tracking-tight mt-1">{item.num}</p>
+                <p className="relative font-serif text-2xl md:text-3xl text-primary tracking-tight mt-1">{item.num}</p>
 
                 <div className="relative mt-6 flex items-center gap-2 text-sm text-muted-foreground border-t border-border/50 pt-5">
                   <CalendarDays className="h-4 w-4" strokeWidth={1.75} />

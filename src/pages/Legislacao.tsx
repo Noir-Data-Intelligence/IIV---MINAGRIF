@@ -194,7 +194,7 @@ export default function Legislacao() {
                               1.63:1 mesmo sendo texto grande (mínimo exigido 3:1). --primary muda
                               de tom entre temas, por isso precisa de opacidades distintas para
                               ambos atingirem >= 3:1 (/60 ~3.0:1 claro, /85 ~3.4:1 escuro). */}
-                          <p className="font-serif text-4xl md:text-5xl text-primary/60 dark:text-primary/85 group-hover:text-[hsl(var(--iiv-gold-text))] tracking-tight transition-colors">
+                          <p className="font-serif text-2xl md:text-3xl text-primary/60 dark:text-primary/85 group-hover:text-[hsl(var(--iiv-gold-text))] tracking-tight transition-colors">
                             {l.num}
                           </p>
                         </Link>
