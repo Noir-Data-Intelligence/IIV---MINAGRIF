@@ -584,8 +584,8 @@ function ParticipantsTab({ missionId, currency, canEdit }: {
   return (
     <div className="space-y-3">
       {canEdit && (
-        <div className="grid grid-cols-12 gap-2 items-end p-3 rounded-md border bg-muted/30">
-          <div className="col-span-5">
+        <div className="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end p-3 rounded-md border bg-muted/30">
+          <div className="col-span-2 sm:col-span-5">
             <Label>{t("participants.user")}</Label>
             <Select value={userId} onValueChange={setUserId}>
               <SelectTrigger><SelectValue placeholder={t("participants.selectUser")} /></SelectTrigger>
@@ -594,15 +594,15 @@ function ParticipantsTab({ missionId, currency, canEdit }: {
               </SelectContent>
             </Select>
           </div>
-          <div className="col-span-4">
+          <div className="col-span-2 sm:col-span-4">
             <Label>{t("participants.role")}</Label>
             <Input value={role} onChange={(e) => setRole(e.target.value)} placeholder={t("participants.rolePlaceholder")} />
           </div>
-          <div className="col-span-2">
+          <div className="col-span-1 sm:col-span-2">
             <Label>{t("participants.perDiem")}</Label>
             <Input type="number" value={perDiem} onChange={(e) => setPerDiem(Number(e.target.value))} />
           </div>
-          <div className="col-span-1">
+          <div className="col-span-1 sm:col-span-1">
             <Button onClick={add} size="icon" aria-label={t("actions.add")}><Plus className="h-4 w-4" /></Button>
           </div>
         </div>
@@ -852,8 +852,8 @@ function AccountabilityTab({ mission, canEdit }: { mission: MissionDto; canEdit:
       <div>
         <h4 className="font-semibold mb-2">{t("accountability.expenses")}</h4>
         {canEdit && (
-          <div className="grid grid-cols-12 gap-2 items-end p-3 rounded-md border bg-muted/30 mb-3">
-            <div className="col-span-3">
+          <div className="grid grid-cols-2 sm:grid-cols-12 gap-2 items-end p-3 rounded-md border bg-muted/30 mb-3">
+            <div className="col-span-2 sm:col-span-3">
               <Label>{t("accountability.category")}</Label>
               <Select value={exp.category} onValueChange={(v) => setExp({ ...exp, category: v as ExpenseCategory })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -862,19 +862,19 @@ function AccountabilityTab({ mission, canEdit }: { mission: MissionDto; canEdit:
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-4">
+            <div className="col-span-2 sm:col-span-4">
               <Label>{t("accountability.description")}</Label>
               <Input value={exp.description} onChange={(e) => setExp({ ...exp, description: e.target.value })} />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <Label>{t("accountability.amount")}</Label>
               <Input type="number" step="0.01" value={exp.amount} onChange={(e) => setExp({ ...exp, amount: Number(e.target.value) })} />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <Label>{t("accountability.date")}</Label>
               <Input type="date" value={exp.expenseDate} onChange={(e) => setExp({ ...exp, expenseDate: e.target.value })} />
             </div>
-            <div className="col-span-1">
+            <div className="col-span-2 sm:col-span-1">
               <Button onClick={addExpense} size="icon" aria-label={t("actions.add")}><Plus className="h-4 w-4" /></Button>
             </div>
           </div>

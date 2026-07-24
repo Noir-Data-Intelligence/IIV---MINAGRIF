@@ -139,9 +139,6 @@
   h2 { font-size: clamp(1.25rem, 1rem + 1.2vw, 1.75rem); }
   h3 { font-size: clamp(1.075rem, 0.95rem + 0.6vw, 1.35rem); }
   h4 { font-size: clamp(1rem, 0.92rem + 0.35vw, 1.15rem); }
-
-  /* Prevent long identifiers / emails from blowing out cards & tables */
-  td, th { word-break: break-word; overflow-wrap: anywhere; }
 }
 
 @layer components {

@@ -779,9 +779,9 @@ export default function Dashboard() {
 
       {/* Charts row 1 — análises */}
       {(allowedCharts.has("monthlyAnalyses") || allowedCharts.has("analysisStatus")) && (
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-5 lg:grid-cols-3 min-w-0">
           {allowedCharts.has("monthlyAnalyses") && (
-            <Card className="lg:col-span-2 glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
+            <Card className="lg:col-span-2 glass-card shadow-elegant rounded-xl hover-lift animate-fade-up min-w-0">
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Análises por Mês</CardTitle><Link to="/admin/painel/monthlyAnalyses" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
               <CardContent>
                 {monthlyAnalyses.some((d) => d.total > 0) ? (
@@ -800,7 +800,7 @@ export default function Dashboard() {
           )}
 
           {allowedCharts.has("analysisStatus") && (
-            <Card className="glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
+            <Card className="glass-card shadow-elegant rounded-xl hover-lift animate-fade-up min-w-0">
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Estado das Análises</CardTitle><Link to="/admin/painel/analysisStatus" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
               <CardContent>
                 {analysisStatus.length > 0 ? (
@@ -825,9 +825,9 @@ export default function Dashboard() {
 
       {/* Charts row 2 — produção */}
       {(allowedCharts.has("monthlyProduction") || allowedCharts.has("productionStatus")) && (
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-5 lg:grid-cols-3 min-w-0">
           {allowedCharts.has("monthlyProduction") && (
-            <Card className="lg:col-span-2 glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
+            <Card className="lg:col-span-2 glass-card shadow-elegant rounded-xl hover-lift animate-fade-up min-w-0">
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Produção vs Distribuição</CardTitle><Link to="/admin/painel/monthlyProduction" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
               <CardContent>
                 {monthlyProduction.some((d) => d.produced > 0 || d.distributed > 0) ? (
@@ -848,7 +848,7 @@ export default function Dashboard() {
           )}
 
           {allowedCharts.has("productionStatus") && (
-            <Card className="glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
+            <Card className="glass-card shadow-elegant rounded-xl hover-lift animate-fade-up min-w-0">
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Estado dos Lotes</CardTitle><Link to="/admin/painel/productionStatus" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
               <CardContent>
                 {productionStatus.length > 0 ? (
