@@ -3,7 +3,7 @@ name: "Deploy VPS Noir IIV"
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
