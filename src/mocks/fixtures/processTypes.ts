@@ -74,23 +74,23 @@ export let processTypesFixtures: ProcessTypeDto[] = [
 
 export let processTypeStepsFixtures: ProcessTypeStepDto[] = [
   // Parecer Técnico
-  { id: "pstep-0001", processTypeId: "ptype-0001", orderIndex: 1, name: "Recepção e triagem", defaultRole: "gestor", slaDays: 2 },
+  { id: "pstep-0001", processTypeId: "ptype-0001", orderIndex: 1, name: "Recepção e triagem", defaultRole: "recepcionista", slaDays: 2 },
   { id: "pstep-0002", processTypeId: "ptype-0001", orderIndex: 2, name: "Análise técnica", defaultRole: "tecnico", slaDays: 7 },
   { id: "pstep-0003", processTypeId: "ptype-0001", orderIndex: 3, name: "Revisão e validação", defaultRole: "diretor", slaDays: 3 },
-  { id: "pstep-0004", processTypeId: "ptype-0001", orderIndex: 4, name: "Emissão do parecer", defaultRole: "gestor", slaDays: 3 },
+  { id: "pstep-0004", processTypeId: "ptype-0001", orderIndex: 4, name: "Emissão do parecer", defaultRole: "director-laboratorio", slaDays: 3 },
 
   // Licenciamento Sanitário
-  { id: "pstep-0005", processTypeId: "ptype-0002", orderIndex: 1, name: "Submissão do pedido", defaultRole: "colaborador", slaDays: 2 },
+  { id: "pstep-0005", processTypeId: "ptype-0002", orderIndex: 1, name: "Submissão do pedido", defaultRole: "recepcionista", slaDays: 2 },
   { id: "pstep-0006", processTypeId: "ptype-0002", orderIndex: 2, name: "Vistoria ao estabelecimento", defaultRole: "tecnico", slaDays: 10 },
-  { id: "pstep-0007", processTypeId: "ptype-0002", orderIndex: 3, name: "Análise documental", defaultRole: "gestor", slaDays: 7 },
+  { id: "pstep-0007", processTypeId: "ptype-0002", orderIndex: 3, name: "Análise documental", defaultRole: "responsavel-qualidade", slaDays: 7 },
   { id: "pstep-0008", processTypeId: "ptype-0002", orderIndex: 4, name: "Decisão", defaultRole: "diretor", slaDays: 5 },
-  { id: "pstep-0009", processTypeId: "ptype-0002", orderIndex: 5, name: "Emissão da licença", defaultRole: "gestor", slaDays: 3 },
+  { id: "pstep-0009", processTypeId: "ptype-0002", orderIndex: 5, name: "Emissão da licença", defaultRole: "director-laboratorio", slaDays: 3 },
 
   // Tratamento de Não Conformidade
-  { id: "pstep-0010", processTypeId: "ptype-0003", orderIndex: 1, name: "Registo da não conformidade", defaultRole: "gestor", slaDays: 1 },
+  { id: "pstep-0010", processTypeId: "ptype-0003", orderIndex: 1, name: "Registo da não conformidade", defaultRole: "responsavel-qualidade", slaDays: 1 },
   { id: "pstep-0011", processTypeId: "ptype-0003", orderIndex: 2, name: "Investigação de causa", defaultRole: "tecnico", slaDays: 7 },
   { id: "pstep-0012", processTypeId: "ptype-0003", orderIndex: 3, name: "Acção correctiva", defaultRole: "tecnico", slaDays: 10 },
-  { id: "pstep-0013", processTypeId: "ptype-0003", orderIndex: 4, name: "Verificação de eficácia", defaultRole: "gestor", slaDays: 2 },
+  { id: "pstep-0013", processTypeId: "ptype-0003", orderIndex: 4, name: "Verificação de eficácia", defaultRole: "responsavel-qualidade", slaDays: 2 },
 
   // Aprovação de Lote
   { id: "pstep-0014", processTypeId: "ptype-0004", orderIndex: 1, name: "Requisição de controlo", defaultRole: "tecnico", slaDays: 1 },
@@ -98,8 +98,8 @@ export let processTypeStepsFixtures: ProcessTypeStepDto[] = [
   { id: "pstep-0016", processTypeId: "ptype-0004", orderIndex: 3, name: "Aprovação e libertação", defaultRole: "diretor", slaDays: 3 },
 
   // Requisição Interna
-  { id: "pstep-0017", processTypeId: "ptype-0005", orderIndex: 1, name: "Preenchimento da requisição", defaultRole: "colaborador", slaDays: 1 },
-  { id: "pstep-0018", processTypeId: "ptype-0005", orderIndex: 2, name: "Aprovação da chefia", defaultRole: "gestor", slaDays: 2 },
+  { id: "pstep-0017", processTypeId: "ptype-0005", orderIndex: 1, name: "Preenchimento da requisição", defaultRole: "recepcionista", slaDays: 1 },
+  { id: "pstep-0018", processTypeId: "ptype-0005", orderIndex: 2, name: "Aprovação da chefia", defaultRole: "gestor-stock", slaDays: 2 },
   { id: "pstep-0019", processTypeId: "ptype-0005", orderIndex: 3, name: "Validação orçamental", defaultRole: "diretor", slaDays: 2 },
 ];
 

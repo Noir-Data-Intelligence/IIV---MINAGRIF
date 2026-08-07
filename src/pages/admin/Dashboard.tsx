@@ -57,27 +57,48 @@ type KpiKey =
 type ChartKey = "monthlyAnalyses" | "analysisStatus" | "monthlyProduction" | "productionStatus" | "productTypes";
 
 const KPIS_BY_ROLE: Record<AppRole, KpiKey[]> = {
-  admin:       ["analysesPending", "completionRate", "batchesActive", "distributionsMonth", "ncOpen", "lowStock", "expiringSoon", "users"],
-  diretor:     ["analysesPending", "completionRate", "batchesActive", "distributionsMonth", "ncOpen", "lowStock", "expiringSoon", "users"],
-  gestor:      ["batchesActive", "distributionsMonth", "expiringSoon", "lowStock", "ncOpen", "completionRate"],
-  tecnico:     ["analysesPending", "completionRate", "lowStock"],
-  colaborador: ["analysesPending", "distributionsMonth", "expiringSoon"],
+  admin:                  ["analysesPending", "completionRate", "batchesActive", "distributionsMonth", "ncOpen", "lowStock", "expiringSoon", "users"],
+  diretor:                ["analysesPending", "completionRate", "batchesActive", "distributionsMonth", "ncOpen", "lowStock", "expiringSoon", "users"],
+  "director-laboratorio": ["analysesPending", "completionRate", "ncOpen", "lowStock"],
+  "responsavel-qualidade": ["ncOpen", "completionRate", "lowStock"],
+  tecnico:                ["analysesPending", "completionRate", "lowStock"],
+  recepcionista:          ["analysesPending", "distributionsMonth", "expiringSoon"],
+  "gestor-stock":         ["batchesActive", "distributionsMonth", "expiringSoon", "lowStock", "ncOpen", "completionRate"],
+  "gestor-patrimonio":    ["users"],
+  "gestor-financeiro":    ["users"],
+  "gestor-rh":            ["users"],
+  "gestor-estacao":       ["batchesActive", "users"],
+  isv:                    ["users"],
 };
 
 const CHARTS_BY_ROLE: Record<AppRole, ChartKey[]> = {
-  admin:       ["monthlyAnalyses", "analysisStatus", "monthlyProduction", "productionStatus", "productTypes"],
-  diretor:     ["monthlyAnalyses", "analysisStatus", "monthlyProduction", "productionStatus", "productTypes"],
-  gestor:      ["monthlyProduction", "productionStatus", "productTypes"],
-  tecnico:     ["monthlyAnalyses", "analysisStatus"],
-  colaborador: ["monthlyAnalyses"],
+  admin:                  ["monthlyAnalyses", "analysisStatus", "monthlyProduction", "productionStatus", "productTypes"],
+  diretor:                ["monthlyAnalyses", "analysisStatus", "monthlyProduction", "productionStatus", "productTypes"],
+  "director-laboratorio": ["monthlyAnalyses", "analysisStatus"],
+  "responsavel-qualidade": ["analysisStatus"],
+  tecnico:                ["monthlyAnalyses", "analysisStatus"],
+  recepcionista:          ["monthlyAnalyses"],
+  "gestor-stock":         ["monthlyProduction", "productionStatus", "productTypes"],
+  "gestor-patrimonio":    [],
+  "gestor-financeiro":    [],
+  "gestor-rh":            [],
+  "gestor-estacao":       ["monthlyProduction"],
+  isv:                    [],
 };
 
 const ROLE_INTRO: Record<AppRole, string> = {
   admin: "Visão geral completa do sistema de gestão do IIV",
   diretor: "Visão executiva e indicadores estratégicos do instituto",
-  gestor: "Indicadores de produção, distribuição e qualidade",
+  "director-laboratorio": "Indicadores de desempenho e conformidade do laboratório",
+  "responsavel-qualidade": "Indicadores de não-conformidades e conformidade de qualidade",
   tecnico: "Indicadores de análises laboratoriais e insumos",
-  colaborador: "Resumo das suas actividades e distribuições",
+  recepcionista: "Resumo das suas actividades e distribuições",
+  "gestor-stock": "Indicadores de produção, distribuição e stock",
+  "gestor-patrimonio": "Resumo institucional — consulte o módulo Património para o detalhe",
+  "gestor-financeiro": "Resumo institucional — consulte o módulo Financeiro para o detalhe",
+  "gestor-rh": "Resumo institucional — consulte o módulo Recursos Humanos para o detalhe",
+  "gestor-estacao": "Indicadores de produção das estações zootécnicas",
+  isv: "Resumo institucional de acesso externo",
 };
 
 const KPI_LABELS: Record<KpiKey, string> = {
@@ -154,7 +175,7 @@ const MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Se
 export default function Dashboard() {
   const { user } = useAuth();
   const { role } = useUserRole();
-  const activeRole: AppRole = role ?? "colaborador";
+  const activeRole: AppRole = role ?? "recepcionista";
   const roleKpis = KPIS_BY_ROLE[activeRole];
   const roleCharts = CHARTS_BY_ROLE[activeRole];
 
@@ -219,12 +240,12 @@ export default function Dashboard() {
 
   const toggleDraftKpi = (k: KpiKey) => {
     const next = new Set(draftKpis);
-    next.has(k) ? next.delete(k) : next.add(k);
+    if (next.has(k)) next.delete(k); else next.add(k);
     setDraftKpis(next);
   };
   const toggleDraftChart = (c: ChartKey) => {
     const next = new Set(draftCharts);
-    next.has(c) ? next.delete(c) : next.add(c);
+    if (next.has(c)) next.delete(c); else next.add(c);
     setDraftCharts(next);
   };
 
@@ -425,7 +446,7 @@ export default function Dashboard() {
   }, [loading, prefsLoaded, stats.lowStock, stats.expiringSoon, stats.ncOpen, stats.analysesPending, thresholds, acks]);
 
   const allKpis: Array<{
-    key: KpiKey; icon: any; label: string; value: string | number; caption?: string; trend?: Trend;
+    key: KpiKey; icon: LucideIcon; label: string; value: string | number; caption?: string; trend?: Trend;
     variant: "glass" | "gradient-green" | "gradient-gold" | "gradient-teal" | "gradient-green-gold";
   }> = [
     {

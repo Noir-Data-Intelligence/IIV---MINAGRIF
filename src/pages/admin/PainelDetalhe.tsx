@@ -26,7 +26,7 @@ import { useProdutosList } from "@/hooks/queries/useProdutos";
 import { useUsersList } from "@/hooks/queries/useUsers";
 import { fmtDate, fmtDateTime, isExpiringSoon, isCurrentMonth } from "@/lib/dashboard-metrics";
 
-type Row = Record<string, any>;
+type Row = Record<string, unknown>;
 type Col = { key: string; label: string; render?: (r: Row) => React.ReactNode; className?: string };
 
 type StatusOpt = { value: string; label: string };

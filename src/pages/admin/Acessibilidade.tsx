@@ -19,6 +19,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { ensurePdfFonts, PDF_HEADING_FONT, PDF_BODY_FONT } from "@/lib/pdfFonts";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
+
+/** jspdf-autotable augments the jsPDF instance at runtime with this property; not part of jsPDF's own types. */
+type JsPdfWithAutoTable = jsPDF & { lastAutoTable?: { finalY: number } };
 import i18n from "@/i18n";
 import ptAcessibilidade from "@/i18n/locales/pt/acessibilidade.json";
 import enAcessibilidade from "@/i18n/locales/en/acessibilidade.json";
@@ -144,7 +147,7 @@ export default function Acessibilidade() {
       styles: { fontSize: 10, font: PDF_BODY_FONT },
     });
 
-    let y = (doc as any).lastAutoTable?.finalY ?? 80;
+    let y = (doc as JsPdfWithAutoTable).lastAutoTable?.finalY ?? 80;
     for (const r of results) {
       if (y > 250) { doc.addPage(); y = 20; }
       doc.setFontSize(12); doc.setFont(PDF_HEADING_FONT, "bold");
@@ -187,7 +190,7 @@ export default function Acessibilidade() {
           styles: { fontSize: 8, font: PDF_BODY_FONT, cellPadding: 1.5 },
           columnStyles: { 4: { cellWidth: 80 } },
         });
-        y = (doc as any).lastAutoTable?.finalY ?? y + 20;
+        y = (doc as JsPdfWithAutoTable).lastAutoTable?.finalY ?? y + 20;
       } else {
         y += 20;
       }

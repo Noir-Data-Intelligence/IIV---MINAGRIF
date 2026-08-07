@@ -11,12 +11,12 @@ import type { NotificationType } from "@/types/dto/notification";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, CheckCircle2, Trash2, BellOff } from "lucide-react";
+import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, CheckCircle2, Trash2, BellOff, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
 
-const typeMeta: Record<NotificationType, { icon: any; color: string; bg: string }> = {
+const typeMeta: Record<NotificationType, { icon: LucideIcon; color: string; bg: string }> = {
   info:    { icon: Info,         color: "text-white", bg: "bg-sky-500 shadow-md shadow-sky-500/30" },
   sucesso: { icon: CheckCircle2, color: "text-primary-foreground", bg: "gradient-green-soft shadow-md" },
   aviso:   { icon: AlertTriangle,color: "text-white", bg: "bg-amber-500 shadow-md shadow-amber-500/30" },

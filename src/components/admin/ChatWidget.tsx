@@ -86,8 +86,9 @@ export function ChatWidget() {
           } catch { /* ignore parse errors on heartbeats */ }
         }
       }
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message ?? "Falha na ligação ao assistente.", variant: "destructive" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Falha na ligação ao assistente.";
+      toast({ title: "Erro", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -124,7 +125,7 @@ export function ChatWidget() {
             </div>
           </div>
 
-          <ScrollArea className="flex-1" ref={scrollRef as any}>
+          <ScrollArea className="flex-1" ref={scrollRef}>
             <div className="p-4 space-y-3">
               {messages.map((m, i) => (
                 <div

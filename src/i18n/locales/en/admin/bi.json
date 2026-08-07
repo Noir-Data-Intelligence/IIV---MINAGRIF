@@ -60,10 +60,17 @@
   },
   "roles": {
     "admin": "Administrator",
+    "diretor": "Direction",
+    "director-laboratorio": "Laboratory Director",
+    "responsavel-qualidade": "Quality Officer",
     "tecnico": "Technician",
-    "gestor": "Manager",
-    "diretor": "Director",
-    "colaborador": "Staff"
+    "recepcionista": "Receptionist",
+    "gestor-stock": "Stock Manager",
+    "gestor-patrimonio": "Asset Manager",
+    "gestor-financeiro": "Finance Manager",
+    "gestor-rh": "HR Manager",
+    "gestor-estacao": "Station Manager",
+    "isv": "ISV (External)"
   },
   "pdf": {
     "title": "Executive Report — Institutional BI",

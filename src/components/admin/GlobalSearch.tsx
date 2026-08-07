@@ -28,10 +28,11 @@ import {
   Package, Pill, Boxes, CalendarRange, Truck, MapPin, ClipboardCheck,
   AlertTriangle, Shield, UserCircle, Search, FileStack, Workflow, BarChart3,
   Settings, Newspaper, Scale, Mail, Images, History, Clock,
+  type LucideIcon,
 } from "lucide-react";
 import type { ModuleKey } from "@/lib/permissions";
 
-interface PageItem { label: string; path: string; module: ModuleKey; icon: any; group: string }
+interface PageItem { label: string; path: string; module: ModuleKey; icon: LucideIcon; group: string }
 
 const PAGES: PageItem[] = [
   { label: "Painel", path: "/admin", module: "painel", icon: LayoutDashboard, group: "Geral" },
@@ -67,7 +68,7 @@ interface DataHit {
   label: string;
   sub?: string;
   path: string;
-  icon: any;
+  icon: LucideIcon;
   group: string;
   /** Optional unique id for de-dup / focus param */
   id?: string;

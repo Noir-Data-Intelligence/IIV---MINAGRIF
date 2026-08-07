@@ -1,6 +1,29 @@
 import type { PermissionEntryDto } from "@/types/dto/rbac";
 
-export type AppRole = "admin" | "tecnico" | "gestor" | "diretor" | "colaborador";
+/**
+ * Os 12 papéis institucionais especificados na REQ-005 §13 (matriz RBAC).
+ * Substituem o modelo anterior de 5 papéis genéricos (admin/diretor/gestor/
+ * tecnico/colaborador) — "gestor" foi desdobrado em 5 papéis especializados
+ * (gestor-stock/patrimonio/financeiro/rh/estacao) e "tecnico"/"colaborador"
+ * em papéis mais fiéis à operação real do laboratório (director-laboratorio,
+ * responsavel-qualidade, recepcionista). "isv" é o papel externo de
+ * interface (consulta/notificação), sem acesso de escrita ao admin interno.
+ * Ver SIG-IIV-MEMORIA-PROJETO.md secção 9 para o mapeamento 5→12 e o
+ * racional de cada papel.
+ */
+export type AppRole =
+  | "admin"
+  | "diretor"
+  | "director-laboratorio"
+  | "responsavel-qualidade"
+  | "tecnico"
+  | "recepcionista"
+  | "gestor-stock"
+  | "gestor-patrimonio"
+  | "gestor-financeiro"
+  | "gestor-rh"
+  | "gestor-estacao"
+  | "isv";
 
 export type ModuleKey =
   | "painel"
@@ -105,6 +128,18 @@ export const MODULE_LABEL: Record<ModuleKey, string> = {
 
 const ALL = ALL_MODULES;
 
+/**
+ * Matriz de permissões por omissão dos 12 papéis. Deriva do modelo anterior de
+ * 5 papéis (o antigo "gestor" desdobrado pelas 5 áreas de gestão especializada,
+ * o antigo "tecnico" desdobrado em tecnico/director-laboratorio/responsavel-
+ * qualidade, o antigo "colaborador" renomeado para "recepcionista").
+ *
+ * NOTA: esta distribuição é um ponto de partida razoável, não uma transcrição
+ * literal da matriz V/C/E/Va/A da REQ-005 §13 (ainda por transcrever célula a
+ * célula) — validar/afinar contra essa matriz durante a Onda 1 do backend
+ * (ver SIG-IIV-MEMORIA-PROJETO.md secção 9 e 16). Editável em runtime via a
+ * página /admin/rbac (overrides gravados em `role_permissions`).
+ */
 export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
   admin: {
     view: ALL,
@@ -114,23 +149,24 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
     view: ALL,
     write: [],
   },
-  gestor: {
+  "director-laboratorio": {
     view: [
-      "painel", "perfil", "departamentos",
+      "painel", "perfil",
       "laboratorios", "analises", "resultados", "insumos",
-      "produtos", "lotes", "planeamento", "distribuicao",
-      "estacoes", "animais", "inseminacao", "auditorias", "nao-conformidades",
+      "animais", "inseminacao", "auditorias", "nao-conformidades", "logs", "acessibilidade",
       "historico-alertas", "documentos", "processos",
-      "stock", "agricultura", "pecuaria", "financeiro", "patrimonio",
-      "missoes", "rh", "formacoes", "investigacao", "avaliacoes", "bi",
+      "missoes", "formacoes", "investigacao", "avaliacoes", "bi",
     ],
-    write: [
-      "produtos", "lotes", "planeamento", "distribuicao",
-      "estacoes", "animais", "inseminacao", "auditorias", "nao-conformidades",
-      "documentos", "processos",
-      "stock", "agricultura", "pecuaria", "financeiro", "patrimonio",
-      "missoes", "rh", "formacoes", "investigacao", "avaliacoes",
+    write: ["laboratorios", "analises", "resultados", "insumos", "auditorias", "nao-conformidades", "documentos", "processos"],
+  },
+  "responsavel-qualidade": {
+    view: [
+      "painel", "perfil",
+      "laboratorios", "analises", "resultados",
+      "auditorias", "nao-conformidades", "logs", "acessibilidade",
+      "historico-alertas", "documentos", "processos",
     ],
+    write: ["auditorias", "nao-conformidades", "logs", "acessibilidade", "documentos", "processos"],
   },
   tecnico: {
     view: [
@@ -143,10 +179,35 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
     write: ["analises", "resultados", "insumos", "animais", "inseminacao", "documentos", "processos",
       "stock", "agricultura", "pecuaria", "missoes", "formacoes", "investigacao"],
   },
-  colaborador: {
+  recepcionista: {
     view: ["painel", "perfil", "analises", "distribuicao", "historico-alertas", "documentos", "processos",
       "missoes", "formacoes", "investigacao", "avaliacoes"],
     write: ["processos"],
+  },
+  "gestor-stock": {
+    view: ["painel", "perfil", "insumos", "stock", "agricultura", "pecuaria",
+      "produtos", "lotes", "planeamento", "distribuicao", "historico-alertas", "documentos", "processos"],
+    write: ["insumos", "stock", "agricultura", "pecuaria", "produtos", "lotes", "planeamento", "distribuicao", "documentos", "processos"],
+  },
+  "gestor-patrimonio": {
+    view: ["painel", "perfil", "patrimonio", "estacoes", "historico-alertas", "documentos", "processos"],
+    write: ["patrimonio", "documentos", "processos"],
+  },
+  "gestor-financeiro": {
+    view: ["painel", "perfil", "financeiro", "bi", "historico-alertas", "documentos", "processos"],
+    write: ["financeiro", "documentos", "processos"],
+  },
+  "gestor-rh": {
+    view: ["painel", "perfil", "rh", "formacoes", "missoes", "historico-alertas", "documentos", "processos"],
+    write: ["rh", "formacoes", "missoes", "documentos", "processos"],
+  },
+  "gestor-estacao": {
+    view: ["painel", "perfil", "estacoes", "animais", "inseminacao", "agricultura", "pecuaria", "historico-alertas", "documentos", "processos"],
+    write: ["estacoes", "animais", "inseminacao", "agricultura", "pecuaria", "documentos", "processos"],
+  },
+  isv: {
+    view: ["painel", "processos", "historico-alertas"],
+    write: [],
   },
 };
 
@@ -156,13 +217,10 @@ type Matrix = Record<AppRole, { view: Set<ModuleKey>; write: Set<ModuleKey> }>;
 let DYNAMIC_MATRIX: Matrix | null = null;
 
 export function setDynamicPermissions(rows: PermissionEntryDto[]) {
-  const next: Matrix = {
-    admin: { view: new Set(), write: new Set() },
-    diretor: { view: new Set(), write: new Set() },
-    gestor: { view: new Set(), write: new Set() },
-    tecnico: { view: new Set(), write: new Set() },
-    colaborador: { view: new Set(), write: new Set() },
-  };
+  const next = {} as Matrix;
+  for (const role of ALL_ROLES) {
+    next[role] = { view: new Set(), write: new Set() };
+  }
   for (const r of rows) {
     if (!next[r.role]) continue;
     if (r.canView) next[r.role].view.add(r.module);
@@ -196,13 +254,24 @@ export function canWrite(role: AppRole | null, module: ModuleKey): boolean {
 
 export const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Administrador",
-  diretor: "Director",
-  gestor: "Gestor",
+  diretor: "Direcção",
+  "director-laboratorio": "Director de Laboratório",
+  "responsavel-qualidade": "Responsável de Qualidade",
   tecnico: "Técnico",
-  colaborador: "Colaborador",
+  recepcionista: "Recepcionista",
+  "gestor-stock": "Gestor de Stock",
+  "gestor-patrimonio": "Gestor de Património",
+  "gestor-financeiro": "Gestor Financeiro",
+  "gestor-rh": "Gestor de RH",
+  "gestor-estacao": "Gestor de Estação",
+  isv: "ISV (Externo)",
 };
 
-export const ALL_ROLES: AppRole[] = ["admin", "diretor", "gestor", "tecnico", "colaborador"];
+export const ALL_ROLES: AppRole[] = [
+  "admin", "diretor", "director-laboratorio", "responsavel-qualidade", "tecnico",
+  "recepcionista", "gestor-stock", "gestor-patrimonio", "gestor-financeiro",
+  "gestor-rh", "gestor-estacao", "isv",
+];
 
 /** Papel principal de um utilizador com vários papéis: o primeiro por ordem alfabética. */
 export function primaryRole(roles: AppRole[]): AppRole | null {

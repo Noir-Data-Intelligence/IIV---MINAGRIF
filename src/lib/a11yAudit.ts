@@ -6,6 +6,11 @@
 // We still run the full WCAG 2.1 AA ruleset and flag the focused ones.
 
 import axeSource from "axe-core/axe.min.js?raw";
+import type { default as Axe, AxeResults, Result, NodeResult } from "axe-core";
+
+interface AxeWindow extends Window {
+  axe?: typeof Axe;
+}
 
 export interface A11yNode {
   target: string;
@@ -94,7 +99,7 @@ export async function auditRoute(
 
   try {
     await waitForLoad(iframe);
-    const win = iframe.contentWindow as any;
+    const win = iframe.contentWindow as AxeWindow | null;
     const doc = iframe.contentDocument;
     if (!win || !doc) throw new Error("Não foi possível aceder ao documento da rota.");
 
@@ -121,7 +126,7 @@ export async function auditRoute(
     const axe = win.axe;
     if (!axe) throw new Error("Falhou a injecção do motor de auditoria.");
 
-    const results = await withTimeout<any>(
+    const results = await withTimeout<AxeResults>(
       axe.run(doc, {
         runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
         resultTypes: ["violations", "passes", "incomplete"],
@@ -130,7 +135,7 @@ export async function auditRoute(
       "Tempo esgotado a analisar a rota (possível animação contínua a bloquear o motor de auditoria).",
     );
 
-    const violations: A11yViolation[] = results.violations.map((v: any) => ({
+    const violations: A11yViolation[] = results.violations.map((v: Result) => ({
       id: v.id,
       impact: v.impact ?? null,
       help: v.help,
@@ -138,7 +143,7 @@ export async function auditRoute(
       description: v.description,
       tags: v.tags,
       category: classify(v.id),
-      nodes: v.nodes.slice(0, 5).map((n: any) => ({
+      nodes: v.nodes.slice(0, 5).map((n: NodeResult) => ({
         target: Array.isArray(n.target) ? n.target.join(" ") : String(n.target),
         html: n.html?.slice(0, 240) ?? "",
         failureSummary: n.failureSummary ?? "",
@@ -154,7 +159,7 @@ export async function auditRoute(
       passCount: results.passes.length,
       incompleteCount: results.incomplete.length,
     };
-  } catch (e: any) {
+  } catch (e) {
     return {
       path,
       label,
@@ -163,7 +168,7 @@ export async function auditRoute(
       violations: [],
       passCount: 0,
       incompleteCount: 0,
-      error: e?.message ?? "Erro desconhecido.",
+      error: e instanceof Error ? e.message : "Erro desconhecido.",
     };
   } finally {
     container.removeChild(iframe);

@@ -53,7 +53,7 @@ export const authHandlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // POST /api/register -> cria conta nova (papel "colaborador" por omissão)
+  // POST /api/register -> cria conta nova (papel "recepcionista" por omissão)
   http.post(`${BASE}/register`, async ({ request }) => {
     const { fullName, email, password } = (await request.json().catch(() => ({}))) as Partial<RegisterPayload>;
     if (!fullName || !email || !password) {
@@ -71,7 +71,7 @@ export const authHandlers = [
       email,
       phone: null,
       createdAt: new Date().toISOString(),
-      roles: ["colaborador"],
+      roles: ["recepcionista"],
       departmentIds: [],
     };
     setUsersFixtures([...usersFixtures, newUser]);
@@ -91,7 +91,7 @@ export const authHandlers = [
       // MSW nesse caso) — não há envio de email real em nenhum ambiente onde este
       // código executa, por isso o link fica sempre visível na consola.
       const link = `${window.location.origin}/redefinir-senha?token=${token}&email=${encodeURIComponent(user.email)}`;
-      // eslint-disable-next-line no-console
+       
       console.info(`[mock] Link de recuperação de password (${user.email}):`, link);
     }
     return new HttpResponse(null, { status: 204 });

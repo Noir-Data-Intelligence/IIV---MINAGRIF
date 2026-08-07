@@ -2,6 +2,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { ensurePdfFonts, PDF_HEADING_FONT, PDF_BODY_FONT } from "@/lib/pdfFonts";
 
+/** jspdf-autotable augments the jsPDF instance at runtime with this property; not part of jsPDF's own types. */
+type JsPdfWithAutoTable = jsPDF & { lastAutoTable?: { finalY: number } };
+
 export interface MissionGuideData {
   mission: {
     title: string;
@@ -61,7 +64,7 @@ export async function generateMissionGuidePdf(data: MissionGuideData) {
   });
 
   // Participantes
-  const finalY = (doc as any).lastAutoTable?.finalY ?? 100;
+  const finalY = (doc as JsPdfWithAutoTable).lastAutoTable?.finalY ?? 100;
   doc.setFontSize(12); doc.setFont(PDF_HEADING_FONT, "bold");
   doc.text("Participantes", 20, finalY + 12);
 
@@ -78,7 +81,7 @@ export async function generateMissionGuidePdf(data: MissionGuideData) {
 
   // Notas
   if (data.guide.notes) {
-    const y2 = (doc as any).lastAutoTable?.finalY ?? 160;
+    const y2 = (doc as JsPdfWithAutoTable).lastAutoTable?.finalY ?? 160;
     doc.setFontSize(11); doc.setFont(PDF_HEADING_FONT, "bold"); doc.text("Notas", 20, y2 + 12);
     doc.setFont(PDF_BODY_FONT, "normal"); doc.setFontSize(10);
     doc.text(doc.splitTextToSize(data.guide.notes, 170), 20, y2 + 20);

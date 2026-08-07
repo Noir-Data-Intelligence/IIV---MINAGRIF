@@ -20,7 +20,7 @@ import type { LineDto, ProjectDto, PublicationDto } from "@/types/dto/investigac
 
 // --- Linhas de investigação -------------------------------------------------
 
-export let linesFixtures: LineDto[] = [
+export const linesFixtures: LineDto[] = [
   {
     id: "lin-0001",
     name: "Vigilância epidemiológica de doenças transfronteiriças",
@@ -75,7 +75,7 @@ export let linesFixtures: LineDto[] = [
 
 // --- Projectos de I&D -------------------------------------------------------
 
-export let projectsFixtures: ProjectDto[] = [
+export const projectsFixtures: ProjectDto[] = [
   {
     id: "prj-0001",
     lineId: "lin-0001",
@@ -176,7 +176,7 @@ export let projectsFixtures: ProjectDto[] = [
 
 // --- Publicações ------------------------------------------------------------
 
-export let publicationsFixtures: PublicationDto[] = [
+export const publicationsFixtures: PublicationDto[] = [
   {
     id: "pub-0001",
     projectId: "prj-0004",

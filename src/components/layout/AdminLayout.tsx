@@ -11,6 +11,7 @@ import {
   ClipboardCheck, AlertTriangle, Shield, Menu, X, UserCircle, Search,
   Sparkles, Boxes as BoxesIcon, LineChart, ShieldCheck, ScrollText, MessageSquare, Images, Newspaper, Bell,
   FolderKanban, FileStack, Workflow, Rabbit, Dna, Sprout, Beef, Wallet, Wrench, Plane, GraduationCap, UserCog, Microscope, BarChart3, Award,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,8 +32,8 @@ import { NotificationCenter } from "@/components/admin/NotificationCenter";
 import { ChatWidget } from "@/components/admin/ChatWidget";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-interface NavItem { icon: any; label: string; path: string; module: ModuleKey }
-interface NavGroup { label: string; items: NavItem[]; icon: any; colorClass: string }
+interface NavItem { icon: LucideIcon; label: string; path: string; module: ModuleKey }
+interface NavGroup { label: string; items: NavItem[]; icon: LucideIcon; colorClass: string }
 
 const navGroups: NavGroup[] = [
   {

@@ -50,7 +50,7 @@ import {
   useUpdateProcessTypeStep,
 } from "@/hooks/queries/useProcessTypes";
 import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
-import type { AppRole } from "@/lib/permissions";
+import { ALL_ROLES, type AppRole } from "@/lib/permissions";
 import type { ProcessTypeDto, ProcessTypeStepDto } from "@/types/dto/processType";
 import i18n from "@/i18n";
 import ptProcessosTipos from "@/i18n/locales/pt/admin/processos-tipos.json";
@@ -63,7 +63,7 @@ if (!i18n.hasResourceBundle("pt", "admin-processos-tipos"))
 if (!i18n.hasResourceBundle("en", "admin-processos-tipos"))
   i18n.addResourceBundle("en", "admin-processos-tipos", enProcessosTipos, true, true);
 
-const ROLES: AppRole[] = ["admin", "gestor", "tecnico", "diretor", "colaborador"];
+const ROLES = ALL_ROLES;
 /** Sentinela para "sem papel" — o <Select> shadcn não aceita valor "". */
 const NONE = "none";
 

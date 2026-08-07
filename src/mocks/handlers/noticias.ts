@@ -9,10 +9,10 @@ import type { Paginated } from "@/types/dto/paginated";
  * Operam sobre `noticiasFixtures` (array mutável em memória), pelo que
  * create/update/delete PERSISTEM durante a sessão do browser (reset no refresh).
  *
- * Os paths usam o wildcard `*` no início (padrão recomendado pela documentação
+ * Os paths usam o wildcard "*" no início (padrão recomendado pela documentação
  * MSW) para casar independentemente da baseURL exacta configurada em http.ts
- * (por omissão relativa, "/api"). Assim `*​/api/noticias` intercepta o pedido
- * real seja qual for o host/porta.
+ * (por omissão relativa, "/api"). Assim, o padrão wildcard + "/api/noticias"
+ * intercepta o pedido real seja qual for o host/porta.
  */
 
 const BASE = "*/api/noticias";

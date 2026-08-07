@@ -26,7 +26,15 @@ Deno.serve(async (req) => {
     .lt("due_at", nowIso)
     .in("status", ["pendente", "em_curso"]);
 
-  const notifications: any[] = [];
+  interface PendingNotification {
+    user_id: string;
+    title: string;
+    message: string;
+    link: string;
+    type: "warning";
+  }
+
+  const notifications: PendingNotification[] = [];
 
   for (const p of overdueProc ?? []) {
     if (!p.requester_id) continue;
@@ -45,7 +53,7 @@ Deno.serve(async (req) => {
     if (s.assignee_role) {
       const { data: users } = await supabase
         .from("user_roles").select("user_id").eq("role", s.assignee_role);
-      (users ?? []).forEach((u: any) => recipients.add(u.user_id));
+      (users ?? []).forEach((u: { user_id: string }) => recipients.add(u.user_id));
     }
     for (const uid of recipients) {
       notifications.push({

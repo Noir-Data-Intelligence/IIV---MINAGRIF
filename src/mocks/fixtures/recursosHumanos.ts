@@ -26,7 +26,7 @@ import type {
 
 // --- Colaboradores ---------------------------------------------------------
 
-export let employeesFixtures: EmployeeDto[] = [
+export const employeesFixtures: EmployeeDto[] = [
   {
     id: "emp-0001",
     employeeNumber: "IIV-0001",
@@ -181,7 +181,7 @@ export let employeesFixtures: EmployeeDto[] = [
 
 // --- Contratos -------------------------------------------------------------
 
-export let contractsFixtures: ContractDto[] = [
+export const contractsFixtures: ContractDto[] = [
   {
     id: "con-0001",
     employeeId: "emp-0001",
@@ -329,7 +329,7 @@ export let contractsFixtures: ContractDto[] = [
 
 // --- Ausências -------------------------------------------------------------
 
-export let leavesFixtures: LeaveDto[] = [
+export const leavesFixtures: LeaveDto[] = [
   {
     id: "lea-0001",
     employeeId: "emp-0001",

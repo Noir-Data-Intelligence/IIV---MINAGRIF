@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Bell, BellOff, Check, CheckCheck, Trash2, Info, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Bell, BellOff, Check, CheckCheck, Trash2, Info, AlertTriangle, AlertCircle, CheckCircle2, type LucideIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { pt, enUS } from "date-fns/locale";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -33,7 +33,7 @@ if (!i18n.hasResourceBundle("pt", "notificacoes"))
 if (!i18n.hasResourceBundle("en", "notificacoes"))
   i18n.addResourceBundle("en", "notificacoes", enNotificacoes, true, true);
 
-const typeIcon: Record<NotificationType, { icon: any; color: string; bg: string }> = {
+const typeIcon: Record<NotificationType, { icon: LucideIcon; color: string; bg: string }> = {
   info: { icon: Info, color: "text-white", bg: "bg-sky-500 shadow-md shadow-sky-500/30" },
   sucesso: { icon: CheckCircle2, color: "text-primary-foreground", bg: "gradient-green-soft shadow-md" },
   aviso: { icon: AlertTriangle, color: "text-white", bg: "bg-amber-500 shadow-md shadow-amber-500/30" },

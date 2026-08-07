@@ -16,7 +16,7 @@ import type { TrainingDto } from "@/types/dto/formacoes";
  * browser (perde-se no refresh, comportamento esperado de um mock).
  */
 
-export let trainingsFixtures: TrainingDto[] = [
+export const trainingsFixtures: TrainingDto[] = [
   {
     id: "for-0001",
     title: "Biossegurança em Laboratório de Nível 2 (BSL-2)",

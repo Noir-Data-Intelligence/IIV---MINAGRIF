@@ -31,6 +31,7 @@ declare module "@tanstack/react-table" {
 const ACTIONS_COLUMN_ID = "__actions";
 
 export interface DataTableProps<TData> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TValue varies per column; matches TanStack Table's own generic-component pattern.
   columns: ColumnDef<TData, any>[];
   data: TData[];
   loading?: boolean;
@@ -105,6 +106,7 @@ export function DataTable<TData>({
   const sorting = controlledSorting ?? internalSorting;
   const onSortingChange = controlledOnSortingChange ?? setInternalSorting;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TValue varies per column; matches TanStack Table's own generic-component pattern.
   const tableColumns: ColumnDef<TData, any>[] = renderRowActions
     ? [
         ...columns,

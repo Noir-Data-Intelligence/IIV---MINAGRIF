@@ -27,7 +27,15 @@ Deno.serve(async (req) => {
     });
   }
 
-  const notifications: any[] = [];
+  interface PendingNotification {
+    user_id: string;
+    title: string;
+    message: string;
+    link: string;
+    type: "warning" | "info";
+  }
+
+  const notifications: PendingNotification[] = [];
   for (const d of docs ?? []) {
     const expired = d.expiry_date! <= todayStr;
     const recipients = new Set<string>();

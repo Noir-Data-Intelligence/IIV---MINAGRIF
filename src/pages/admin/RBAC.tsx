@@ -54,9 +54,16 @@ type PermRow = { role: AppRole; module: ModuleKey; can_view: boolean; can_write:
 const ROLE_TONE: Record<AppRole, string> = {
   admin: "bg-primary/10 text-primary border-primary/30",
   diretor: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
-  gestor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "director-laboratorio": "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  "responsavel-qualidade": "bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30",
   tecnico: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30",
-  colaborador: "bg-muted text-muted-foreground border-border",
+  recepcionista: "bg-muted text-muted-foreground border-border",
+  "gestor-stock": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "gestor-patrimonio": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "gestor-financeiro": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "gestor-rh": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "gestor-estacao": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  isv: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
 };
 
 // Conversões entre o DTO REST (camelCase) e a linha interna da matriz (snake_case,
@@ -246,11 +253,12 @@ export default function RBAC() {
   }, [moduleSearch]);
 
   const totals = useMemo(() => {
-    const out: Record<AppRole, { view: number; write: number }> = {
-      admin: { view: ALL_MODULES.length, write: ALL_MODULES.length },
-      diretor: { view: 0, write: 0 }, gestor: { view: 0, write: 0 },
-      tecnico: { view: 0, write: 0 }, colaborador: { view: 0, write: 0 },
-    };
+    const out = {} as Record<AppRole, { view: number; write: number }>;
+    for (const role of ALL_ROLES) {
+      out[role] = role === "admin"
+        ? { view: ALL_MODULES.length, write: ALL_MODULES.length }
+        : { view: 0, write: 0 };
+    }
     for (const role of ALL_ROLES) {
       if (role === "admin") continue;
       for (const mod of ALL_MODULES) {
@@ -528,7 +536,7 @@ export default function RBAC() {
                   <TableBody>
                     {filteredProfiles.map((p) => {
                       const roles = p.roles ?? [];
-                      const selected = newRoleByUser[p.userId] ?? "colaborador";
+                      const selected = newRoleByUser[p.userId] ?? "recepcionista";
                       return (
                         <TableRow key={p.userId}>
                           <TableCell className="font-medium">{p.fullName || t("users.emptyName")}</TableCell>

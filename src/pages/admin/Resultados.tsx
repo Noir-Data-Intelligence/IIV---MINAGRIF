@@ -214,7 +214,6 @@ export default function Resultados() {
         ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [t, analiseMap],
   );
 

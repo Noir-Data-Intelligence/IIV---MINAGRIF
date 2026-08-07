@@ -27,7 +27,7 @@ import { useUsersList } from "@/hooks/queries/useUsers";
 import { formatKwanza, formatNumber } from "@/lib/format";
 import { generateInstitutionalPdf } from "@/lib/generateInstitutionalPdf";
 import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
-import type { AppRole } from "@/lib/permissions";
+import { ALL_ROLES, type AppRole } from "@/lib/permissions";
 import i18n from "@/i18n";
 import ptBi from "@/i18n/locales/pt/admin/bi.json";
 import enBi from "@/i18n/locales/en/admin/bi.json";
@@ -39,7 +39,7 @@ if (!i18n.hasResourceBundle("en", "bi")) i18n.addResourceBundle("en", "bi", enBi
 // Dataset completo para agregação client-side (mesmo padrão de Financeiro.tsx/Documentos.tsx).
 const BIG = { page: 1, perPage: 1000 } as const;
 
-const ROLE_ORDER: AppRole[] = ["admin", "diretor", "gestor", "tecnico", "colaborador"];
+const ROLE_ORDER = ALL_ROLES;
 
 export default function BI() {
   const { t, i18n: i18nInstance } = useTranslation("bi");

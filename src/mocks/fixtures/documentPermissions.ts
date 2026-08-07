@@ -14,7 +14,7 @@ export let documentPermissionsFixtures: DocumentPermissionDto[] = [
   {
     id: "dperm-0001",
     documentId: "doc-0002",
-    role: "gestor",
+    role: "gestor-financeiro",
     departmentId: null,
     canEdit: true,
     department: null,

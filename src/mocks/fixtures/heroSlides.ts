@@ -14,7 +14,7 @@ import type { HeroSlideDto } from "@/types/dto/heroSlide";
  * persistindo alterações durante a sessão do browser (perde-se no refresh,
  * que é o comportamento esperado de um mock).
  */
-export let heroSlidesFixtures: HeroSlideDto[] = [
+export const heroSlidesFixtures: HeroSlideDto[] = [
   {
     id: "hs-01",
     kicker: "Diagnóstico Laboratorial",

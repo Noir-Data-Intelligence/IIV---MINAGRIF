@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Plus, X } from "lucide-react";
-import type { AppRole } from "@/lib/permissions";
+import { ALL_ROLES, ROLE_LABEL } from "@/lib/permissions";
 import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
 import {
   useDocumentPermissions,
@@ -16,7 +16,7 @@ import {
 
 interface Props { documentId: string }
 
-const ROLES: AppRole[] = ["admin", "gestor", "tecnico", "diretor", "colaborador"];
+const ROLES = ALL_ROLES;
 
 /**
  * Painel de permissões granulares (por papel ou por departamento) de um
@@ -92,7 +92,7 @@ export function DocumentPermissionsPanel({ documentId }: Props) {
             <li key={p.id} className="flex items-center justify-between gap-2 text-sm bg-muted/30 rounded px-2 py-1.5">
               <span className="flex items-center gap-2">
                 {p.role ? (
-                  <Badge variant="outline" className="capitalize">Papel: {p.role}</Badge>
+                  <Badge variant="outline">Papel: {ROLE_LABEL[p.role as keyof typeof ROLE_LABEL] ?? p.role}</Badge>
                 ) : (
                   <Badge variant="outline">Dept.: {p.department?.name ?? "—"}</Badge>
                 )}
@@ -122,7 +122,7 @@ export function DocumentPermissionsPanel({ documentId }: Props) {
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar papel" /></SelectTrigger>
                 <SelectContent>
-                  {ROLES.map((r) => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}
+                  {ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABEL[r]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

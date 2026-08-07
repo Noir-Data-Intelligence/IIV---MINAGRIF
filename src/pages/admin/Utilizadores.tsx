@@ -39,9 +39,16 @@ import enUtilizadores from "@/i18n/locales/en/admin/utilizadores.json";
 const ROLE_TONE: Record<AppRole, string> = {
   admin: "bg-primary/10 text-primary border-primary/30",
   diretor: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
-  gestor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "director-laboratorio": "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  "responsavel-qualidade": "bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30",
   tecnico: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30",
-  colaborador: "bg-muted text-muted-foreground border-border",
+  recepcionista: "bg-muted text-muted-foreground border-border",
+  "gestor-stock": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "gestor-patrimonio": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "gestor-financeiro": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "gestor-rh": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "gestor-estacao": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  isv: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
 };
 
 // Namespace "utilizadores" registado em runtime, mesmo padrão de Departamentos.tsx

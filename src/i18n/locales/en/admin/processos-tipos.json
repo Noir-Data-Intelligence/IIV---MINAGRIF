@@ -68,10 +68,17 @@
   },
   "roles": {
     "admin": "Administrator",
-    "gestor": "Manager",
+    "diretor": "Direction",
+    "director-laboratorio": "Laboratory Director",
+    "responsavel-qualidade": "Quality Officer",
     "tecnico": "Technician",
-    "diretor": "Director",
-    "colaborador": "Collaborator"
+    "recepcionista": "Receptionist",
+    "gestor-stock": "Stock Manager",
+    "gestor-patrimonio": "Asset Manager",
+    "gestor-financeiro": "Finance Manager",
+    "gestor-rh": "HR Manager",
+    "gestor-estacao": "Station Manager",
+    "isv": "ISV (External)"
   },
   "deleteType": {
     "title": "Delete type?",
