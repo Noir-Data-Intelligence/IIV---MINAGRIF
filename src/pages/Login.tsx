@@ -9,6 +9,7 @@ import type { ApiError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, LogIn, ArrowLeft, ShieldCheck } from "lucide-react";
 import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
@@ -37,10 +38,17 @@ function renderMultiline(text: string) {
 
 const DEMO_ACCOUNTS = [
   { roleKey: "admin", email: "admin@iiv.demo", password: "admin123" },
-  { roleKey: "tecnico", email: "tecnico@iiv.demo", password: "tecnico123" },
-  { roleKey: "gestor", email: "gestor@iiv.demo", password: "gestor123" },
   { roleKey: "diretor", email: "diretor@iiv.demo", password: "diretor123" },
-  { roleKey: "colaborador", email: "colaborador@iiv.demo", password: "colaborador123" },
+  { roleKey: "director-laboratorio", email: "director-laboratorio@iiv.demo", password: "director-laboratorio123" },
+  { roleKey: "responsavel-qualidade", email: "responsavel-qualidade@iiv.demo", password: "responsavel-qualidade123" },
+  { roleKey: "tecnico", email: "tecnico@iiv.demo", password: "tecnico123" },
+  { roleKey: "recepcionista", email: "recepcionista@iiv.demo", password: "recepcionista123" },
+  { roleKey: "gestor-stock", email: "gestor-stock@iiv.demo", password: "gestor-stock123" },
+  { roleKey: "gestor-patrimonio", email: "gestor-patrimonio@iiv.demo", password: "gestor-patrimonio123" },
+  { roleKey: "gestor-financeiro", email: "gestor-financeiro@iiv.demo", password: "gestor-financeiro123" },
+  { roleKey: "gestor-rh", email: "gestor-rh@iiv.demo", password: "gestor-rh123" },
+  { roleKey: "gestor-estacao", email: "gestor-estacao@iiv.demo", password: "gestor-estacao123" },
+  { roleKey: "isv", email: "isv@iiv.demo", password: "isv123" },
 ] as const;
 
 export default function Login() {
@@ -49,6 +57,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [selectedDemo, setSelectedDemo] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -196,19 +205,28 @@ export default function Login() {
           {(import.meta.env.DEV || import.meta.env.VITE_API_MOCK === "true") && (
             <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("demo.title")}</p>
-              <div className="grid gap-1.5">
-                {DEMO_ACCOUNTS.map((acc) => (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    className="flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                    onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
-                  >
-                    <span className="font-medium">{t(`demo.roles.${acc.roleKey}`)}</span>
-                    <span>{acc.email}</span>
-                  </button>
-                ))}
-              </div>
+              <Select
+                value={selectedDemo}
+                onValueChange={(value) => {
+                  const acc = DEMO_ACCOUNTS.find((a) => a.email === value);
+                  if (!acc) return;
+                  setSelectedDemo(value);
+                  setEmail(acc.email);
+                  setPassword(acc.password);
+                }}
+              >
+                <SelectTrigger className="h-10 text-xs">
+                  <SelectValue placeholder={t("demo.placeholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {DEMO_ACCOUNTS.map((acc) => (
+                    <SelectItem key={acc.email} value={acc.email} className="text-xs">
+                      <span className="font-medium">{t(`demo.roles.${acc.roleKey}`)}</span>
+                      <span className="text-muted-foreground"> — {acc.email}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-[10px] text-muted-foreground text-center">{t("demo.hint")}</p>
             </div>
           )}

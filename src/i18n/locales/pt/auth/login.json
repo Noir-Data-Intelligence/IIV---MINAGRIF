@@ -23,13 +23,21 @@
   "requestAccess": "Solicitar acesso",
   "demo": {
     "title": "Acesso rápido (demo)",
-    "hint": "Clique num perfil para preencher automaticamente",
+    "placeholder": "Seleccionar um perfil de demonstração",
+    "hint": "Seleccione um perfil para preencher automaticamente",
     "roles": {
       "admin": "Admin",
+      "diretor": "Direcção",
+      "director-laboratorio": "Director de Laboratório",
+      "responsavel-qualidade": "Responsável de Qualidade",
       "tecnico": "Técnico",
-      "gestor": "Gestor",
-      "diretor": "Director",
-      "colaborador": "Colaborador"
+      "recepcionista": "Recepcionista",
+      "gestor-stock": "Gestor de Stock",
+      "gestor-patrimonio": "Gestor de Património",
+      "gestor-financeiro": "Gestor Financeiro",
+      "gestor-rh": "Gestor de RH",
+      "gestor-estacao": "Gestor de Estação",
+      "isv": "ISV (Externo)"
     }
   },
   "toast": {

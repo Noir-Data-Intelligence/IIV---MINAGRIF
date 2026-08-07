@@ -23,13 +23,21 @@
   "requestAccess": "Request access",
   "demo": {
     "title": "Quick access (demo)",
-    "hint": "Click a profile to auto-fill the form",
+    "placeholder": "Select a demo profile",
+    "hint": "Select a profile to auto-fill the form",
     "roles": {
       "admin": "Admin",
+      "diretor": "Direction",
+      "director-laboratorio": "Laboratory Director",
+      "responsavel-qualidade": "Quality Officer",
       "tecnico": "Technician",
-      "gestor": "Manager",
-      "diretor": "Director",
-      "colaborador": "Staff"
+      "recepcionista": "Receptionist",
+      "gestor-stock": "Stock Manager",
+      "gestor-patrimonio": "Asset Manager",
+      "gestor-financeiro": "Finance Manager",
+      "gestor-rh": "HR Manager",
+      "gestor-estacao": "Station Manager",
+      "isv": "ISV (External)"
     }
   },
   "toast": {
