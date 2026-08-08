@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,10 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DataTable } from "@/components/data-table";
 import {
   Activity, TrendingUp, Boxes, Truck, AlertTriangle, PackageX,
   CalendarClock, Users, BarChart3, PieChart, Pill, ArrowLeft, Search,
@@ -255,12 +253,20 @@ export default function PainelDetalhe() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
-  // Reset filtros ao trocar de métrica.
+  // Reset filtros e paginação ao trocar de métrica.
   useEffect(() => {
     setSearch("");
     setStatusFilter("all");
+    setPagination({ pageIndex: 0, pageSize: 20 });
   }, [metric]);
+
+  // Reset da página ao mudar pesquisa/filtro (a paginação é client-side sobre
+  // `filtered`, tal como o resto desta página — ver comentário de `sources`).
+  useEffect(() => {
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
+  }, [search, statusFilter]);
 
   // Fontes subjacentes — perPage alto para trazer tudo e filtrar client-side,
   // à semelhança das páginas de detalhe/agregação já migradas.
@@ -305,6 +311,25 @@ export default function PainelDetalhe() {
     }
     return out;
   }, [baseRows, search, statusFilter, config]);
+
+  // Paginação client-side sobre `filtered` — `DataTable` espera em `data`
+  // apenas a página actual (modo "server-side"/manual), por isso fatiamos
+  // aqui em vez de lhe passar o array completo.
+  const pageRows = useMemo(
+    () => filtered.slice(pagination.pageIndex * pagination.pageSize, (pagination.pageIndex + 1) * pagination.pageSize),
+    [filtered, pagination],
+  );
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pagination.pageSize));
+
+  const columns = useMemo<ColumnDef<Row>[]>(() => {
+    if (!config) return [];
+    return config.columns.map((c): ColumnDef<Row> => ({
+      id: c.key,
+      accessorKey: c.key,
+      header: c.label,
+      cell: ({ row }) => c.render ? c.render(row.original) : ((row.original[c.key] as ReactNode) ?? "—"),
+    }));
+  }, [config]);
 
   if (!config) return <Navigate to="/admin" replace />;
 
@@ -356,38 +381,17 @@ export default function PainelDetalhe() {
           </div>
 
           {/* Table */}
-          {loading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">
-              {config.emptyMessage ?? "Sem registos para os filtros selecionados."}
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-border/40">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {config.columns.map((c) => (
-                      <TableHead key={c.key} className={c.className}>{c.label}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((r, i) => (
-                    <TableRow key={r.id ?? i}>
-                      {config.columns.map((c) => (
-                        <TableCell key={c.key} className={c.className}>
-                          {c.render ? c.render(r) : (r[c.key] ?? "—")}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+          <DataTable
+            columns={columns}
+            data={pageRows}
+            loading={loading}
+            pageCount={pageCount}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            rowCount={filtered.length}
+            emptyMessage={config.emptyMessage ?? "Sem registos para os filtros selecionados."}
+            hideToolbar
+          />
         </CardContent>
       </Card>
     </div>

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
-import { TablePagination } from "@/components/admin/TablePagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,7 +17,6 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { axisTickStyle, buildChartConfig, chartColors, formatAxisNumber, NoDataOverlay } from "@/components/charts";
 import { useTableExport } from "@/hooks/useTableExport";
-import { usePagination } from "@/hooks/usePagination";
 import { fadeIn } from "@/lib/motion";
 import { Bell, Download, Trash2, ArrowUpRight, UserPlus, Clock, RefreshCw, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
@@ -67,7 +66,7 @@ export default function HistoricoAlertas() {
   const [draftStatus, setDraftStatus] = useState<string>("pendente");
   const [draftNotes, setDraftNotes] = useState<string>("");
 
-  const pag = usePagination(20);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const { exportCSV } = useTableExport();
 
   const usersQuery = useUsersList({});
@@ -76,20 +75,14 @@ export default function HistoricoAlertas() {
   const departments = useMemo(() => departmentsQuery.data?.data ?? [], [departmentsQuery.data]);
 
   const listQuery = useAlertHistoryList({
-    page: pag.page + 1,
-    perPage: pag.pageSize,
+    page: pagination.pageIndex + 1,
+    perPage: pagination.pageSize,
     metricKey: metric !== "all" ? metric : undefined,
     actionStatus: status !== "all" ? status : undefined,
     from: from || undefined,
     to: to || undefined,
   });
   const rows = useMemo(() => listQuery.data?.data ?? [], [listQuery.data]);
-
-  // Sincroniza total da paginação com o meta da resposta.
-  useEffect(() => {
-    if (listQuery.data) pag.setTotal(listQuery.data.meta.total);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listQuery.data]);
 
   // Query de tendência: últimos 30 dias (não paginada).
   const since = useMemo(() => {
@@ -172,7 +165,7 @@ export default function HistoricoAlertas() {
     try {
       await clearMutation.mutateAsync();
       toast.success(t("toast.cleared"));
-      pag.setPage(0);
+      resetPage();
     } catch {
       toast.error(t("toast.clearError"));
     }
@@ -202,7 +195,74 @@ export default function HistoricoAlertas() {
     );
   };
 
-  const resetPage = () => pag.setPage(0);
+  const resetPage = () => setPagination((p) => ({ ...p, pageIndex: 0 }));
+
+  const columns = useMemo<ColumnDef<AlertHistoryDto>[]>(
+    () => [
+      {
+        accessorKey: "createdAt",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.datetime")} />,
+        cell: ({ row }) => (
+          <span className="text-sm whitespace-nowrap">
+            {format(new Date(row.original.createdAt), "dd/MM/yyyy HH:mm", { locale: pt })}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "label",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.metric")} />,
+        cell: ({ row }) => <span className="text-sm font-medium">{row.original.label}</span>,
+      },
+      {
+        accessorKey: "value",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.value")} />,
+        cell: ({ row }) => <span className="text-right font-semibold block">{row.original.value}</span>,
+      },
+      {
+        accessorKey: "threshold",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.threshold")} />,
+        cell: ({ row }) => <span className="text-right text-muted-foreground block">{row.original.threshold}</span>,
+      },
+      {
+        accessorKey: "assignedToName",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.assignee")} />,
+        cell: ({ row }) => <span className="text-sm">{row.original.assignedToName ?? t("table.emptyCell")}</span>,
+      },
+      {
+        accessorKey: "assignedDepartmentName",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.department")} />,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.assignedDepartmentName ?? t("table.emptyCell")}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "actionStatus",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.state")} />,
+        cell: ({ row }) => (
+          <Badge variant={STATUS_VARIANT[row.original.actionStatus] ?? "outline"}>
+            {statusLabel(row.original.actionStatus)}
+          </Badge>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  const renderRowActions = (row: AlertHistoryDto) => (
+    <div className="flex items-center gap-2 whitespace-nowrap">
+      <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => openAssign(row)}>
+        <UserPlus className="h-3 w-3" /> {t("table.assign")}
+      </Button>
+      <Link
+        to={`/admin/painel/${row.metricKey}`}
+        className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+      >
+        {t("table.details")} <ArrowUpRight className="h-3 w-3" />
+      </Link>
+    </div>
+  );
 
   const motionProps = prefersReduced
     ? {}
@@ -287,65 +347,18 @@ export default function HistoricoAlertas() {
       </AdminCard>
 
       {/* Tabela */}
-      <AdminCard
-        title={t("table.title")}
-        icon={Bell}
-        loading={listQuery.isLoading}
-        isEmpty={rows.length === 0}
-        emptyMessage={t("table.empty")}
-      >
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("table.datetime")}</TableHead>
-                <TableHead>{t("table.metric")}</TableHead>
-                <TableHead className="text-right">{t("table.value")}</TableHead>
-                <TableHead className="text-right">{t("table.threshold")}</TableHead>
-                <TableHead>{t("table.assignee")}</TableHead>
-                <TableHead>{t("table.department")}</TableHead>
-                <TableHead>{t("table.state")}</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="text-sm whitespace-nowrap">
-                    {format(new Date(r.createdAt), "dd/MM/yyyy HH:mm", { locale: pt })}
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">{r.label}</TableCell>
-                  <TableCell className="text-right font-semibold">{r.value}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{r.threshold}</TableCell>
-                  <TableCell className="text-sm">{r.assignedToName ?? t("table.emptyCell")}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{r.assignedDepartmentName ?? t("table.emptyCell")}</TableCell>
-                  <TableCell>
-                    <Badge variant={STATUS_VARIANT[r.actionStatus] ?? "outline"}>
-                      {statusLabel(r.actionStatus)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="space-x-2 whitespace-nowrap">
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => openAssign(r)}>
-                      <UserPlus className="h-3 w-3" /> {t("table.assign")}
-                    </Button>
-                    <Link to={`/admin/painel/${r.metricKey}`} className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                      {t("table.details")} <ArrowUpRight className="h-3 w-3" />
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <TablePagination
-          page={pag.page}
-          pageSize={pag.pageSize}
-          total={pag.total}
-          totalPages={pag.totalPages}
-          canPrev={pag.canPrev}
-          canNext={pag.canNext}
-          onPageChange={pag.setPage}
-          onPageSizeChange={pag.setPageSize}
+      <AdminCard title={t("table.title")} icon={Bell}>
+        <DataTable
+          columns={columns}
+          data={rows}
+          loading={listQuery.isLoading}
+          pageCount={listQuery.data?.meta.totalPages ?? 0}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          rowCount={listQuery.data?.meta.total}
+          emptyMessage={t("table.empty")}
+          renderRowActions={renderRowActions}
+          hideToolbar
         />
       </AdminCard>
 

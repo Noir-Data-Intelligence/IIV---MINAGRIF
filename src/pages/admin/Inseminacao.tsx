@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Activity, AlertTriangle, Building2, Dna, Droplet, FlaskConical, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { useUserRole } from "@/hooks/useUserRole";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,22 @@ const resultVariant: Record<InseminationResult, "default" | "secondary" | "destr
   falhou: "destructive",
 };
 
+/**
+ * As 5 listas deste módulo (centros/reprodutores/tanques/doses/registos) não
+ * são paginadas no servidor (os hooks trazem o conjunto completo) — o
+ * `DataTable` espera em `data` apenas a página actual, por isso fatiamos aqui
+ * em memória, à semelhança de PainelDetalhe.tsx.
+ */
+function usePageSlice<T>(rows: T[], pageSize = 10) {
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize });
+  const pageRows = useMemo(
+    () => rows.slice(pagination.pageIndex * pagination.pageSize, (pagination.pageIndex + 1) * pagination.pageSize),
+    [rows, pagination],
+  );
+  const pageCount = Math.max(1, Math.ceil(rows.length / pagination.pageSize));
+  return { pagination, setPagination, pageRows, pageCount };
+}
+
 export default function Inseminacao() {
   const { t } = useTranslation("inseminacao");
   const { canWrite } = useUserRole();
@@ -126,6 +143,179 @@ export default function Inseminacao() {
   const breederTag = (id: string) => breeders.find((b) => b.id === id)?.tag ?? t("common.none");
   const tankCode = (id: string | null) => (id ? tanks.find((tk) => tk.id === id)?.code ?? t("common.none") : t("common.none"));
   const animalTag = (id: string) => animals.find((a) => a.id === id)?.tag ?? t("common.none");
+
+  const centersPage = usePageSlice(centers);
+  const breedersPage = usePageSlice(breeders);
+  const tanksPage = usePageSlice(tanks);
+  const dosesPage = usePageSlice(doses);
+  const insemsPage = usePageSlice(insems);
+
+  const centerColumns = useMemo<ColumnDef<IACenterDto>[]>(() => [
+    {
+      accessorKey: "name",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("centros.table.name")} />,
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+    },
+    {
+      accessorKey: "location",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("centros.table.location")} />,
+      cell: ({ row }) => row.original.location ?? t("common.none"),
+    },
+    {
+      accessorKey: "isActive",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("centros.table.status")} />,
+      cell: ({ row }) => (
+        <Badge variant={row.original.isActive ? "default" : "secondary"}>
+          {row.original.isActive ? t("centros.status.active") : t("centros.status.inactive")}
+        </Badge>
+      ),
+    },
+  ], [t]);
+
+  const breederColumns = useMemo<ColumnDef<BreederDto>[]>(() => [
+    {
+      accessorKey: "tag",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("reprodutores.table.tag")} />,
+      cell: ({ row }) => <span className="font-mono">{row.original.tag}</span>,
+    },
+    {
+      accessorKey: "name",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("reprodutores.table.name")} />,
+      cell: ({ row }) => row.original.name ?? t("common.none"),
+    },
+    {
+      accessorKey: "species",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("reprodutores.table.species")} />,
+    },
+    {
+      accessorKey: "breed",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("reprodutores.table.breed")} />,
+      cell: ({ row }) => row.original.breed ?? t("common.none"),
+    },
+    {
+      accessorKey: "centerId",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("reprodutores.table.center")} />,
+      cell: ({ row }) => centerName(row.original.centerId),
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("reprodutores.table.status")} />,
+      cell: ({ row }) => (
+        <Badge variant={row.original.status === "activo" ? "default" : "secondary"}>
+          {t(`breederStatus.${row.original.status}`)}
+        </Badge>
+      ),
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [t, centers]);
+
+  const tankColumns = useMemo<ColumnDef<TankDto>[]>(() => [
+    {
+      accessorKey: "code",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("tanques.table.code")} />,
+      cell: ({ row }) => <span className="font-mono">{row.original.code}</span>,
+    },
+    {
+      accessorKey: "centerId",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("tanques.table.center")} />,
+      cell: ({ row }) => centerName(row.original.centerId),
+    },
+    {
+      accessorKey: "capacityL",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("tanques.table.capacity")} />,
+    },
+    {
+      accessorKey: "currentLevelL",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("tanques.table.level")} />,
+      cell: ({ row }) => `${row.original.currentLevelL} L`,
+    },
+    {
+      accessorKey: "lastRefillDate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("tanques.table.lastRefill")} />,
+      cell: ({ row }) => row.original.lastRefillDate ?? t("common.none"),
+    },
+    {
+      id: "status",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("tanques.table.status")} />,
+      cell: ({ row }) => {
+        const low = row.original.currentLevelL <= row.original.minLevelL;
+        return low
+          ? <Badge variant="destructive">{t("tanques.low")}</Badge>
+          : <Badge variant="default">{t("tanques.ok")}</Badge>;
+      },
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [t, centers]);
+
+  const doseColumns = useMemo<ColumnDef<DoseDto>[]>(() => [
+    {
+      accessorKey: "collectionDate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("doses.table.date")} />,
+    },
+    {
+      accessorKey: "breederId",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("doses.table.breeder")} />,
+      cell: ({ row }) => <span className="font-mono">{breederTag(row.original.breederId)}</span>,
+    },
+    {
+      accessorKey: "tankId",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("doses.table.tank")} />,
+      cell: ({ row }) => tankCode(row.original.tankId),
+    },
+    {
+      accessorKey: "quantity",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("doses.table.quantity")} />,
+    },
+    {
+      accessorKey: "availableQuantity",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("doses.table.available")} />,
+    },
+    {
+      accessorKey: "qualityGrade",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("doses.table.quality")} />,
+      cell: ({ row }) => <Badge variant="outline">{row.original.qualityGrade ?? t("common.none")}</Badge>,
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [t, breeders, tanks]);
+
+  const insemColumns = useMemo<ColumnDef<InsemDto>[]>(() => [
+    {
+      accessorKey: "inseminationDate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("inseminacoes.table.date")} />,
+    },
+    {
+      accessorKey: "animalId",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("inseminacoes.table.animal")} />,
+      cell: ({ row }) => <span className="font-mono">{animalTag(row.original.animalId)}</span>,
+    },
+    {
+      accessorKey: "doseId",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("inseminacoes.table.dose")} />,
+      cell: ({ row }) => (
+        <span className="font-mono">
+          {row.original.doseId
+            ? breederTag(doses.find((d) => d.id === row.original.doseId)?.breederId ?? "")
+            : t("common.none")}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "result",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("inseminacoes.table.result")} />,
+      cell: ({ row }) => <Badge variant={resultVariant[row.original.result]}>{t(`result.${row.original.result}`)}</Badge>,
+    },
+    {
+      accessorKey: "pregnancyConfirmedAt",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("inseminacoes.table.confirmation")} />,
+      cell: ({ row }) => row.original.pregnancyConfirmedAt ?? t("common.none"),
+    },
+    {
+      accessorKey: "expectedBirthDate",
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t("inseminacoes.table.expectedBirth")} />,
+      cell: ({ row }) => row.original.expectedBirthDate ?? t("common.none"),
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [t, doses, breeders]);
 
   // Envolve uma mutação com toast de sucesso/erro e fecho do dialog.
   const runSave = async (fn: () => Promise<unknown>, edit: boolean, close: () => void) => {
@@ -280,7 +470,7 @@ export default function Inseminacao() {
 
         {/* ============ CENTROS ============ */}
         <TabsContent value="centros">
-          <AdminCard title={t("centros.title")} loading={loadingCenters} isEmpty={!loadingCenters && centers.length === 0} emptyMessage={t("centros.empty")}>
+          <AdminCard title={t("centros.title")}>
             <div className="flex justify-end mb-3">
               {canEdit && (
                 <Button onClick={() => { setCenterEdit(null); setCenterOpen(true); }} size="sm">
@@ -288,33 +478,29 @@ export default function Inseminacao() {
                 </Button>
               )}
             </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>{t("centros.table.name")}</TableHead><TableHead>{t("centros.table.location")}</TableHead><TableHead>{t("centros.table.status")}</TableHead>
-                {canEdit && <TableHead className="w-24">{t("common.actions")}</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {centers.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell>{c.location ?? t("common.none")}</TableCell>
-                    <TableCell><Badge variant={c.isActive ? "default" : "secondary"}>{c.isActive ? t("centros.status.active") : t("centros.status.inactive")}</Badge></TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setCenterEdit(c); setCenterOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "centro", id: c.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={centerColumns}
+              data={centersPage.pageRows}
+              loading={loadingCenters}
+              pageCount={centersPage.pageCount}
+              pagination={centersPage.pagination}
+              onPaginationChange={centersPage.setPagination}
+              rowCount={centers.length}
+              emptyMessage={t("centros.empty")}
+              hideToolbar
+              renderRowActions={canEdit ? (c) => (
+                <>
+                  <Button size="icon" variant="ghost" onClick={() => { setCenterEdit(c); setCenterOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "centro", id: c.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </>
+              ) : undefined}
+            />
           </AdminCard>
         </TabsContent>
 
         {/* ============ REPRODUTORES ============ */}
         <TabsContent value="reprodutores">
-          <AdminCard title={t("reprodutores.title")} loading={loadingBreeders} isEmpty={!loadingBreeders && breeders.length === 0} emptyMessage={t("reprodutores.empty")}>
+          <AdminCard title={t("reprodutores.title")}>
             <div className="flex justify-end mb-3">
               {canEdit && (
                 <Button onClick={() => { setBreederEdit(null); setBreederOpen(true); }} size="sm" disabled={centers.length === 0}>
@@ -322,37 +508,29 @@ export default function Inseminacao() {
                 </Button>
               )}
             </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>{t("reprodutores.table.tag")}</TableHead><TableHead>{t("reprodutores.table.name")}</TableHead><TableHead>{t("reprodutores.table.species")}</TableHead>
-                <TableHead>{t("reprodutores.table.breed")}</TableHead><TableHead>{t("reprodutores.table.center")}</TableHead><TableHead>{t("reprodutores.table.status")}</TableHead>
-                {canEdit && <TableHead className="w-24">{t("common.actions")}</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {breeders.map((b) => (
-                  <TableRow key={b.id}>
-                    <TableCell className="font-mono">{b.tag}</TableCell>
-                    <TableCell>{b.name ?? t("common.none")}</TableCell>
-                    <TableCell>{b.species}</TableCell>
-                    <TableCell>{b.breed ?? t("common.none")}</TableCell>
-                    <TableCell>{centerName(b.centerId)}</TableCell>
-                    <TableCell><Badge variant={b.status === "activo" ? "default" : "secondary"}>{t(`breederStatus.${b.status}`)}</Badge></TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setBreederEdit(b); setBreederOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "reprodutor", id: b.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={breederColumns}
+              data={breedersPage.pageRows}
+              loading={loadingBreeders}
+              pageCount={breedersPage.pageCount}
+              pagination={breedersPage.pagination}
+              onPaginationChange={breedersPage.setPagination}
+              rowCount={breeders.length}
+              emptyMessage={t("reprodutores.empty")}
+              hideToolbar
+              renderRowActions={canEdit ? (b) => (
+                <>
+                  <Button size="icon" variant="ghost" onClick={() => { setBreederEdit(b); setBreederOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "reprodutor", id: b.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </>
+              ) : undefined}
+            />
           </AdminCard>
         </TabsContent>
 
         {/* ============ TANQUES ============ */}
         <TabsContent value="tanques">
-          <AdminCard title={t("tanques.title")} loading={loadingTanks} isEmpty={!loadingTanks && tanks.length === 0} emptyMessage={t("tanques.empty")}>
+          <AdminCard title={t("tanques.title")}>
             <div className="flex justify-end mb-3">
               {canEdit && (
                 <Button onClick={() => { setTankEdit(null); setTankOpen(true); }} size="sm" disabled={centers.length === 0}>
@@ -360,40 +538,29 @@ export default function Inseminacao() {
                 </Button>
               )}
             </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>{t("tanques.table.code")}</TableHead><TableHead>{t("tanques.table.center")}</TableHead><TableHead>{t("tanques.table.capacity")}</TableHead>
-                <TableHead>{t("tanques.table.level")}</TableHead><TableHead>{t("tanques.table.lastRefill")}</TableHead><TableHead>{t("tanques.table.status")}</TableHead>
-                {canEdit && <TableHead className="w-24">{t("common.actions")}</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {tanks.map((tk) => {
-                  const low = tk.currentLevelL <= tk.minLevelL;
-                  return (
-                    <TableRow key={tk.id}>
-                      <TableCell className="font-mono">{tk.code}</TableCell>
-                      <TableCell>{centerName(tk.centerId)}</TableCell>
-                      <TableCell>{tk.capacityL}</TableCell>
-                      <TableCell>{tk.currentLevelL} L</TableCell>
-                      <TableCell>{tk.lastRefillDate ?? t("common.none")}</TableCell>
-                      <TableCell>{low ? <Badge variant="destructive">{t("tanques.low")}</Badge> : <Badge variant="default">{t("tanques.ok")}</Badge>}</TableCell>
-                      {canEdit && (
-                        <TableCell>
-                          <Button size="icon" variant="ghost" onClick={() => { setTankEdit(tk); setTankOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "tanque", id: tk.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={tankColumns}
+              data={tanksPage.pageRows}
+              loading={loadingTanks}
+              pageCount={tanksPage.pageCount}
+              pagination={tanksPage.pagination}
+              onPaginationChange={tanksPage.setPagination}
+              rowCount={tanks.length}
+              emptyMessage={t("tanques.empty")}
+              hideToolbar
+              renderRowActions={canEdit ? (tk) => (
+                <>
+                  <Button size="icon" variant="ghost" onClick={() => { setTankEdit(tk); setTankOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "tanque", id: tk.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </>
+              ) : undefined}
+            />
           </AdminCard>
         </TabsContent>
 
         {/* ============ DOSES ============ */}
         <TabsContent value="doses">
-          <AdminCard title={t("doses.title")} loading={loadingDoses} isEmpty={!loadingDoses && doses.length === 0} emptyMessage={t("doses.empty")}>
+          <AdminCard title={t("doses.title")}>
             <div className="flex justify-end mb-3">
               {canEdit && (
                 <Button onClick={() => { setDoseEdit(null); setDoseOpen(true); }} size="sm" disabled={breeders.length === 0}>
@@ -401,37 +568,29 @@ export default function Inseminacao() {
                 </Button>
               )}
             </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>{t("doses.table.date")}</TableHead><TableHead>{t("doses.table.breeder")}</TableHead><TableHead>{t("doses.table.tank")}</TableHead>
-                <TableHead>{t("doses.table.quantity")}</TableHead><TableHead>{t("doses.table.available")}</TableHead><TableHead>{t("doses.table.quality")}</TableHead>
-                {canEdit && <TableHead className="w-24">{t("common.actions")}</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {doses.map((d) => (
-                  <TableRow key={d.id}>
-                    <TableCell>{d.collectionDate}</TableCell>
-                    <TableCell className="font-mono">{breederTag(d.breederId)}</TableCell>
-                    <TableCell>{tankCode(d.tankId)}</TableCell>
-                    <TableCell>{d.quantity}</TableCell>
-                    <TableCell>{d.availableQuantity}</TableCell>
-                    <TableCell><Badge variant="outline">{d.qualityGrade ?? t("common.none")}</Badge></TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setDoseEdit(d); setDoseOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "dose", id: d.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={doseColumns}
+              data={dosesPage.pageRows}
+              loading={loadingDoses}
+              pageCount={dosesPage.pageCount}
+              pagination={dosesPage.pagination}
+              onPaginationChange={dosesPage.setPagination}
+              rowCount={doses.length}
+              emptyMessage={t("doses.empty")}
+              hideToolbar
+              renderRowActions={canEdit ? (d) => (
+                <>
+                  <Button size="icon" variant="ghost" onClick={() => { setDoseEdit(d); setDoseOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "dose", id: d.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </>
+              ) : undefined}
+            />
           </AdminCard>
         </TabsContent>
 
         {/* ============ INSEMINAÇÕES ============ */}
         <TabsContent value="inseminacoes">
-          <AdminCard title={t("inseminacoes.title")} loading={loadingInsems} isEmpty={!loadingInsems && insems.length === 0} emptyMessage={t("inseminacoes.empty")}>
+          <AdminCard title={t("inseminacoes.title")}>
             <div className="flex justify-end mb-3">
               {canEdit && (
                 <Button onClick={() => { setInsemEdit(null); setInsemOpen(true); }} size="sm" disabled={animals.length === 0}>
@@ -439,31 +598,23 @@ export default function Inseminacao() {
                 </Button>
               )}
             </div>
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>{t("inseminacoes.table.date")}</TableHead><TableHead>{t("inseminacoes.table.animal")}</TableHead><TableHead>{t("inseminacoes.table.dose")}</TableHead>
-                <TableHead>{t("inseminacoes.table.result")}</TableHead><TableHead>{t("inseminacoes.table.confirmation")}</TableHead><TableHead>{t("inseminacoes.table.expectedBirth")}</TableHead>
-                {canEdit && <TableHead className="w-24">{t("common.actions")}</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {insems.map((i) => (
-                  <TableRow key={i.id}>
-                    <TableCell>{i.inseminationDate}</TableCell>
-                    <TableCell className="font-mono">{animalTag(i.animalId)}</TableCell>
-                    <TableCell className="font-mono">{i.doseId ? breederTag(doses.find((d) => d.id === i.doseId)?.breederId ?? "") : t("common.none")}</TableCell>
-                    <TableCell><Badge variant={resultVariant[i.result]}>{t(`result.${i.result}`)}</Badge></TableCell>
-                    <TableCell>{i.pregnancyConfirmedAt ?? t("common.none")}</TableCell>
-                    <TableCell>{i.expectedBirthDate ?? t("common.none")}</TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button size="icon" variant="ghost" onClick={() => { setInsemEdit(i); setInsemOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "registo", id: i.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={insemColumns}
+              data={insemsPage.pageRows}
+              loading={loadingInsems}
+              pageCount={insemsPage.pageCount}
+              pagination={insemsPage.pagination}
+              onPaginationChange={insemsPage.setPagination}
+              rowCount={insems.length}
+              emptyMessage={t("inseminacoes.empty")}
+              hideToolbar
+              renderRowActions={canEdit ? (i) => (
+                <>
+                  <Button size="icon" variant="ghost" onClick={() => { setInsemEdit(i); setInsemOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => setDeleteTarget({ kind: "registo", id: i.id })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </>
+              ) : undefined}
+            />
           </AdminCard>
         </TabsContent>
       </Tabs>
