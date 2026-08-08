@@ -6,7 +6,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { ROLE_LABEL, type ModuleKey } from "@/lib/permissions";
 import { pageTransition } from "@/lib/motion";
 import {
-  LayoutDashboard, Users, Building2, LogOut, ChevronLeft, FlaskConical, TestTubes,
+  LayoutDashboard, Users, Building2, LogOut, ChevronLeft, FlaskConical,
   ClipboardList, Package, Pill, Boxes, CalendarRange, Truck, MapPin,
   ClipboardCheck, AlertTriangle, Shield, Menu, X, UserCircle, Search,
   Sparkles, Boxes as BoxesIcon, LineChart, ShieldCheck, ScrollText, MessageSquare, Images, Newspaper, Bell,
@@ -59,8 +59,7 @@ const navGroups: NavGroup[] = [
     colorClass: "text-[hsl(175,55%,55%)]",
     items: [
       { icon: FlaskConical, label: "Laboratórios", path: "/admin/laboratorios", module: "laboratorios" },
-      { icon: TestTubes, label: "Análises", path: "/admin/analises", module: "analises" },
-      { icon: ClipboardList, label: "Resultados", path: "/admin/resultados", module: "resultados" },
+      { icon: ClipboardList, label: "Requisições", path: "/admin/requisicoes", module: "analises" },
       { icon: Package, label: "Insumos", path: "/admin/insumos", module: "insumos" },
     ],
   },

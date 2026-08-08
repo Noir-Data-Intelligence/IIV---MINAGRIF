@@ -1,0 +1,82 @@
+{
+  "loading": "Loading...",
+  "back": "Back to Requisitions",
+  "notFound": {
+    "title": "Requisition not found"
+  },
+  "sections": {
+    "amostras": "Samples",
+    "info": "Requisition Information",
+    "laboratorio": "Laboratory Area"
+  },
+  "tipoSujeito": {
+    "animal": "Animal",
+    "humano": "Human"
+  },
+  "amostraStatus": {
+    "recebida": "Received",
+    "aceite": "Accepted",
+    "rejeitada": "Rejected"
+  },
+  "boletimStatus": {
+    "em_analise": "In Analysis",
+    "resultado_registado": "Result Registered",
+    "em_validacao": "In Validation",
+    "aprovado": "Approved",
+    "comunicado": "Communicated"
+  },
+  "actions": {
+    "aceitar": "Accept",
+    "rejeitar": "Reject",
+    "registarResultado": "Register Result",
+    "validar": "Validate",
+    "comunicar": "Communicate"
+  },
+  "rejeicao": {
+    "motivo": "Reason",
+    "assinatura": "Signature"
+  },
+  "validacao": {
+    "progresso": "{{count}} of {{required}} validators",
+    "aprovadoPor": "Approved by",
+    "comunicadoEm": "Communicated on"
+  },
+  "info": {
+    "cliente": "Client",
+    "contacto": "Contact",
+    "veterinario": "Veterinarian",
+    "criadaEm": "Created on",
+    "consentimento": "Consent",
+    "consentimentoSim": "Confirmed",
+    "consentimentoNao": "Missing",
+    "area": "Area",
+    "validadores": "Validators required",
+    "sla": "SLA",
+    "slaHoras": "{{count}} hours"
+  },
+  "rejeitarDialog": {
+    "title": "Reject Sample",
+    "criterio": "Rejection criterion",
+    "criterioPlaceholder": "Select the reason",
+    "detalhe": "Detail (optional)",
+    "assinatura": "Responsible's signature",
+    "cancel": "Cancel",
+    "confirm": "Confirm Rejection"
+  },
+  "resultadoDialog": {
+    "title": "Register Result",
+    "parametro": "Parameter",
+    "valor": "Value",
+    "add": "Add parameter",
+    "cancel": "Cancel",
+    "confirm": "Save Result"
+  },
+  "toast": {
+    "aceite": "Sample accepted — internal bulletin opened",
+    "rejeitada": "Sample rejected",
+    "resultadoRegistado": "Result registered",
+    "validado": "Validation registered",
+    "comunicado": "Bulletin communicated",
+    "error": "An error occurred. Please try again."
+  }
+}

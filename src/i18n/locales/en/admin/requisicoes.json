@@ -1,0 +1,68 @@
+{
+  "page": {
+    "title": "Requisitions",
+    "description": "Sample intake — batch requisitions and laboratory triage"
+  },
+  "kpis": {
+    "total": "Total Requisitions",
+    "totalCaption": "Registered in the system",
+    "pendentes": "Pending Samples",
+    "pendentesCaption": "Awaiting triage",
+    "amostras": "Samples in Batch",
+    "amostrasCaption": "On this page"
+  },
+  "actions": {
+    "new": "New Requisition",
+    "view": "View"
+  },
+  "table": {
+    "numero": "No.",
+    "cliente": "Client",
+    "laboratorio": "Area",
+    "amostras": "Samples",
+    "data": "Date",
+    "empty": "No requisitions found.",
+    "emptyCell": "—"
+  },
+  "dialog": {
+    "createTitle": "New Requisition"
+  },
+  "form": {
+    "labels": {
+      "laboratorio": "Laboratory area",
+      "tipoSujeito": "Subject type",
+      "clienteNome": "Client name",
+      "clienteContacto": "Contact",
+      "veterinarioResponsavel": "Responsible veterinarian",
+      "consentimento": "Client gave consent",
+      "assinaturaCliente": "Client signature"
+    },
+    "placeholders": {
+      "laboratorio": "Select the area",
+      "clienteNome": "Client/farm name",
+      "clienteContacto": "Phone or email",
+      "veterinarioResponsavel": "Veterinarian's name",
+      "assinaturaCliente": "Confirmation name/signature"
+    },
+    "tipoSujeito": {
+      "animal": "Animal",
+      "humano": "Human"
+    },
+    "amostras": {
+      "title": "Batch samples",
+      "add": "Add sample",
+      "tipoAmostra": "Sample type",
+      "tipoAmostraPlaceholder": "e.g. Blood, Feces, Swab",
+      "origemMatriz": "Origin/matrix",
+      "pontoColheita": "Collection point",
+      "colhidaPor": "Collected by"
+    },
+    "submitCreate": "Create Requisition",
+    "submitting": "Saving...",
+    "cancel": "Cancel"
+  },
+  "toast": {
+    "createSuccess": "Requisition created successfully",
+    "error": "An error occurred. Please try again."
+  }
+}

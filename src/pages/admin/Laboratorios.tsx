@@ -43,9 +43,12 @@ if (!i18n.hasResourceBundle("en", "admin-laboratorios"))
 
 function buildLaboratorioSchema(t: TFunction) {
   return z.object({
+    code: z.string().trim().min(1, t("validation.codeRequired")).max(20),
     name: z.string().trim().min(2, t("validation.nameShort")),
     type: z.string().trim().min(2, t("validation.typeRequired")),
     description: z.string().trim().optional(),
+    validadorCount: z.coerce.number().int().min(1).max(5),
+    slaHoras: z.coerce.number().int().min(1).optional(),
     isActive: z.boolean(),
   });
 }
@@ -81,9 +84,12 @@ export default function Laboratorios() {
     () =>
       editItem
         ? {
+            code: editItem.code,
             name: editItem.name,
-            type: editItem.type,
+            type: editItem.type ?? "",
             description: editItem.description ?? "",
+            validadorCount: editItem.validadorCount,
+            slaHoras: editItem.slaHoras ?? undefined,
             isActive: editItem.isActive,
           }
         : undefined,
@@ -93,13 +99,16 @@ export default function Laboratorios() {
   const entityForm = useEntityForm({
     schema: laboratorioSchema,
     initialValues,
-    defaultValues: { name: "", type: "", description: "", isActive: true },
+    defaultValues: { code: "", name: "", type: "", description: "", validadorCount: 2, isActive: true },
     open: formOpen,
     onSubmit: async (values) => {
       const payload = {
+        code: values.code,
         name: values.name,
         type: values.type,
         description: values.description?.trim() ? values.description.trim() : null,
+        validadorCount: values.validadorCount,
+        slaHoras: values.slaHoras ?? null,
         isActive: values.isActive,
       };
       if (editItem) {
@@ -134,6 +143,11 @@ export default function Laboratorios() {
   const columns = useMemo<ColumnDef<LaboratorioDto>[]>(
     () => [
       {
+        accessorKey: "code",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.code")} />,
+        cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span>,
+      },
+      {
         accessorKey: "name",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.name")} />,
         cell: ({ row }) => (
@@ -148,9 +162,14 @@ export default function Laboratorios() {
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.type")} />,
         cell: ({ row }) => (
           <Badge variant="secondary" className="capitalize">
-            {row.original.type.replace(/_/g, " ")}
+            {(row.original.type ?? "—").replace(/_/g, " ")}
           </Badge>
         ),
+      },
+      {
+        accessorKey: "validadorCount",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.validadorCount")} />,
+        cell: ({ row }) => <Badge variant="outline">{row.original.validadorCount}</Badge>,
       },
       {
         accessorKey: "isActive",
@@ -259,19 +278,34 @@ export default function Laboratorios() {
       >
         {(form) => (
           <>
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("form.labels.name")}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t("form.placeholders.name")} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.code")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.code")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.name")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.name")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="type"
@@ -285,6 +319,34 @@ export default function Laboratorios() {
                 </FormItem>
               )}
             />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="validadorCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.validadorCount")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} max={5} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slaHoras"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.slaHoras")}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} placeholder={t("form.placeholders.slaHoras")} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="description"
@@ -333,12 +395,16 @@ export default function Laboratorios() {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <span className="text-muted-foreground">{t("details.code")}:</span>
+                  <p className="font-medium font-mono">{viewItem.code}</p>
+                </div>
+                <div>
                   <span className="text-muted-foreground">{t("details.name")}:</span>
                   <p className="font-medium">{viewItem.name}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">{t("details.type")}:</span>
-                  <p className="font-medium capitalize">{viewItem.type.replace(/_/g, " ")}</p>
+                  <p className="font-medium capitalize">{(viewItem.type ?? "—").replace(/_/g, " ")}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">{t("details.status")}:</span>
@@ -348,6 +414,16 @@ export default function Laboratorios() {
                     </Badge>
                   </p>
                 </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.validadorCount")}:</span>
+                  <p className="font-medium">{viewItem.validadorCount}</p>
+                </div>
+                {viewItem.slaHoras && (
+                  <div>
+                    <span className="text-muted-foreground">{t("details.slaHoras")}:</span>
+                    <p className="font-medium">{viewItem.slaHoras}h</p>
+                  </div>
+                )}
                 <div>
                   <span className="text-muted-foreground">{t("details.createdAt")}:</span>
                   <p className="font-medium">

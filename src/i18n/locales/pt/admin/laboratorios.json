@@ -19,15 +19,20 @@
   },
   "form": {
     "labels": {
+      "code": "Código",
       "name": "Nome",
       "type": "Tipo",
       "description": "Descrição",
+      "validadorCount": "Nº de validadores",
+      "slaHoras": "SLA (horas)",
       "isActive": "Laboratório activo"
     },
     "placeholders": {
+      "code": "Ex: AB, AP, BM",
       "name": "Ex: Laboratório de Virologia",
       "type": "Ex: virologia, bacteriologia",
-      "description": "Descrição do laboratório"
+      "description": "Descrição do laboratório",
+      "slaHoras": "Ex: 72"
     },
     "submitCreate": "Criar Laboratório",
     "submitEdit": "Guardar Alterações",
@@ -40,17 +45,22 @@
     "detailsTitle": "Detalhes do Laboratório"
   },
   "details": {
+    "code": "Código",
     "name": "Nome",
     "type": "Tipo",
     "status": "Estado",
     "description": "Descrição",
+    "validadorCount": "Nº de validadores",
+    "slaHoras": "SLA",
     "createdAt": "Criado em"
   },
   "table": {
+    "code": "Código",
     "name": "Nome",
     "type": "Tipo",
     "status": "Estado",
     "description": "Descrição",
+    "validadorCount": "Validadores",
     "active": "Activo",
     "inactive": "Inactivo",
     "empty": "Nenhum laboratório encontrado.",
@@ -58,6 +68,7 @@
     "emptyCell": "—"
   },
   "validation": {
+    "codeRequired": "Indique o código da área (ex: AB, AP)",
     "nameShort": "Nome demasiado curto",
     "typeRequired": "Indique o tipo de laboratório"
   },

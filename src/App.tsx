@@ -37,8 +37,8 @@ const PainelDetalhe = lazy(() => import("./pages/admin/PainelDetalhe"));
 const Utilizadores = lazy(() => import("./pages/admin/Utilizadores"));
 const Departamentos = lazy(() => import("./pages/admin/Departamentos"));
 const Laboratorios = lazy(() => import("./pages/admin/Laboratorios"));
-const Analises = lazy(() => import("./pages/admin/Analises"));
-const Resultados = lazy(() => import("./pages/admin/Resultados"));
+const Requisicoes = lazy(() => import("./pages/admin/Requisicoes"));
+const RequisicaoDetalhe = lazy(() => import("./pages/admin/RequisicaoDetalhe"));
 const Insumos = lazy(() => import("./pages/admin/Insumos"));
 const Produtos = lazy(() => import("./pages/admin/Produtos"));
 const Lotes = lazy(() => import("./pages/admin/Lotes"));
@@ -125,8 +125,8 @@ const App = () => (
               <Route path="utilizadores" element={<RoleGuard module="utilizadores"><Utilizadores /></RoleGuard>} />
               <Route path="departamentos" element={<RoleGuard module="departamentos"><Departamentos /></RoleGuard>} />
               <Route path="laboratorios" element={<RoleGuard module="laboratorios"><Laboratorios /></RoleGuard>} />
-              <Route path="analises" element={<RoleGuard module="analises"><Analises /></RoleGuard>} />
-              <Route path="resultados" element={<RoleGuard module="resultados"><Resultados /></RoleGuard>} />
+              <Route path="requisicoes" element={<RoleGuard module="analises"><Requisicoes /></RoleGuard>} />
+              <Route path="requisicoes/:id" element={<RoleGuard module="analises"><RequisicaoDetalhe /></RoleGuard>} />
               <Route path="insumos" element={<RoleGuard module="insumos"><Insumos /></RoleGuard>} />
               <Route path="produtos" element={<RoleGuard module="produtos"><Produtos /></RoleGuard>} />
               <Route path="lotes" element={<RoleGuard module="lotes"><Lotes /></RoleGuard>} />

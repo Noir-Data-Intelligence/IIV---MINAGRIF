@@ -85,21 +85,40 @@ export const endpoints = {
   },
 
   // --- LABORATÓRIO ---------------------------------------------------------
+  // Onda 3: domínio real da REQ-005 (requisições em lote -> amostras ->
+  // boletins), substitui o antigo par analises/resultados (CRUD genérico
+  // herdado do Supabase) — ver SIG-IIV-MEMORIA-PROJETO.md secção 15.
   laboratorios: {
     list: "/laboratorios",
     detail: (id: string) => `/laboratorios/${id}`,
   },
-  analises: {
-    list: "/analises",
-    detail: (id: string) => `/analises/${id}`,
+  requisicoes: {
+    list: "/requisicoes",
+    detail: (id: string) => `/requisicoes/${id}`,
+  },
+  amostras: {
+    list: "/amostras",
+    detail: (id: string) => `/amostras/${id}`,
+    aceitar: (id: string) => `/amostras/${id}/aceitar`,
+    rejeitar: (id: string) => `/amostras/${id}/rejeitar`,
+  },
+  boletins: {
+    list: "/boletins",
+    detail: (id: string) => `/boletins/${id}`,
+    resultado: (id: string) => `/boletins/${id}/resultado`,
+    validar: (id: string) => `/boletins/${id}/validar`,
+    comunicar: (id: string) => `/boletins/${id}/comunicar`,
+  },
+  criteriosRejeicao: {
+    list: "/criterios-rejeicao",
+    detail: (id: string) => `/criterios-rejeicao/${id}`,
+  },
+  inqueritosSatisfacao: {
+    list: "/inqueritos-satisfacao",
   },
   insumos: {
     list: "/insumos",
     detail: (id: string) => `/insumos/${id}`,
-  },
-  resultados: {
-    list: "/resultados",
-    detail: (id: string) => `/resultados/${id}`,
   },
 
   // --- QUALIDADE ------------------------------------------------------------

@@ -12,7 +12,10 @@ import { rbacHandlers } from "@/mocks/handlers/rbac";
 import { laboratoriosHandlers } from "@/mocks/handlers/laboratorios";
 import { analisesHandlers } from "@/mocks/handlers/analises";
 import { insumosHandlers } from "@/mocks/handlers/insumos";
-import { resultadosHandlers } from "@/mocks/handlers/resultados";
+import { requisicoesHandlers } from "@/mocks/handlers/requisicoes";
+import { amostrasHandlers } from "@/mocks/handlers/amostras";
+import { boletinsHandlers } from "@/mocks/handlers/boletins";
+import { criteriosRejeicaoHandlers } from "@/mocks/handlers/criteriosRejeicao";
 import { produtosHandlers } from "@/mocks/handlers/produtos";
 import { lotesHandlers } from "@/mocks/handlers/lotes";
 import { planeamentoHandlers } from "@/mocks/handlers/planeamento";
@@ -64,7 +67,10 @@ export const handlers = [
   ...laboratoriosHandlers,
   ...analisesHandlers,
   ...insumosHandlers,
-  ...resultadosHandlers,
+  ...requisicoesHandlers,
+  ...amostrasHandlers,
+  ...boletinsHandlers,
+  ...criteriosRejeicaoHandlers,
   ...produtosHandlers,
   ...lotesHandlers,
   ...planeamentoHandlers,

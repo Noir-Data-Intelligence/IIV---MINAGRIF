@@ -1,15 +1,21 @@
 /**
- * DTO de Laboratório — contrato exacto do JSON REST para o recurso `laboratorios`.
+ * DTO de Laboratório — contrato exacto do JSON REST para o recurso `laboratorios`
+ * (espelha `App\Http\Resources\LaboratorioResource` no backend Laravel).
  *
- * Espelha a tabela Supabase `laboratories` (name/type/description/is_active/created_at),
- * mas em camelCase tal como o backend Laravel os devolverá via API Resources
- * (`is_active` -> `isActive`, `created_at` -> `createdAt`).
+ * Catálogo das 8 áreas laboratoriais + Sala de Incubação (REQ-005 §8). Os
+ * campos `validadorCount`/`slaHoras`/`validadoresNomeados` parametrizam o
+ * `LabWorkflowService` do backend (validação dupla/tripla, lista nomeada da
+ * Bacteriologia, SLA por disciplina) — ver Onda 3 na SIG-IIV-MEMORIA-PROJETO.md.
  */
 export interface LaboratorioDto {
   id: string;
+  code: string;
   name: string;
-  type: string;
+  type: string | null;
   description: string | null;
+  validadorCount: number;
+  slaHoras: number | null;
+  validadoresNomeados: string[] | null;
   isActive: boolean;
   createdAt: string;
 }

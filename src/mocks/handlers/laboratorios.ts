@@ -26,7 +26,8 @@ export const laboratoriosHandlers = [
       rows = rows.filter(
         (l) =>
           l.name.toLowerCase().includes(search) ||
-          l.type.toLowerCase().includes(search) ||
+          (l.type ?? "").toLowerCase().includes(search) ||
+          l.code.toLowerCase().includes(search) ||
           (l.description ?? "").toLowerCase().includes(search),
       );
     }
@@ -48,9 +49,13 @@ export const laboratoriosHandlers = [
     const payload = (await request.json().catch(() => ({}))) as Partial<LaboratorioDto>;
     const created: LaboratorioDto = {
       id: `lab-${Date.now()}`,
+      code: payload.code ?? "XX",
       name: payload.name ?? "Sem nome",
       type: payload.type ?? "geral",
       description: payload.description ?? null,
+      validadorCount: payload.validadorCount ?? 2,
+      slaHoras: payload.slaHoras ?? null,
+      validadoresNomeados: payload.validadoresNomeados ?? null,
       isActive: payload.isActive ?? true,
       createdAt: new Date().toISOString(),
     };

@@ -19,15 +19,20 @@
   },
   "form": {
     "labels": {
+      "code": "Code",
       "name": "Name",
       "type": "Type",
       "description": "Description",
+      "validadorCount": "Validators required",
+      "slaHoras": "SLA (hours)",
       "isActive": "Active laboratory"
     },
     "placeholders": {
+      "code": "e.g. AB, AP, BM",
       "name": "e.g. Virology Laboratory",
       "type": "e.g. virology, bacteriology",
-      "description": "Laboratory description"
+      "description": "Laboratory description",
+      "slaHoras": "e.g. 72"
     },
     "submitCreate": "Create Laboratory",
     "submitEdit": "Save Changes",
@@ -40,17 +45,22 @@
     "detailsTitle": "Laboratory Details"
   },
   "details": {
+    "code": "Code",
     "name": "Name",
     "type": "Type",
     "status": "Status",
     "description": "Description",
+    "validadorCount": "Validators required",
+    "slaHoras": "SLA",
     "createdAt": "Created on"
   },
   "table": {
+    "code": "Code",
     "name": "Name",
     "type": "Type",
     "status": "Status",
     "description": "Description",
+    "validadorCount": "Validators",
     "active": "Active",
     "inactive": "Inactive",
     "empty": "No laboratories found.",
@@ -58,6 +68,7 @@
     "emptyCell": "—"
   },
   "validation": {
+    "codeRequired": "Please provide the area code (e.g. AB, AP)",
     "nameShort": "Name too short",
     "typeRequired": "Please provide the laboratory type"
   },

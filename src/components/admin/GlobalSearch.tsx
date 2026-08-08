@@ -18,13 +18,13 @@ import { listDocumentos } from "@/services/api/documentos";
 import { listProcesses } from "@/services/api/processes";
 import { listNaoConformidades } from "@/services/api/naoConformidades";
 import { listAuditorias } from "@/services/api/auditorias";
-import { listAnalises } from "@/services/api/analises";
+import { listRequisicoes } from "@/services/api/requisicoes";
 import { listNoticias } from "@/services/api/noticias";
 import { listLegislacaoAdmin } from "@/services/api/legislacao";
 import { listContactMessages } from "@/services/api/contactMessages";
 import { listHeroSlidesAdmin } from "@/services/api/heroSlides";
 import {
-  LayoutDashboard, Users, Building2, FlaskConical, TestTubes, ClipboardList,
+  LayoutDashboard, Users, Building2, FlaskConical, ClipboardList,
   Package, Pill, Boxes, CalendarRange, Truck, MapPin, ClipboardCheck,
   AlertTriangle, Shield, UserCircle, Search, FileStack, Workflow, BarChart3,
   Settings, Newspaper, Scale, Mail, Images, History, Clock,
@@ -40,8 +40,7 @@ const PAGES: PageItem[] = [
   { label: "Departamentos", path: "/admin/departamentos", module: "departamentos", icon: Building2, group: "Geral" },
   { label: "Meu Perfil", path: "/admin/perfil", module: "perfil", icon: UserCircle, group: "Geral" },
   { label: "Laboratórios", path: "/admin/laboratorios", module: "laboratorios", icon: FlaskConical, group: "Laboratório" },
-  { label: "Análises", path: "/admin/analises", module: "analises", icon: TestTubes, group: "Laboratório" },
-  { label: "Resultados", path: "/admin/resultados", module: "resultados", icon: ClipboardList, group: "Laboratório" },
+  { label: "Requisições", path: "/admin/requisicoes", module: "analises", icon: ClipboardList, group: "Laboratório" },
   { label: "Insumos", path: "/admin/insumos", module: "insumos", icon: Package, group: "Laboratório" },
   { label: "Produtos", path: "/admin/produtos", module: "produtos", icon: Pill, group: "Produção" },
   { label: "Lotes", path: "/admin/lotes", module: "lotes", icon: Boxes, group: "Produção" },
@@ -265,10 +264,10 @@ export function GlobalSearch({ open, onOpenChange }: Props) {
         }
         if (canView("analises")) {
           tasks.push(
-            listAnalises({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
-              data.map((a) => ({
-                id: a.id, label: a.clientName, sub: `${a.analysisType} · ${a.status}`,
-                path: `/admin/analises?focus=${a.id}`, icon: TestTubes, group: "Análises",
+            listRequisicoes({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+              data.map((r) => ({
+                id: r.id, label: `${r.numero} · ${r.clienteNome}`, sub: `${r.amostras?.length ?? 0} amostra(s)`,
+                path: `/admin/requisicoes/${r.id}`, icon: ClipboardList, group: "Requisições",
               })),
             ),
           );

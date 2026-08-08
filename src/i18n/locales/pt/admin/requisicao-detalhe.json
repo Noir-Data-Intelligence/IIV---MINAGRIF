@@ -1,0 +1,82 @@
+{
+  "loading": "A carregar...",
+  "back": "Voltar às Requisições",
+  "notFound": {
+    "title": "Requisição não encontrada"
+  },
+  "sections": {
+    "amostras": "Amostras",
+    "info": "Informação da Requisição",
+    "laboratorio": "Área Laboratorial"
+  },
+  "tipoSujeito": {
+    "animal": "Animal",
+    "humano": "Humano"
+  },
+  "amostraStatus": {
+    "recebida": "Recebida",
+    "aceite": "Aceite",
+    "rejeitada": "Rejeitada"
+  },
+  "boletimStatus": {
+    "em_analise": "Em Análise",
+    "resultado_registado": "Resultado Registado",
+    "em_validacao": "Em Validação",
+    "aprovado": "Aprovado",
+    "comunicado": "Comunicado"
+  },
+  "actions": {
+    "aceitar": "Aceitar",
+    "rejeitar": "Rejeitar",
+    "registarResultado": "Registar Resultado",
+    "validar": "Validar",
+    "comunicar": "Comunicar"
+  },
+  "rejeicao": {
+    "motivo": "Motivo",
+    "assinatura": "Assinatura"
+  },
+  "validacao": {
+    "progresso": "{{count}} de {{required}} validadores",
+    "aprovadoPor": "Aprovado por",
+    "comunicadoEm": "Comunicado em"
+  },
+  "info": {
+    "cliente": "Cliente",
+    "contacto": "Contacto",
+    "veterinario": "Médico veterinário",
+    "criadaEm": "Criada em",
+    "consentimento": "Consentimento",
+    "consentimentoSim": "Confirmado",
+    "consentimentoNao": "Em falta",
+    "area": "Área",
+    "validadores": "Validadores exigidos",
+    "sla": "SLA",
+    "slaHoras": "{{count}} horas"
+  },
+  "rejeitarDialog": {
+    "title": "Rejeitar Amostra",
+    "criterio": "Critério de rejeição",
+    "criterioPlaceholder": "Seleccione o motivo",
+    "detalhe": "Detalhe (opcional)",
+    "assinatura": "Assinatura do responsável",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar Rejeição"
+  },
+  "resultadoDialog": {
+    "title": "Registar Resultado",
+    "parametro": "Parâmetro",
+    "valor": "Valor",
+    "add": "Adicionar parâmetro",
+    "cancel": "Cancelar",
+    "confirm": "Guardar Resultado"
+  },
+  "toast": {
+    "aceite": "Amostra aceite — boletim interno aberto",
+    "rejeitada": "Amostra rejeitada",
+    "resultadoRegistado": "Resultado registado",
+    "validado": "Validação registada",
+    "comunicado": "Boletim comunicado",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}
