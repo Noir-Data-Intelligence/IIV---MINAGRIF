@@ -36,11 +36,13 @@
   },
   "password": {
     "labels": {
+      "currentPassword": "Senha Actual",
       "newPassword": "Nova Senha",
       "confirmPassword": "Confirmar Nova Senha"
     },
     "placeholders": {
-      "newPassword": "Mínimo 6 caracteres",
+      "currentPassword": "A sua senha actual",
+      "newPassword": "Mínimo 8 caracteres",
       "confirmPassword": "Repita a nova senha"
     },
     "submit": "Alterar Senha"

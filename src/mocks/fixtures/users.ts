@@ -26,6 +26,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-02-14T09:15:00.000Z",
     roles: ["admin"],
     departmentIds: ["dep-0009"],
+    isActive: true,
   },
   {
     id: "usr-0002",
@@ -35,6 +36,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-04-18T10:20:00.000Z",
     roles: ["diretor"],
     departmentIds: ["dep-0005"],
+    isActive: true,
   },
   {
     id: "usr-0003",
@@ -44,6 +46,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-04-02T08:45:00.000Z",
     roles: ["director-laboratorio"],
     departmentIds: ["dep-0003"],
+    isActive: true,
   },
   {
     id: "usr-0004",
@@ -53,6 +56,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-06-12T15:40:00.000Z",
     roles: ["responsavel-qualidade"],
     departmentIds: ["dep-0007"],
+    isActive: true,
   },
   {
     id: "usr-0005",
@@ -62,6 +66,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-03-20T14:30:00.000Z",
     roles: ["tecnico"],
     departmentIds: ["dep-0002"],
+    isActive: true,
   },
   {
     id: "usr-0006",
@@ -71,6 +76,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-05-09T13:10:00.000Z",
     roles: ["recepcionista"],
     departmentIds: ["dep-0004"],
+    isActive: true,
   },
   {
     id: "usr-0007",
@@ -80,6 +86,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-08-01T09:35:00.000Z",
     roles: ["gestor-stock"],
     departmentIds: ["dep-0002"],
+    isActive: true,
   },
   {
     id: "usr-0008",
@@ -89,6 +96,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-08-20T14:05:00.000Z",
     roles: ["gestor-patrimonio"],
     departmentIds: ["dep-0009"],
+    isActive: true,
   },
   {
     id: "usr-0009",
@@ -98,6 +106,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-06-30T08:00:00.000Z",
     roles: ["gestor-financeiro"],
     departmentIds: ["dep-0008"],
+    isActive: true,
   },
   {
     id: "usr-0010",
@@ -107,6 +116,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-07-14T12:25:00.000Z",
     roles: ["gestor-rh"],
     departmentIds: ["dep-0010"],
+    isActive: true,
   },
   {
     id: "usr-0011",
@@ -116,6 +126,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-03-05T11:00:00.000Z",
     roles: ["gestor-estacao"],
     departmentIds: ["dep-0001"],
+    isActive: true,
   },
   {
     id: "usr-0012",
@@ -125,6 +136,7 @@ export let usersFixtures: UserDto[] = [
     createdAt: "2023-05-25T09:50:00.000Z",
     roles: ["isv"],
     departmentIds: ["dep-0006"],
+    isActive: true,
   },
 ];
 

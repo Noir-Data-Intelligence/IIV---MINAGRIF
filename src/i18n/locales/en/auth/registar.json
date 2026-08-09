@@ -3,7 +3,7 @@
   "brand": {
     "title": "Join the\nVeterinary\nResearch\nInstitute",
     "subtitle": "Create your account to access the integrated laboratory management system.",
-    "securityNote": "Your account will be verified by email before activation."
+    "securityNote": "Your account stays pending until an administrator approves it."
   },
   "footer": {
     "copyright": "© {{year}} IIV — All rights reserved"
@@ -16,7 +16,7 @@
     "emailLabel": "Institutional email",
     "emailPlaceholder": "name@iiv.gov.ao",
     "passwordLabel": "Password",
-    "passwordPlaceholder": "At least 6 characters",
+    "passwordPlaceholder": "At least 8 characters",
     "submitDefault": "Create Account",
     "submitLoading": "Signing up..."
   },
@@ -25,6 +25,6 @@
   "toast": {
     "errorTitle": "Sign-up error",
     "successTitle": "Account created!",
-    "successDescription": "Check your email to confirm your account."
+    "successDescription": "The account stays pending until an administrator approves it."
   }
 }

@@ -57,7 +57,7 @@ No `.env` (não versionado): `VITE_API_MOCK=false` e `VITE_API_URL=http://localh
 
 ## Deploy com Docker
 
-`docker-compose.yml` faz build da SPA (Vite, variáveis `VITE_*` como build args, inlined em tempo de build) e serve-a via nginx, atrás de um Traefik externo (rede `proxy`, já tem de existir — `docker network create proxy`). Por omissão liga-se ao backend real dockerizado (`../Back-end/docker-compose.yml`, mesmo padrão de rede/Traefik, subdomínio `api.` do mesmo domínio).
+`docker-compose.yml` faz build da SPA (Vite, variáveis `VITE_*` como build args, inlined em tempo de build) e serve-a via nginx, atrás de um Traefik externo (rede `proxy`, já tem de existir — `docker network create proxy`). Por omissão liga-se ao backend real dockerizado (`../Back-end/docker-compose.yml`) no **mesmo host** (`VITE_API_URL=/api`, relativo) — o Traefik encaminha `/api`/`/sanctum` desse host para o backend (ver labels do serviço `nginx` em `Back-end/docker-compose.yml`). Deliberadamente **não** um subdomínio `api.` próprio: um `SESSION_DOMAIN` com wildcard entre subdomínios foi identificado numa auditoria de segurança (2026-08-09) como vector de cookie tossing a partir de outro subdomínio da mesma agência — mesma origem elimina o problema.
 
 ```bash
 docker network create proxy   # só da primeira vez, se ainda não existir
@@ -67,7 +67,7 @@ docker compose up -d --build
 Ajustar via variáveis de ambiente antes do build (nenhuma tem segredos, mas `VITE_API_URL`/`VITE_API_MOCK` decidem se a app fala com o backend real ou com dados mock):
 
 ```bash
-VITE_API_MOCK=false VITE_API_URL=https://api.iiv.noirdataintelligence.com/api docker compose up -d --build
+VITE_API_MOCK=false VITE_API_URL=/api docker compose up -d --build
 ```
 
 ## Próximas Etapas

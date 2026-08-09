@@ -59,6 +59,7 @@ export const usersHandlers = [
       phone: payload.phone !== undefined ? payload.phone : current.phone,
       roles: payload.roles !== undefined ? payload.roles : current.roles,
       departmentIds: payload.departmentIds !== undefined ? payload.departmentIds : current.departmentIds,
+      isActive: payload.isActive !== undefined ? payload.isActive : current.isActive,
       // id/createdAt são imutáveis pelo cliente.
       id: current.id,
       createdAt: current.createdAt,

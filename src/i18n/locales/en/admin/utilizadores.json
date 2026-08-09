@@ -6,13 +6,16 @@
   "actions": {
     "permissionsMatrix": "Permissions matrix",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "approve": "Approve account"
   },
   "kpis": {
     "total": "Total Users",
     "totalCaption": "{{count}} departments",
     "admins": "Administrators",
     "adminsCaption": "With administrator role",
+    "pending": "Pending Accounts",
+    "pendingCaption": "Self-registered, awaiting approval",
     "noDept": "No Department",
     "noDeptCaption": "Awaiting assignment",
     "noRole": "No Role",
@@ -22,6 +25,9 @@
     "name": "Name",
     "roles": "Roles",
     "departments": "Departments",
+    "status": "Status",
+    "statusActive": "Active",
+    "statusPending": "Pending",
     "createdAt": "Registered on",
     "actions": "Actions",
     "empty": "No users found.",
@@ -44,8 +50,11 @@
       "fullName": "Full name",
       "phone": "Phone",
       "roles": "Roles",
-      "departments": "Departments"
+      "departments": "Departments",
+      "isActive": "Account active"
     },
+    "isActiveHintActive": "The user can sign in to the system.",
+    "isActiveHintPending": "Pending account — without this activation, the user cannot sign in.",
     "placeholders": {
       "phone": "+244 9XX XXX XXX"
     },
@@ -61,6 +70,7 @@
   "toast": {
     "updateSuccess": "User updated",
     "updateSuccessDescription": "The changes have been saved.",
+    "approveSuccessDescription": "The account has been activated and can now sign in.",
     "deleteSuccess": "User deleted",
     "deleteSuccessDescription": "The user record has been deleted.",
     "error": "An error occurred. Please try again."

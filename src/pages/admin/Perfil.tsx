@@ -54,6 +54,7 @@ export default function Perfil() {
   }, [perfil]);
 
   // --- Alteração de password ---
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
@@ -118,11 +119,11 @@ export default function Perfil() {
   };
 
   const handleChangePassword = async () => {
-    if (!newPassword || !confirmPassword) {
+    if (!currentPassword || !newPassword || !confirmPassword) {
       toast({ title: t("toast.error"), description: t("toast.passwordFillAll"), variant: "destructive" });
       return;
     }
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       toast({ title: t("toast.error"), description: t("toast.passwordTooShort"), variant: "destructive" });
       return;
     }
@@ -132,8 +133,9 @@ export default function Perfil() {
     }
     setChangingPassword(true);
     try {
-      await changePassword(newPassword);
+      await changePassword(currentPassword, newPassword);
       toast({ title: t("toast.passwordChanged"), description: t("toast.passwordChangedDescription") });
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch {
@@ -264,6 +266,17 @@ export default function Perfil() {
         <AdminCard title={t("card.changePassword")} icon={KeyRound}>
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">{t("password.labels.currentPassword")}</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder={t("password.placeholders.currentPassword")}
+                  autoComplete="current-password"
+                />
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">{t("password.labels.newPassword")}</Label>

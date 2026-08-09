@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Building2, Pencil, Shield, ShieldCheck, Trash2, UserPlus, Users, UserX } from "lucide-react";
+import { Building2, CheckCircle2, Clock, Pencil, Shield, ShieldCheck, Trash2, UserPlus, Users, UserX } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -20,6 +20,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -106,7 +107,8 @@ export default function Utilizadores() {
     const admins = allUsers.filter((u) => u.roles.includes("admin")).length;
     const withoutDept = allUsers.filter((u) => u.departmentIds.length === 0).length;
     const withoutRole = allUsers.filter((u) => u.roles.length === 0).length;
-    return { total, admins, withoutDept, withoutRole };
+    const pending = allUsers.filter((u) => !u.isActive).length;
+    return { total, admins, withoutDept, withoutRole, pending };
   }, [allUsers]);
 
   const updateUser = useUpdateUser();
@@ -129,6 +131,7 @@ export default function Utilizadores() {
   const [draftPhone, setDraftPhone] = useState("");
   const [draftRoles, setDraftRoles] = useState<Set<AppRole>>(new Set());
   const [draftDepts, setDraftDepts] = useState<Set<string>>(new Set());
+  const [draftActive, setDraftActive] = useState(true);
 
   // Delete confirm dialog state
   const [deleteTarget, setDeleteTarget] = useState<UserDto | null>(null);
@@ -139,6 +142,7 @@ export default function Utilizadores() {
     setDraftPhone(u.phone ?? "");
     setDraftRoles(new Set(u.roles));
     setDraftDepts(new Set(u.departmentIds));
+    setDraftActive(u.isActive);
   }
 
   async function saveEdit() {
@@ -151,10 +155,27 @@ export default function Utilizadores() {
           phone: draftPhone.trim() || null,
           roles: [...draftRoles],
           departmentIds: [...draftDepts],
+          isActive: draftActive,
         },
       });
       toast({ title: t("toast.updateSuccess"), description: t("toast.updateSuccessDescription") });
       setEditing(null);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast({ title: t("toast.error"), description: message, variant: "destructive" });
+    }
+  }
+
+  // Aprovação rápida de contas pendentes (auto-registo, `isActive: false`)
+  // directamente a partir das acções da linha — sem abrir o dialog de edição
+  // completo, já que a única mudança necessária é activar a conta.
+  async function quickApprove(u: UserDto) {
+    try {
+      await updateUser.mutateAsync({
+        id: u.id,
+        payload: { isActive: true },
+      });
+      toast({ title: t("toast.updateSuccess"), description: t("toast.approveSuccessDescription") });
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       toast({ title: t("toast.error"), description: message, variant: "destructive" });
@@ -217,6 +238,23 @@ export default function Utilizadores() {
         ),
       },
       {
+        id: "status",
+        accessorFn: (row) => row.isActive,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.status")} />,
+        cell: ({ row }) =>
+          row.original.isActive ? (
+            <Badge variant="outline" className="text-xs border bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              {t("table.statusActive")}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-xs border bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30">
+              <Clock className="h-3 w-3 mr-1" />
+              {t("table.statusPending")}
+            </Badge>
+          ),
+      },
+      {
         accessorKey: "createdAt",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.createdAt")} />,
         cell: ({ row }) => (
@@ -234,6 +272,9 @@ export default function Utilizadores() {
   const renderRowActions = (row: UserDto) => {
     const actions: RowAction[] = [];
     if (canEdit) {
+      if (!row.isActive) {
+        actions.push({ label: t("actions.approve"), icon: CheckCircle2, onClick: () => quickApprove(row) });
+      }
       actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
       actions.push({
         label: t("actions.delete"),
@@ -255,7 +296,7 @@ export default function Utilizadores() {
 
       {/* KPIs — visão rápida do universo de utilizadores, independente dos filtros da tabela */}
       <motion.div
-        className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5"
         variants={prefersReducedMotion ? undefined : staggerContainer}
         initial={prefersReducedMotion ? undefined : "hidden"}
         animate={prefersReducedMotion ? undefined : "visible"}
@@ -276,6 +317,15 @@ export default function Utilizadores() {
             title={t("kpis.admins")}
             caption={t("kpis.adminsCaption")}
             variant="gradient-gold"
+          />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard
+            icon={Clock}
+            metric={kpis.pending}
+            title={t("kpis.pending")}
+            caption={t("kpis.pendingCaption")}
+            variant="gradient-teal"
           />
         </motion.div>
         <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
@@ -373,6 +423,16 @@ export default function Utilizadores() {
                     placeholder={t("form.placeholders.phone")}
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <Label htmlFor="u-active" className="cursor-pointer">{t("form.labels.isActive")}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {draftActive ? t("form.isActiveHintActive") : t("form.isActiveHintPending")}
+                  </p>
+                </div>
+                <Switch id="u-active" checked={draftActive} onCheckedChange={setDraftActive} />
               </div>
 
               <div>

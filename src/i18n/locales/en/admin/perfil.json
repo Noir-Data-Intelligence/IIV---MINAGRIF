@@ -36,11 +36,13 @@
   },
   "password": {
     "labels": {
+      "currentPassword": "Current Password",
       "newPassword": "New Password",
       "confirmPassword": "Confirm New Password"
     },
     "placeholders": {
-      "newPassword": "At least 6 characters",
+      "currentPassword": "Your current password",
+      "newPassword": "At least 8 characters",
       "confirmPassword": "Repeat the new password"
     },
     "submit": "Change Password"

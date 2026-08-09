@@ -46,7 +46,10 @@ export async function logout(): Promise<void> {
   }
 }
 
-export async function register(fullName: string, email: string, password: string): Promise<UserDto> {
+export async function register(fullName: string, email: string, password: string): Promise<void> {
+  // Conta nasce inactiva (`isActive: false`) em ambos os modos — nunca
+  // autentica de imediato, só um admin a aprova depois (`PUT /users/{id}`).
+  // Por isso a resposta é só uma mensagem (202), sem UserDto para consumir.
   if (IS_REAL_BACKEND) {
     await ensureCsrfCookie();
     // O formulário de registo (Registar.tsx) só recolhe uma password (sem
@@ -54,21 +57,19 @@ export async function register(fullName: string, email: string, password: string
     // (regra `confirmed` do Laravel). Reenvia o mesmo valor como confirmação
     // em vez de adicionar um segundo campo ao formulário só para satisfazer
     // essa validação.
-    return http
-      .post<UserDto>(endpoints.auth.register, {
-        fullName,
-        email,
-        password,
-        password_confirmation: password,
-      })
-      .then((res) => res.data);
+    await http.post<{ message: string }>(endpoints.auth.register, {
+      fullName,
+      email,
+      password,
+      password_confirmation: password,
+    });
+    return;
   }
-  const { data } = await http.post<{ user: UserDto }>(endpoints.auth.register, {
+  await http.post<{ message: string }>(endpoints.auth.register, {
     fullName,
     email,
     password,
   } satisfies RegisterPayload);
-  return data.user;
 }
 
 export function forgotPassword(email: string): Promise<void> {
@@ -88,8 +89,11 @@ export function resetPassword(token: string, email: string, password: string): P
   } satisfies ResetPasswordPayload & { password_confirmation: string });
 }
 
-export function changePassword(password: string): Promise<void> {
-  return apiPatch<void>(endpoints.auth.changePassword, { password } satisfies ChangePasswordPayload);
+export function changePassword(currentPassword: string, password: string): Promise<void> {
+  return apiPatch<void>(endpoints.auth.changePassword, {
+    currentPassword,
+    password,
+  } satisfies ChangePasswordPayload);
 }
 
 /** Devolve o utilizador da sessão actual, ou `null` se não houver token/sessão inválida. */

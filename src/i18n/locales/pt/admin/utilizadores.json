@@ -6,13 +6,16 @@
   "actions": {
     "permissionsMatrix": "Matriz de permissões",
     "edit": "Editar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "approve": "Aprovar conta"
   },
   "kpis": {
     "total": "Total de Utilizadores",
     "totalCaption": "{{count}} departamentos",
     "admins": "Administradores",
     "adminsCaption": "Com papel de administrador",
+    "pending": "Contas Pendentes",
+    "pendingCaption": "Auto-registadas, a aguardar aprovação",
     "noDept": "Sem Departamento",
     "noDeptCaption": "A aguardar atribuição",
     "noRole": "Sem Papel",
@@ -22,6 +25,9 @@
     "name": "Nome",
     "roles": "Papéis",
     "departments": "Departamentos",
+    "status": "Estado",
+    "statusActive": "Activa",
+    "statusPending": "Pendente",
     "createdAt": "Registado em",
     "actions": "Acções",
     "empty": "Nenhum utilizador encontrado.",
@@ -44,8 +50,11 @@
       "fullName": "Nome completo",
       "phone": "Telefone",
       "roles": "Papéis",
-      "departments": "Departamentos"
+      "departments": "Departamentos",
+      "isActive": "Conta activa"
     },
+    "isActiveHintActive": "O utilizador pode entrar no sistema.",
+    "isActiveHintPending": "Conta pendente — sem esta activação, o utilizador não consegue entrar.",
     "placeholders": {
       "phone": "+244 9XX XXX XXX"
     },
@@ -61,6 +70,7 @@
   "toast": {
     "updateSuccess": "Utilizador actualizado",
     "updateSuccessDescription": "As alterações foram guardadas.",
+    "approveSuccessDescription": "A conta foi activada e já pode entrar.",
     "deleteSuccess": "Utilizador eliminado",
     "deleteSuccessDescription": "O registo do utilizador foi apagado.",
     "error": "Ocorreu um erro. Tente novamente."

@@ -19,6 +19,13 @@ export interface UserDto {
   createdAt: string;
   roles: AppRole[];
   departmentIds: string[];
+  /**
+   * Contas auto-registadas (`POST /register`, público) nascem `false` e
+   * ficam sem acesso nenhum até um admin as aprovar aqui — ver auditoria de
+   * segurança 2026-08-09 (registo público autenticava de imediato, dando
+   * acesso de leitura a requisições/documentos/avaliações sem aprovação).
+   */
+  isActive: boolean;
 }
 
 /** Parâmetros de listagem/filtragem de utilizadores. */
@@ -34,4 +41,5 @@ export interface UpdateUserPayload {
   phone?: string | null;
   roles?: AppRole[];
   departmentIds?: string[];
+  isActive?: boolean;
 }

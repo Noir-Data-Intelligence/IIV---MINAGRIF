@@ -36,5 +36,6 @@ export interface ResetPasswordPayload {
 }
 
 export interface ChangePasswordPayload {
+  currentPassword: string;
   password: string;
 }

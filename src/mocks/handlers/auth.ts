@@ -45,6 +45,14 @@ export const authHandlers = [
     if (!user || !password || passwordByEmail[user.email] !== password) {
       return HttpResponse.json({ message: "Credenciais inválidas." }, { status: 401 });
     }
+    // Espelha o backend real: conta auto-registada (isActive=false) nunca
+    // autentica, mesmo com a password certa — fica pendente de aprovação.
+    if (!user.isActive) {
+      return HttpResponse.json(
+        { message: "Esta conta está pendente de aprovação por um administrador." },
+        { status: 422 },
+      );
+    }
     return HttpResponse.json({ token: user.id, user });
   }),
 
@@ -73,10 +81,16 @@ export const authHandlers = [
       createdAt: new Date().toISOString(),
       roles: ["recepcionista"],
       departmentIds: [],
+      // Espelha AuthController::register() real: nasce inactiva, só um
+      // admin a activa via PUT /users/{id}.
+      isActive: false,
     };
     setUsersFixtures([...usersFixtures, newUser]);
     setPassword(email, password);
-    return HttpResponse.json({ user: newUser }, { status: 201 });
+    return HttpResponse.json(
+      { message: "Conta criada. Fica pendente de aprovação por um administrador antes de poder entrar." },
+      { status: 202 },
+    );
   }),
 
   // POST /api/forgot-password -> gera token de reset (sem envio de email real)
@@ -114,9 +128,12 @@ export const authHandlers = [
     if (!user) {
       return HttpResponse.json({ message: "Não autenticado." }, { status: 401 });
     }
-    const { password } = (await request.json().catch(() => ({}))) as Partial<ChangePasswordPayload>;
-    if (!password) {
+    const { currentPassword, password } = (await request.json().catch(() => ({}))) as Partial<ChangePasswordPayload>;
+    if (!currentPassword || !password) {
       return HttpResponse.json({ message: "Password em falta." }, { status: 422 });
+    }
+    if (passwordByEmail[user.email] !== currentPassword) {
+      return HttpResponse.json({ message: "Password actual incorrecta." }, { status: 422 });
     }
     setPassword(user.email, password);
     return new HttpResponse(null, { status: 204 });

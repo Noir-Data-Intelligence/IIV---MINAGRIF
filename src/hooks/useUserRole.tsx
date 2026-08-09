@@ -3,8 +3,8 @@ import { getPermissionsMatrix } from "@/services/api/rbac";
 import { useAuth } from "@/hooks/useAuth";
 import {
   type ModuleKey,
-  canView as canViewFn,
-  canWrite as canWriteFn,
+  canViewAny,
+  canWriteAny,
   primaryRole,
   setDynamicPermissions,
 } from "@/lib/permissions";
@@ -56,11 +56,13 @@ export function useUserRole() {
     };
   }, [user]);
 
+  const roles = user?.roles ?? [];
+
   return {
     role,
     loading: authLoading,
     isAdmin: role === "admin",
-    canView: (m: ModuleKey) => canViewFn(role, m),
-    canWrite: (m: ModuleKey) => canWriteFn(role, m),
+    canView: (m: ModuleKey) => canViewAny(roles, m),
+    canWrite: (m: ModuleKey) => canWriteAny(roles, m),
   };
 }

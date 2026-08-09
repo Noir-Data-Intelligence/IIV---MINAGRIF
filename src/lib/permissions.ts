@@ -254,6 +254,23 @@ export function canWrite(role: AppRole | null, module: ModuleKey): boolean {
   return ROLE_PERMISSIONS[role].write.includes(module);
 }
 
+/**
+ * União de TODOS os papéis do utilizador — não só `primaryRole()` (o
+ * primeiro por ordem alfabética). Espelha `PermissionMatrixService::
+ * canViewAny()` no backend (corrige o mesmo achado de auditoria de
+ * segurança, 2026-08-09): gating client-side não é a fronteira de
+ * segurança real (o backend já a aplica correctamente), mas usar só o
+ * papel "principal" fazia menus aparecerem/desaparecerem de forma
+ * inconsistente com o que o backend realmente autoriza.
+ */
+export function canViewAny(roles: AppRole[], module: ModuleKey): boolean {
+  return roles.some((r) => canView(r, module));
+}
+
+export function canWriteAny(roles: AppRole[], module: ModuleKey): boolean {
+  return roles.some((r) => canWrite(r, module));
+}
+
 export const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Administrador",
   diretor: "Direcção",

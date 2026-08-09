@@ -3,7 +3,7 @@
   "brand": {
     "title": "Junte-se ao\nInstituto de\nInvestigação\nVeterinária",
     "subtitle": "Crie a sua conta para aceder ao sistema integrado de gestão laboratorial.",
-    "securityNote": "A sua conta será verificada por email antes da activação."
+    "securityNote": "A sua conta fica pendente até um administrador a aprovar."
   },
   "footer": {
     "copyright": "© {{year}} IIV — Todos os direitos reservados"
@@ -16,7 +16,7 @@
     "emailLabel": "Email institucional",
     "emailPlaceholder": "nome@iiv.gov.ao",
     "passwordLabel": "Palavra-passe",
-    "passwordPlaceholder": "Mínimo 6 caracteres",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
     "submitDefault": "Criar Conta",
     "submitLoading": "A registar..."
   },
@@ -25,6 +25,6 @@
   "toast": {
     "errorTitle": "Erro ao registar",
     "successTitle": "Conta criada!",
-    "successDescription": "Verifique o seu email para confirmar a conta."
+    "successDescription": "A conta fica pendente até um administrador a aprovar."
   }
 }
