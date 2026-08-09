@@ -10,7 +10,11 @@ COPY . .
 # Variaveis VITE_* sao inlined em tempo de build pelo Vite, por isso tem de
 # ser passadas como build args (nao dá para injectar em runtime no container).
 ARG VITE_SITE_URL=https://www.iiv.gov.ao
-ARG VITE_API_MOCK=true
+# false por omissão: um `docker build` directo (sem passar por
+# docker-compose.yml, que já sobrepõe este ARG) não deve produzir
+# silenciosamente uma imagem em modo mock (auditoria de segurança,
+# 2026-08-09 — M6).
+ARG VITE_API_MOCK=false
 ARG VITE_API_URL=/api
 
 ENV VITE_SITE_URL=$VITE_SITE_URL \
