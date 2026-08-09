@@ -2,11 +2,13 @@
 
 Portal público e área administrativa do Instituto de Investigação Veterinária (IIV) do MINAGRIF (Ministério da Agricultura, Angola).
 
+Contexto completo do projecto (requisitos, regras de negócio, arquitectura, decisões em aberto): `../SIG-IIV-MEMORIA-PROJETO.md`.
+
 ## Stack Técnico
 
 - **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui
-- **Routing**: react-router-dom
-- **Backend**: Supabase (migração em curso para API Laravel)
+- **Routing**: react-router-dom, TanStack Query/Table
+- **Backend**: API REST Laravel 12 (`../Back-end`) — Sanctum SPA cookie-based. Em modo mock (`VITE_API_MOCK=true`) as respostas são servidas por MSW, sem backend nenhum a correr.
 - **Ferramentas**: ESLint, Vitest, PostCSS, Autoprefixer
 
 ## Como Correr Localmente
@@ -36,21 +38,38 @@ npm run test:watch
 npm run lint
 ```
 
+### Ligar ao backend real (em vez do mock MSW)
+
+No `.env` (não versionado): `VITE_API_MOCK=false` e `VITE_API_URL=http://localhost:8000/api`, com o backend Laravel a correr localmente (ver `../Back-end/README.md`, secção "Correr localmente" ou "Deploy com Docker"). Login com as contas de demonstração `<papel>@iiv.demo` / `<papel>123`.
+
 ## Estrutura do Projecto
 
 - **src/pages** - Páginas da aplicação (público e administrativo)
 - **src/components** - Componentes reutilizáveis (UI, layouts, admin)
 - **src/hooks** - Hooks customizados (autenticação, mobile, etc.)
-- **src/integrations** - Integrações com serviços externos
+- **src/services/api** - Camada de dados REST (um ficheiro por módulo, `endpoints.ts` como mapa central)
+- **src/mocks** - Handlers/fixtures MSW (modo `VITE_API_MOCK=true`)
 - **src/assets** - Imagens e recursos estáticos
-- **supabase/** - Configurações e migrações Supabase
 
-## Estrutura de Permissões
+## RBAC
 
-A aplicação implementa um sistema de roles (Utilizador, Técnico, Administrador) com guards de rota para controlar acesso a áreas administrativas.
+12 papéis institucionais (`src/lib/permissions.ts`, `AppRole`) — `admin`, `diretor`, `director-laboratorio`, `responsavel-qualidade`, `tecnico`, `recepcionista`, `gestor-stock`, `gestor-patrimonio`, `gestor-financeiro`, `gestor-rh`, `gestor-estacao`, `isv`. Matriz de permissões por módulo, editável em runtime na página `/admin/rbac` — tem de espelhar exactamente `Back-end/database/seeders/RolePermissionSeeder.php`.
+
+## Deploy com Docker
+
+`docker-compose.yml` faz build da SPA (Vite, variáveis `VITE_*` como build args, inlined em tempo de build) e serve-a via nginx, atrás de um Traefik externo (rede `proxy`, já tem de existir — `docker network create proxy`). Por omissão liga-se ao backend real dockerizado (`../Back-end/docker-compose.yml`, mesmo padrão de rede/Traefik, subdomínio `api.` do mesmo domínio).
+
+```bash
+docker network create proxy   # só da primeira vez, se ainda não existir
+docker compose up -d --build
+```
+
+Ajustar via variáveis de ambiente antes do build (nenhuma tem segredos, mas `VITE_API_URL`/`VITE_API_MOCK` decidem se a app fala com o backend real ou com dados mock):
+
+```bash
+VITE_API_MOCK=false VITE_API_URL=https://api.iiv.noirdataintelligence.com/api docker compose up -d --build
+```
 
 ## Próximas Etapas
 
-- Migração do backend de Supabase para API Laravel
-- Otimizações de performance e SEO
-- Melhorias na área administrativa
+Ver `../SIG-IIV-MEMORIA-PROJETO.md` secção 15/16 para o estado detalhado por Onda e as decisões pendentes de confirmação do cliente (domínio institucional final, fornecedor de LLM do chat-assistant, etc.).
