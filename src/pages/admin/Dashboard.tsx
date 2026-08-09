@@ -35,7 +35,7 @@ import {
   axisTickStyle, buildChartConfig, chartColors, formatAxisNumber, getChartColor, NoDataOverlay,
 } from "@/components/charts";
 
-import { useAnalisesList } from "@/hooks/queries/useAnalises";
+import { useBoletinsList } from "@/hooks/queries/useBoletins";
 import { useLotesList } from "@/hooks/queries/useLotes";
 import { useDistribuicaoList } from "@/hooks/queries/useDistribuicao";
 import { useNaoConformidadesList } from "@/hooks/queries/useNaoConformidades";
@@ -190,7 +190,11 @@ export default function Dashboard() {
   });
 
   // ---- Fontes de dados (hooks migrados, agregação client-side) ----
-  const analisesQuery = useAnalisesList({ page: 1, perPage: 1000 });
+  // "Análises" migrado do domínio legado `analise.ts` para o domínio real da
+  // Onda 3 (Laboratório): o Boletim Interno é a unidade com o ciclo de vida
+  // completo (em_analise → resultado_registado → em_validacao → aprovado →
+  // comunicado), equivalente ao antigo `AnaliseDto.status`.
+  const boletinsQuery = useBoletinsList({ page: 1, perPage: 1000 });
   const lotesQuery = useLotesList({ page: 1, perPage: 1000 });
   const distribuicaoQuery = useDistribuicaoList({ page: 1, perPage: 1000 });
   const ncQuery = useNaoConformidadesList({ page: 1, perPage: 1000 });
@@ -200,7 +204,7 @@ export default function Dashboard() {
   const usersQuery = useUsersList({});
 
   const loading =
-    analisesQuery.isLoading || lotesQuery.isLoading || distribuicaoQuery.isLoading ||
+    boletinsQuery.isLoading || lotesQuery.isLoading || distribuicaoQuery.isLoading ||
     ncQuery.isLoading || insumosQuery.isLoading || produtosQuery.isLoading ||
     laboratoriosQuery.isLoading || usersQuery.isLoading;
 
@@ -301,7 +305,7 @@ export default function Dashboard() {
 
   // ---- Agregação de KPIs/estatísticas ----
   const stats = useMemo(() => {
-    const analyses = analisesQuery.data?.data ?? [];
+    const boletins = boletinsQuery.data?.data ?? [];
     const batches = lotesQuery.data?.data ?? [];
     const dists = distribuicaoQuery.data?.data ?? [];
     const ncs = ncQuery.data?.data ?? [];
@@ -312,9 +316,9 @@ export default function Dashboard() {
     const prev = new Date(curY, curM - 1, 1);
     const prevY = prev.getFullYear(), prevM = prev.getMonth();
 
-    const analysesPending = analyses.filter((a) => a.status === "agendada" || a.status === "em_progresso").length;
-    const analysesPendingPrev = analyses.filter((a) =>
-      (a.status === "agendada" || a.status === "em_progresso") && isInMonth(a.createdAt, prevY, prevM),
+    const analysesPending = boletins.filter((b) => b.status !== "comunicado").length;
+    const analysesPendingPrev = boletins.filter((b) =>
+      b.status !== "comunicado" && isInMonth(b.entradaEm, prevY, prevM),
     ).length;
 
     const batchesActive = batches.filter((b) => b.status === "em_producao" || b.status === "planeada").length;
@@ -327,8 +331,8 @@ export default function Dashboard() {
     const distributionsMonthPrev = dists.filter((d) => isInMonth(d.distributionDate, prevY, prevM))
       .reduce((s, d) => s + (d.quantity || 0), 0);
 
-    const concluded = analyses.filter((a) => a.status === "concluida").length;
-    const completionRate = analyses.length > 0 ? Math.round((concluded / analyses.length) * 100) : 0;
+    const concluded = boletins.filter((b) => b.status === "comunicado").length;
+    const completionRate = boletins.length > 0 ? Math.round((concluded / boletins.length) * 100) : 0;
 
     const ncOpen = ncs.filter((n) => n.status === "aberta" || n.status === "em_resolucao").length;
     const lowStock = supplies.filter((s) => (s.quantity ?? 0) <= (s.minStock ?? 0)).length;
@@ -345,17 +349,20 @@ export default function Dashboard() {
       ncOpen, lowStock, expiringSoon,
     };
   }, [
-    analisesQuery.data, lotesQuery.data, distribuicaoQuery.data, ncQuery.data,
+    boletinsQuery.data, lotesQuery.data, distribuicaoQuery.data, ncQuery.data,
     insumosQuery.data, usersQuery.data, laboratoriosQuery.data, produtosQuery.data,
   ]);
 
   // ---- Séries dos gráficos ----
   const analysisStatus = useMemo(() => {
-    const labels: Record<string, string> = { agendada: "Agendada", em_progresso: "Em Progresso", concluida: "Concluída", cancelada: "Cancelada" };
+    const labels: Record<string, string> = {
+      em_analise: "Em Análise", resultado_registado: "Resultado Registado",
+      em_validacao: "Em Validação", aprovado: "Aprovado", comunicado: "Comunicado",
+    };
     const counts: Record<string, number> = {};
-    (analisesQuery.data?.data ?? []).forEach((a) => { counts[a.status] = (counts[a.status] || 0) + 1; });
+    (boletinsQuery.data?.data ?? []).forEach((b) => { counts[b.status] = (counts[b.status] || 0) + 1; });
     return Object.entries(counts).map(([k, v]) => ({ name: labels[k] || k, value: v }));
-  }, [analisesQuery.data]);
+  }, [boletinsQuery.data]);
 
   const productionStatus = useMemo(() => {
     const labels: Record<string, string> = { planeada: "Planeada", em_producao: "Em Produção", concluida: "Concluída", suspensa: "Suspensa" };
@@ -375,8 +382,8 @@ export default function Dashboard() {
       monthlyA[key] = 0;
       monthlyP[key] = { produced: 0, distributed: 0 };
     }
-    (analisesQuery.data?.data ?? []).forEach((a) => {
-      const key = a.scheduledDate?.substring(0, 7);
+    (boletinsQuery.data?.data ?? []).forEach((b) => {
+      const key = b.entradaEm?.substring(0, 7);
       if (key && key in monthlyA) monthlyA[key]++;
     });
     (lotesQuery.data?.data ?? []).forEach((b) => {
@@ -395,7 +402,7 @@ export default function Dashboard() {
       monthlyAnalyses: Object.entries(monthlyA).map(([k, v]) => ({ month: toMonth(k), total: v })),
       monthlyProduction: Object.entries(monthlyP).map(([k, v]) => ({ month: toMonth(k), ...v })),
     };
-  }, [analisesQuery.data, lotesQuery.data, distribuicaoQuery.data]);
+  }, [boletinsQuery.data, lotesQuery.data, distribuicaoQuery.data]);
 
   const productTypes = useMemo(() => {
     const labels: Record<string, string> = { vacina: "Vacinas", soro: "Soros", reagente: "Reagentes" };

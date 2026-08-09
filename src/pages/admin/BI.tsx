@@ -17,7 +17,7 @@ import {
   axisTickStyle, buildChartConfig, chartColors, formatAxisNumber, formatCompactNumber, getChartColor, NoDataOverlay,
 } from "@/components/charts";
 import { useAnimaisList } from "@/hooks/queries/useAnimais";
-import { useAnalisesList } from "@/hooks/queries/useAnalises";
+import { useAmostrasList } from "@/hooks/queries/useAmostras";
 import { useMissionsList } from "@/hooks/queries/useMissoes";
 import { useEmployeesList } from "@/hooks/queries/useRecursosHumanos";
 import { useProjectsList, usePublicationsList } from "@/hooks/queries/useInvestigacao";
@@ -49,7 +49,9 @@ export default function BI() {
 
   // --- Leitura: reutiliza os hooks já existentes de cada módulo migrado ------
   const animalsQuery = useAnimaisList(BIG);
-  const analysesQuery = useAnalisesList(BIG);
+  // Migrado do domínio legado `analise.ts` para o domínio real da Onda 3
+  // (Laboratório) — a amostra é a unidade de volume de trabalho laboratorial.
+  const analysesQuery = useAmostrasList(BIG);
   const missionsQuery = useMissionsList(BIG);
   const employeesQuery = useEmployeesList(BIG);
   const projectsQuery = useProjectsList(BIG);

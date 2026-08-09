@@ -15,7 +15,7 @@ import {
   CalendarClock, Users, BarChart3, PieChart, Pill, ArrowLeft, Search,
   type LucideIcon,
 } from "lucide-react";
-import { useAnalisesList } from "@/hooks/queries/useAnalises";
+import { useBoletinsList } from "@/hooks/queries/useBoletins";
 import { useLotesList } from "@/hooks/queries/useLotes";
 import { useNaoConformidadesList } from "@/hooks/queries/useNaoConformidades";
 import { useInsumosList } from "@/hooks/queries/useInsumos";
@@ -30,7 +30,7 @@ type Col = { key: string; label: string; render?: (r: Row) => React.ReactNode; c
 type StatusOpt = { value: string; label: string };
 
 /** Fontes de dados subjacentes a cada métrica (hooks já migrados). */
-type Source = "analises" | "lotes" | "nc" | "insumos" | "distribuicao" | "produtos" | "users";
+type Source = "boletins" | "lotes" | "nc" | "insumos" | "distribuicao" | "produtos" | "users";
 
 type MetricConfig = {
   title: string;
@@ -47,7 +47,8 @@ type MetricConfig = {
 };
 
 const STATUS_ANALYSIS: Record<string, string> = {
-  agendada: "Agendada", em_progresso: "Em Progresso", concluida: "Concluída", cancelada: "Cancelada",
+  em_analise: "Em Análise", resultado_registado: "Resultado Registado",
+  em_validacao: "Em Validação", aprovado: "Aprovado", comunicado: "Comunicado",
 };
 const STATUS_BATCH: Record<string, string> = {
   planeada: "Planeada", em_producao: "Em Produção", concluida: "Concluída", suspensa: "Suspensa",
@@ -61,12 +62,13 @@ function statusBadge(label: string, tone: "default" | "secondary" | "destructive
   return <Badge variant={tone}>{label}</Badge>;
 }
 
-// Colunas em camelCase (DTOs Laravel via API Resources).
+// Colunas em camelCase (DTOs Laravel via API Resources) — Boletim Interno
+// (Onda 3), substitui o antigo `AnaliseDto` (domínio legado removido).
 const analysisColumns: Col[] = [
-  { key: "clientName", label: "Cliente" },
-  { key: "analysisType", label: "Tipo" },
-  { key: "sampleType", label: "Amostra" },
-  { key: "scheduledDate", label: "Agendada", render: (r) => fmtDate(r.scheduledDate) },
+  { key: "numeroAnalise", label: "Nº Análise" },
+  { key: "entradaEm", label: "Entrada", render: (r) => fmtDateTime(r.entradaEm) },
+  { key: "inicioEm", label: "Início", render: (r) => fmtDateTime(r.inicioEm as string | null) },
+  { key: "conclusaoEm", label: "Conclusão", render: (r) => fmtDateTime(r.conclusaoEm as string | null) },
   { key: "status", label: "Estado", render: (r) => statusBadge(STATUS_ANALYSIS[r.status] || r.status) },
 ];
 
@@ -83,25 +85,27 @@ const CONFIG: Record<string, MetricConfig> = {
   // ---------- KPIs ----------
   analysesPending: {
     title: "Análises Pendentes",
-    description: "Análises agendadas ou em progresso",
+    description: "Boletins ainda não comunicados ao cliente",
     icon: Activity,
-    source: "analises",
-    filter: (r) => r.status === "agendada" || r.status === "em_progresso",
+    source: "boletins",
+    filter: (r) => r.status !== "comunicado",
     columns: analysisColumns,
-    searchKeys: ["clientName", "analysisType", "sampleType"],
+    searchKeys: ["numeroAnalise"],
     statusKey: "status",
     statusOptions: [
-      { value: "agendada", label: "Agendada" },
-      { value: "em_progresso", label: "Em Progresso" },
+      { value: "em_analise", label: "Em Análise" },
+      { value: "resultado_registado", label: "Resultado Registado" },
+      { value: "em_validacao", label: "Em Validação" },
+      { value: "aprovado", label: "Aprovado" },
     ],
   },
   completionRate: {
     title: "Taxa de Conclusão",
-    description: "Todas as análises agrupadas por estado",
+    description: "Todos os boletins agrupados por estado",
     icon: TrendingUp,
-    source: "analises",
+    source: "boletins",
     columns: analysisColumns,
-    searchKeys: ["clientName", "analysisType"],
+    searchKeys: ["numeroAnalise"],
     statusKey: "status",
     statusOptions: Object.entries(STATUS_ANALYSIS).map(([value, label]) => ({ value, label })),
   },
@@ -192,21 +196,21 @@ const CONFIG: Record<string, MetricConfig> = {
   // ---------- Charts ----------
   monthlyAnalyses: {
     title: "Análises por Mês",
-    description: "Todas as análises com data agendada",
+    description: "Todos os boletins por data de entrada",
     icon: BarChart3,
-    source: "analises",
+    source: "boletins",
     columns: analysisColumns,
-    searchKeys: ["clientName", "analysisType"],
+    searchKeys: ["numeroAnalise"],
     statusKey: "status",
     statusOptions: Object.entries(STATUS_ANALYSIS).map(([value, label]) => ({ value, label })),
   },
   analysisStatus: {
     title: "Estado das Análises",
-    description: "Distribuição de análises por estado",
+    description: "Distribuição de boletins por estado",
     icon: PieChart,
-    source: "analises",
+    source: "boletins",
     columns: analysisColumns,
-    searchKeys: ["clientName", "analysisType"],
+    searchKeys: ["numeroAnalise"],
     statusKey: "status",
     statusOptions: Object.entries(STATUS_ANALYSIS).map(([value, label]) => ({ value, label })),
   },
@@ -270,7 +274,7 @@ export default function PainelDetalhe() {
 
   // Fontes subjacentes — perPage alto para trazer tudo e filtrar client-side,
   // à semelhança das páginas de detalhe/agregação já migradas.
-  const analisesQuery = useAnalisesList({ page: 1, perPage: 1000 });
+  const boletinsQuery = useBoletinsList({ page: 1, perPage: 1000 });
   const lotesQuery = useLotesList({ page: 1, perPage: 1000 });
   const ncQuery = useNaoConformidadesList({ page: 1, perPage: 1000 });
   const insumosQuery = useInsumosList({ page: 1, perPage: 1000 });
@@ -279,7 +283,7 @@ export default function PainelDetalhe() {
   const usersQuery = useUsersList({});
 
   const sources: Record<Source, { rows: Row[]; loading: boolean }> = {
-    analises: { rows: analisesQuery.data?.data ?? [], loading: analisesQuery.isLoading },
+    boletins: { rows: boletinsQuery.data?.data ?? [], loading: boletinsQuery.isLoading },
     lotes: { rows: lotesQuery.data?.data ?? [], loading: lotesQuery.isLoading },
     nc: { rows: ncQuery.data?.data ?? [], loading: ncQuery.isLoading },
     insumos: { rows: insumosQuery.data?.data ?? [], loading: insumosQuery.isLoading },

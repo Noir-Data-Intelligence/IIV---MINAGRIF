@@ -4,9 +4,7 @@ import type { LaboratorioDto } from "@/types/dto/laboratorio";
  * Dados fictícios mas realistas dos laboratórios do IIV. Servem os handlers MSW
  * enquanto o backend Laravel não existe.
  *
- * NOTA: IDs (`lab-0001`..`lab-0006`) mantidos estáveis de propósito — são
- * referenciados por `fixtures/analises.ts` (ainda usado pelo Dashboard/BI
- * para KPIs agregados, ver nota em `pages/admin/Laboratorios.tsx`). Os campos
+ * NOTA: IDs (`lab-0001`..`lab-0006`) mantidos estáveis de propósito. Os campos
  * `validadorCount`/`slaHoras`/`validadoresNomeados` (Onda 3) são novos e
  * demonstram o `LabWorkflowService` do backend real — Bacteriologia (lab-0002)
  * usa 3 validadores nomeados, replicando a RN da REQ-005.
