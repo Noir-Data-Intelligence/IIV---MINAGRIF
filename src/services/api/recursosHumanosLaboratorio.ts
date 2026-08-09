@@ -9,27 +9,15 @@ import type {
   LeaveListParams,
 } from "@/types/dto/recursosHumanos";
 
-/**
- * Serviço de dados do módulo Recursos Humanos.
- *
- * Cobre 3 recursos relacionados: `colaboradores` (fichas de pessoal),
- * `contratos` (vínculos) e `ausencias` (férias/faltas). Assenta nos helpers de
- * `client.ts` e nunca conhece o axios nem o MSW directamente — os hooks só
- * falam com estas funções.
- *
- * Rotas declaradas localmente (ver nota em `financeiro.ts`) — consolidar em
- * `endpoints.ts` (entrada `rh`) no final.
- */
+/** Serviço de dados do RH Laboratorial — `/rh-laboratorio/*`, esquema separado do RH Transversal. */
 const ROUTES = {
-  colaboradores: "/rh/colaboradores",
-  colaborador: (id: string) => `/rh/colaboradores/${id}`,
-  contratos: "/rh/contratos",
-  contrato: (id: string) => `/rh/contratos/${id}`,
-  ausencias: "/rh/ausencias",
-  ausencia: (id: string) => `/rh/ausencias/${id}`,
+  colaboradores: "/rh-laboratorio/colaboradores",
+  colaborador: (id: string) => `/rh-laboratorio/colaboradores/${id}`,
+  contratos: "/rh-laboratorio/contratos",
+  contrato: (id: string) => `/rh-laboratorio/contratos/${id}`,
+  ausencias: "/rh-laboratorio/ausencias",
+  ausencia: (id: string) => `/rh-laboratorio/ausencias/${id}`,
 };
-
-// --- Colaboradores ---------------------------------------------------------
 
 function employeesToQuery(params: EmployeeListParams): Record<string, string | number | boolean> {
   const query: Record<string, string | number | boolean> = {
@@ -42,23 +30,21 @@ function employeesToQuery(params: EmployeeListParams): Record<string, string | n
   return query;
 }
 
-export function listEmployees(params: EmployeeListParams): Promise<Paginated<EmployeeDto>> {
+export function listEmployeesLaboratorio(params: EmployeeListParams): Promise<Paginated<EmployeeDto>> {
   return apiGet<Paginated<EmployeeDto>>(ROUTES.colaboradores, { params: employeesToQuery(params) });
 }
 
-export function createEmployee(payload: Partial<EmployeeDto>): Promise<EmployeeDto> {
+export function createEmployeeLaboratorio(payload: Partial<EmployeeDto>): Promise<EmployeeDto> {
   return apiPost<EmployeeDto>(ROUTES.colaboradores, payload);
 }
 
-export function updateEmployee(id: string, payload: Partial<EmployeeDto>): Promise<EmployeeDto> {
+export function updateEmployeeLaboratorio(id: string, payload: Partial<EmployeeDto>): Promise<EmployeeDto> {
   return apiPut<EmployeeDto>(ROUTES.colaborador(id), payload);
 }
 
-export function deleteEmployee(id: string): Promise<void> {
+export function deleteEmployeeLaboratorio(id: string): Promise<void> {
   return apiDelete<void>(ROUTES.colaborador(id));
 }
-
-// --- Contratos -------------------------------------------------------------
 
 function contractsToQuery(params: ContractListParams): Record<string, string | number | boolean> {
   const query: Record<string, string | number | boolean> = {
@@ -72,23 +58,21 @@ function contractsToQuery(params: ContractListParams): Record<string, string | n
   return query;
 }
 
-export function listContracts(params: ContractListParams): Promise<Paginated<ContractDto>> {
+export function listContractsLaboratorio(params: ContractListParams): Promise<Paginated<ContractDto>> {
   return apiGet<Paginated<ContractDto>>(ROUTES.contratos, { params: contractsToQuery(params) });
 }
 
-export function createContract(payload: Partial<ContractDto>): Promise<ContractDto> {
+export function createContractLaboratorio(payload: Partial<ContractDto>): Promise<ContractDto> {
   return apiPost<ContractDto>(ROUTES.contratos, payload);
 }
 
-export function updateContract(id: string, payload: Partial<ContractDto>): Promise<ContractDto> {
+export function updateContractLaboratorio(id: string, payload: Partial<ContractDto>): Promise<ContractDto> {
   return apiPut<ContractDto>(ROUTES.contrato(id), payload);
 }
 
-export function deleteContract(id: string): Promise<void> {
+export function deleteContractLaboratorio(id: string): Promise<void> {
   return apiDelete<void>(ROUTES.contrato(id));
 }
-
-// --- Ausências -------------------------------------------------------------
 
 function leavesToQuery(params: LeaveListParams): Record<string, string | number | boolean> {
   const query: Record<string, string | number | boolean> = {
@@ -102,18 +86,18 @@ function leavesToQuery(params: LeaveListParams): Record<string, string | number 
   return query;
 }
 
-export function listLeaves(params: LeaveListParams): Promise<Paginated<LeaveDto>> {
+export function listLeavesLaboratorio(params: LeaveListParams): Promise<Paginated<LeaveDto>> {
   return apiGet<Paginated<LeaveDto>>(ROUTES.ausencias, { params: leavesToQuery(params) });
 }
 
-export function createLeave(payload: Partial<LeaveDto>): Promise<LeaveDto> {
+export function createLeaveLaboratorio(payload: Partial<LeaveDto>): Promise<LeaveDto> {
   return apiPost<LeaveDto>(ROUTES.ausencias, payload);
 }
 
-export function updateLeave(id: string, payload: Partial<LeaveDto>): Promise<LeaveDto> {
+export function updateLeaveLaboratorio(id: string, payload: Partial<LeaveDto>): Promise<LeaveDto> {
   return apiPut<LeaveDto>(ROUTES.ausencia(id), payload);
 }
 
-export function deleteLeave(id: string): Promise<void> {
+export function deleteLeaveLaboratorio(id: string): Promise<void> {
   return apiDelete<void>(ROUTES.ausencia(id));
 }

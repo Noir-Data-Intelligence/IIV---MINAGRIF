@@ -241,13 +241,23 @@ export const endpoints = {
   },
 
   // --- PESSOAS & MISSÕES ------------------------------------------------
-  rh: {
-    colaboradores: "/rh/colaboradores",
-    colaborador: (id: string) => `/rh/colaboradores/${id}`,
-    contratos: "/rh/contratos",
-    contrato: (id: string) => `/rh/contratos/${id}`,
-    ausencias: "/rh/ausencias",
-    ausencia: (id: string) => `/rh/ausencias/${id}`,
+  // Dualidade obrigatória (ver SIG-IIV-MEMORIA-PROJETO.md secção 6): RH
+  // transversal vs laboratorial são esquemas separados, nunca um único `/rh`.
+  rhTransversal: {
+    colaboradores: "/rh-transversal/colaboradores",
+    colaborador: (id: string) => `/rh-transversal/colaboradores/${id}`,
+    contratos: "/rh-transversal/contratos",
+    contrato: (id: string) => `/rh-transversal/contratos/${id}`,
+    ausencias: "/rh-transversal/ausencias",
+    ausencia: (id: string) => `/rh-transversal/ausencias/${id}`,
+  },
+  rhLaboratorio: {
+    colaboradores: "/rh-laboratorio/colaboradores",
+    colaborador: (id: string) => `/rh-laboratorio/colaboradores/${id}`,
+    contratos: "/rh-laboratorio/contratos",
+    contrato: (id: string) => `/rh-laboratorio/contratos/${id}`,
+    ausencias: "/rh-laboratorio/ausencias",
+    ausencia: (id: string) => `/rh-laboratorio/ausencias/${id}`,
   },
   formacoes: {
     list: "/formacoes",

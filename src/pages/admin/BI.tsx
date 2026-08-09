@@ -19,7 +19,8 @@ import {
 import { useAnimaisList } from "@/hooks/queries/useAnimais";
 import { useAmostrasList } from "@/hooks/queries/useAmostras";
 import { useMissionsList } from "@/hooks/queries/useMissoes";
-import { useEmployeesList } from "@/hooks/queries/useRecursosHumanos";
+import { useEmployeesTransversalList } from "@/hooks/queries/useRecursosHumanosTransversal";
+import { useEmployeesLaboratorioList } from "@/hooks/queries/useRecursosHumanosLaboratorio";
 import { useProjectsList, usePublicationsList } from "@/hooks/queries/useInvestigacao";
 import { useTransactionsList, useBudgetsList } from "@/hooks/queries/useFinanceiro";
 import { useHarvestsList, useFieldsList, useCropsList } from "@/hooks/queries/useAgricultura";
@@ -53,7 +54,9 @@ export default function BI() {
   // (Laboratório) — a amostra é a unidade de volume de trabalho laboratorial.
   const analysesQuery = useAmostrasList(BIG);
   const missionsQuery = useMissionsList(BIG);
-  const employeesQuery = useEmployeesList(BIG);
+  // RH é um domínio dual (transversal/laboratorial) — soma-se os dois totais.
+  const employeesTransversalQuery = useEmployeesTransversalList(BIG);
+  const employeesLaboratorioQuery = useEmployeesLaboratorioList(BIG);
   const projectsQuery = useProjectsList(BIG);
   const publicationsQuery = usePublicationsList(BIG);
   const transactionsQuery = useTransactionsList(BIG);
@@ -66,7 +69,8 @@ export default function BI() {
   // --- Contagens (via meta.total quando disponível) --------------------------
   const animals = animalsQuery.data?.meta.total ?? 0;
   const analyses = analysesQuery.data?.meta.total ?? 0;
-  const employees = employeesQuery.data?.meta.total ?? 0;
+  const employees =
+    (employeesTransversalQuery.data?.meta.total ?? 0) + (employeesLaboratorioQuery.data?.meta.total ?? 0);
 
   const missionsActive = useMemo(
     () =>

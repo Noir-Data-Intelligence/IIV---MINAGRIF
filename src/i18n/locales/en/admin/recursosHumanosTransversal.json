@@ -1,7 +1,7 @@
 {
   "page": {
-    "title": "Human Resources",
-    "description": "Employee records, contracts, holidays and leaves of absence."
+    "title": "Human Resources — Transversal",
+    "description": "Employee records, contracts, holidays and leaves of absence for transversal staff."
   },
   "kpis": {
     "total": "Employees",

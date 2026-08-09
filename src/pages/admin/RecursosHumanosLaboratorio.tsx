@@ -29,22 +29,22 @@ import { formatDate, formatKwanza } from "@/lib/format";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
 import {
-  useEmployeesList, useCreateEmployee, useUpdateEmployee, useDeleteEmployee,
-  useContractsList, useCreateContract, useUpdateContract, useDeleteContract,
-  useLeavesList, useCreateLeave, useUpdateLeave, useDeleteLeave,
-} from "@/hooks/queries/useRecursosHumanos";
+  useEmployeesLaboratorioList, useCreateEmployeeLaboratorio, useUpdateEmployeeLaboratorio, useDeleteEmployeeLaboratorio,
+  useContractsLaboratorioList, useCreateContractLaboratorio, useUpdateContractLaboratorio, useDeleteContractLaboratorio,
+  useLeavesLaboratorioList, useCreateLeaveLaboratorio, useUpdateLeaveLaboratorio, useDeleteLeaveLaboratorio,
+} from "@/hooks/queries/useRecursosHumanosLaboratorio";
 import type {
   ContractDto, ContractType, EmployeeDto, LeaveDto, LeaveStatus, LeaveType,
 } from "@/types/dto/recursosHumanos";
 import i18n from "@/i18n";
-import ptRecursosHumanos from "@/i18n/locales/pt/admin/recursosHumanos.json";
-import enRecursosHumanos from "@/i18n/locales/en/admin/recursosHumanos.json";
+import ptRecursosHumanosLaboratorio from "@/i18n/locales/pt/admin/recursosHumanosLaboratorio.json";
+import enRecursosHumanosLaboratorio from "@/i18n/locales/en/admin/recursosHumanosLaboratorio.json";
 
 // Namespace autónomo registado em runtime, seguindo o padrão de Financeiro.tsx.
-if (!i18n.hasResourceBundle("pt", "recursosHumanos"))
-  i18n.addResourceBundle("pt", "recursosHumanos", ptRecursosHumanos, true, true);
-if (!i18n.hasResourceBundle("en", "recursosHumanos"))
-  i18n.addResourceBundle("en", "recursosHumanos", enRecursosHumanos, true, true);
+if (!i18n.hasResourceBundle("pt", "recursosHumanosLaboratorio"))
+  i18n.addResourceBundle("pt", "recursosHumanosLaboratorio", ptRecursosHumanosLaboratorio, true, true);
+if (!i18n.hasResourceBundle("en", "recursosHumanosLaboratorio"))
+  i18n.addResourceBundle("en", "recursosHumanosLaboratorio", enRecursosHumanosLaboratorio, true, true);
 
 const CONTRACT_TYPES: ContractType[] = [
   "efectivo", "termo_certo", "termo_incerto", "prestacao_servicos", "estagio",
@@ -112,8 +112,8 @@ function buildLeaveSchema(t: TFunction) {
 }
 type LeaveFormValues = z.infer<ReturnType<typeof buildLeaveSchema>>;
 
-export default function RecursosHumanos() {
-  const { t } = useTranslation("recursosHumanos");
+export default function RecursosHumanosLaboratorio() {
+  const { t } = useTranslation("recursosHumanosLaboratorio");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("rh");
   const prefersReduced = useReducedMotion();
@@ -141,38 +141,38 @@ export default function RecursosHumanos() {
   const [deleteTarget, setDeleteTarget] = useState<{ kind: "employee" | "contract" | "leave"; id: string } | null>(null);
 
   // --- Queries: tabela paginada + dataset completo p/ lookups e KPIs ---
-  const employeesQuery = useEmployeesList({
+  const employeesQuery = useEmployeesLaboratorioList({
     page: empPage.pageIndex + 1, perPage: empPage.pageSize, search: empSearch || undefined,
   });
-  const employeesAll = useEmployeesList(BIG_PAGE);
+  const employeesAll = useEmployeesLaboratorioList(BIG_PAGE);
 
-  const contractsQuery = useContractsList({
+  const contractsQuery = useContractsLaboratorioList({
     page: conPage.pageIndex + 1,
     perPage: conPage.pageSize,
     search: conSearch || undefined,
     contractType: conTypeFilter !== "todos" ? (conTypeFilter as ContractType) : undefined,
   });
-  const contractsAll = useContractsList(BIG_PAGE);
+  const contractsAll = useContractsLaboratorioList(BIG_PAGE);
 
-  const leavesQuery = useLeavesList({
+  const leavesQuery = useLeavesLaboratorioList({
     page: leavePage.pageIndex + 1,
     perPage: leavePage.pageSize,
     search: leaveSearch || undefined,
     status: leaveStatusFilter !== "todos" ? (leaveStatusFilter as LeaveStatus) : undefined,
   });
-  const leavesAll = useLeavesList(BIG_PAGE);
+  const leavesAll = useLeavesLaboratorioList(BIG_PAGE);
 
   const departamentosQuery = useDepartamentosList(BIG_PAGE);
 
-  const createEmployee = useCreateEmployee();
-  const updateEmployee = useUpdateEmployee();
-  const deleteEmployee = useDeleteEmployee();
-  const createContract = useCreateContract();
-  const updateContract = useUpdateContract();
-  const deleteContract = useDeleteContract();
-  const createLeave = useCreateLeave();
-  const updateLeave = useUpdateLeave();
-  const deleteLeave = useDeleteLeave();
+  const createEmployee = useCreateEmployeeLaboratorio();
+  const updateEmployee = useUpdateEmployeeLaboratorio();
+  const deleteEmployee = useDeleteEmployeeLaboratorio();
+  const createContract = useCreateContractLaboratorio();
+  const updateContract = useUpdateContractLaboratorio();
+  const deleteContract = useDeleteContractLaboratorio();
+  const createLeave = useCreateLeaveLaboratorio();
+  const updateLeave = useUpdateLeaveLaboratorio();
+  const deleteLeave = useDeleteLeaveLaboratorio();
 
   // --- Lookups ---
   const employees = useMemo(() => employeesAll.data?.data ?? [], [employeesAll.data]);

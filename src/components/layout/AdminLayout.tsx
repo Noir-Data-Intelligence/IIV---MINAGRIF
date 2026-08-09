@@ -122,7 +122,8 @@ const navGroups: NavGroup[] = [
     icon: UserCog,
     colorClass: "text-[hsl(260,60%,65%)]",
     items: [
-      { icon: UserCog, label: "Recursos Humanos", path: "/admin/rh", module: "rh" },
+      { icon: Building2, label: "RH Transversal", path: "/admin/rh-transversal", module: "rh" },
+      { icon: FlaskConical, label: "RH Laboratorial", path: "/admin/rh-laboratorio", module: "rh" },
       { icon: Plane, label: "Missões", path: "/admin/missoes", module: "missoes" },
       { icon: GraduationCap, label: "Formações", path: "/admin/formacoes", module: "formacoes" },
     ],

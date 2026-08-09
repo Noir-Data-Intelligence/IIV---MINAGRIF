@@ -33,7 +33,8 @@ import { processesHandlers } from "@/mocks/handlers/processes";
 import { financeiroHandlers } from "@/mocks/handlers/financeiro";
 import { patrimonioCentralHandlers } from "@/mocks/handlers/patrimonioCentral";
 import { patrimonioEstacaoHandlers } from "@/mocks/handlers/patrimonioEstacao";
-import { recursosHumanosHandlers } from "@/mocks/handlers/recursosHumanos";
+import { recursosHumanosTransversalHandlers } from "@/mocks/handlers/recursosHumanosTransversal";
+import { recursosHumanosLaboratorioHandlers } from "@/mocks/handlers/recursosHumanosLaboratorio";
 import { formacoesHandlers } from "@/mocks/handlers/formacoes";
 import { missoesHandlers } from "@/mocks/handlers/missoes";
 import { investigacaoHandlers } from "@/mocks/handlers/investigacao";
@@ -88,7 +89,8 @@ export const handlers = [
   ...financeiroHandlers,
   ...patrimonioCentralHandlers,
   ...patrimonioEstacaoHandlers,
-  ...recursosHumanosHandlers,
+  ...recursosHumanosTransversalHandlers,
+  ...recursosHumanosLaboratorioHandlers,
   ...formacoesHandlers,
   ...missoesHandlers,
   ...investigacaoHandlers,

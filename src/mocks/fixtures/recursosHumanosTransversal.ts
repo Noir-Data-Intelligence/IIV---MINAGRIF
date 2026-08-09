@@ -5,28 +5,30 @@ import type {
 } from "@/types/dto/recursosHumanos";
 
 /**
- * Dados fictícios mas plausíveis do módulo Recursos Humanos do IIV (Instituto de
- * Investigação Veterinária de Angola). Servem os handlers MSW enquanto o backend
- * Laravel não existe.
+ * Dados fictícios mas plausíveis do RH Transversal do IIV (Instituto de
+ * Investigação Veterinária de Angola) — esquema separado do RH Laboratorial
+ * (dualidade obrigatória, ver SIG-IIV-MEMORIA-PROJETO.md secção 6). Servem os
+ * handlers MSW enquanto o backend Laravel não existe.
  *
- * Cobre um quadro de pessoal técnico e administrativo típico de um instituto
- * público de investigação (investigadores, técnicos de laboratório, veterinários,
- * pessoal de apoio), os respectivos vínculos contratuais (salários em Kwanzas,
- * AOA) e um histórico de férias/ausências.
+ * Cobre o quadro de pessoal técnico e administrativo geral do instituto
+ * (investigadores, veterinários, pessoal de apoio/gestão), os respectivos
+ * vínculos contratuais (salários em Kwanzas, AOA) e um histórico de
+ * férias/ausências.
  *
  * Os `departmentId` referem departamentos de `fixtures/departamentos.ts`
  * (dep-0001..dep-0010). Alguns contratos a termo têm `endDate` propositadamente
  * próximo da data corrente para alimentar o KPI "contratos a expirar em breve";
  * algumas ausências estão em curso para alimentar o KPI "ausências em curso".
  *
- * NOTA: exportados como `let` para serem MUTÁVEIS — os handlers create/update/
- * delete operam sobre estes arrays em memória, persistindo alterações durante a
- * sessão do browser (perde-se no refresh, comportamento esperado de um mock).
+ * NOTA: exportados como `const` mas MUTÁVEIS via `.unshift()`/`.splice()` (nunca
+ * reatribuídos) — os handlers create/update/delete operam sobre estes arrays
+ * em memória, persistindo alterações durante a sessão do browser (perde-se no
+ * refresh, comportamento esperado de um mock).
  */
 
 // --- Colaboradores ---------------------------------------------------------
 
-export const employeesFixtures: EmployeeDto[] = [
+export const employeesTransversalFixtures: EmployeeDto[] = [
   {
     id: "emp-0001",
     employeeNumber: "IIV-0001",
@@ -181,7 +183,7 @@ export const employeesFixtures: EmployeeDto[] = [
 
 // --- Contratos -------------------------------------------------------------
 
-export const contractsFixtures: ContractDto[] = [
+export const contractsTransversalFixtures: ContractDto[] = [
   {
     id: "con-0001",
     employeeId: "emp-0001",
@@ -329,7 +331,7 @@ export const contractsFixtures: ContractDto[] = [
 
 // --- Ausências -------------------------------------------------------------
 
-export const leavesFixtures: LeaveDto[] = [
+export const leavesTransversalFixtures: LeaveDto[] = [
   {
     id: "lea-0001",
     employeeId: "emp-0001",

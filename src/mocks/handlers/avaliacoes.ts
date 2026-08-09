@@ -6,7 +6,8 @@ import {
   historyFixtures,
   scoresFixtures,
 } from "@/mocks/fixtures/avaliacoes";
-import { employeesFixtures } from "@/mocks/fixtures/recursosHumanos";
+import { employeesTransversalFixtures } from "@/mocks/fixtures/recursosHumanosTransversal";
+import { employeesLaboratorioFixtures } from "@/mocks/fixtures/recursosHumanosLaboratorio";
 import { usersFixtures } from "@/mocks/fixtures/users";
 import type {
   CriteriaDto,
@@ -46,7 +47,11 @@ const BASE = "*/api/avaliacoes";
 // --- Resolução de nomes (eager-load simulado) -------------------------------
 
 function employeeName(id: string): string | null {
-  return employeesFixtures.find((e) => e.id === id)?.fullName ?? null;
+  return (
+    employeesTransversalFixtures.find((e) => e.id === id)?.fullName ??
+    employeesLaboratorioFixtures.find((e) => e.id === id)?.fullName ??
+    null
+  );
 }
 function userName(id: string | null): string | null {
   if (!id) return null;

@@ -32,7 +32,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useUsersList } from "@/hooks/queries/useUsers";
-import { useEmployeesList } from "@/hooks/queries/useRecursosHumanos";
+import { useEmployeesTransversalList } from "@/hooks/queries/useRecursosHumanosTransversal";
+import { useEmployeesLaboratorioList } from "@/hooks/queries/useRecursosHumanosLaboratorio";
 import {
   useCyclesList, useCreateCycle, useUpdateCycle, useDeleteCycle,
   useCriteriasList, useCreateCriteria, useUpdateCriteria, useDeleteCriteria,
@@ -120,10 +121,11 @@ export default function Avaliacoes() {
 
   // Opções partilhadas para os Selects (listas "completas", não paginadas na UI).
   const { data: cyclesAll } = useCyclesList({ perPage: 100 });
-  const { data: employeesAll } = useEmployeesList({ perPage: 100 });
+  const { data: employeesTransversalAll } = useEmployeesTransversalList({ perPage: 100 });
+  const { data: employeesLaboratorioAll } = useEmployeesLaboratorioList({ perPage: 100 });
   const { data: usersAll } = useUsersList({});
   const cycleOptions = cyclesAll?.data ?? [];
-  const employeeOptions = employeesAll?.data ?? [];
+  const employeeOptions = [...(employeesTransversalAll?.data ?? []), ...(employeesLaboratorioAll?.data ?? [])];
   const userOptions = usersAll ?? [];
 
   const kpiCards = [
