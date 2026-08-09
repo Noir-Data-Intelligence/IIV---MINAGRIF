@@ -331,6 +331,12 @@ export const endpoints = {
     validate: (id: string) => `/avaliacoes/${id}/validar`,
     reopen: (id: string) => `/avaliacoes/${id}/reabrir`,
   },
+  // Observatório Veterinário Nacional (Onda 11) — só a Fase 1 (mapa
+  // georreferenciado de estações + colheitas). Fases 2/3 (indicadores
+  // sanitários, zonas/focos) ficam por construir.
+  observatorio: {
+    mapa: "/observatorio/mapa",
+  },
 
   // --- Módulos futuros (contrato documentado, ainda sem implementação) -----
   //

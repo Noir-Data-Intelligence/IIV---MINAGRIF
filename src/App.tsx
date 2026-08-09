@@ -60,6 +60,7 @@ const Formacoes = lazy(() => import("./pages/admin/Formacoes"));
 const Investigacao = lazy(() => import("./pages/admin/Investigacao"));
 const Avaliacoes = lazy(() => import("./pages/admin/Avaliacoes"));
 const BI = lazy(() => import("./pages/admin/BI"));
+const Observatorio = lazy(() => import("./pages/admin/Observatorio"));
 const Auditorias = lazy(() => import("./pages/admin/Auditorias"));
 const NaoConformidades = lazy(() => import("./pages/admin/NaoConformidades"));
 const LogsActividade = lazy(() => import("./pages/admin/LogsActividade"));
@@ -150,6 +151,7 @@ const App = () => (
               <Route path="investigacao" element={<RoleGuard module="investigacao"><Investigacao /></RoleGuard>} />
               <Route path="avaliacoes" element={<RoleGuard module="avaliacoes"><Avaliacoes /></RoleGuard>} />
               <Route path="bi" element={<RoleGuard module="bi"><BI /></RoleGuard>} />
+              <Route path="observatorio" element={<RoleGuard module="observatorio"><Observatorio /></RoleGuard>} />
 
               <Route path="auditorias" element={<RoleGuard module="auditorias"><Auditorias /></RoleGuard>} />
               <Route path="nao-conformidades" element={<RoleGuard module="nao-conformidades"><NaoConformidades /></RoleGuard>} />

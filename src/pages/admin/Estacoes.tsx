@@ -51,6 +51,16 @@ function buildEstacaoSchema(t: TFunction) {
       errorMap: () => ({ message: t("validation.typeRequired") }),
     }),
     location: z.string().trim().optional(),
+    latitude: z
+      .string()
+      .trim()
+      .optional()
+      .refine((v) => !v || (Number.isFinite(Number(v)) && Number(v) >= -90 && Number(v) <= 90), t("validation.latitudeInvalid")),
+    longitude: z
+      .string()
+      .trim()
+      .optional()
+      .refine((v) => !v || (Number.isFinite(Number(v)) && Number(v) >= -180 && Number(v) <= 180), t("validation.longitudeInvalid")),
     description: z.string().trim().optional(),
     isActive: z.boolean(),
   });
@@ -93,6 +103,8 @@ export default function Estacoes() {
             name: editItem.name,
             stationType: editItem.stationType,
             location: editItem.location ?? "",
+            latitude: editItem.latitude != null ? String(editItem.latitude) : "",
+            longitude: editItem.longitude != null ? String(editItem.longitude) : "",
             description: editItem.description ?? "",
             isActive: editItem.isActive,
           }
@@ -103,13 +115,15 @@ export default function Estacoes() {
   const entityForm = useEntityForm({
     schema: estacaoSchema,
     initialValues,
-    defaultValues: { name: "", stationType: undefined, location: "", description: "", isActive: true },
+    defaultValues: { name: "", stationType: undefined, location: "", latitude: "", longitude: "", description: "", isActive: true },
     open: formOpen,
     onSubmit: async (values) => {
       const payload = {
         name: values.name,
         stationType: values.stationType,
         location: values.location?.trim() ? values.location.trim() : null,
+        latitude: values.latitude?.trim() ? Number(values.latitude.trim()) : null,
+        longitude: values.longitude?.trim() ? Number(values.longitude.trim()) : null,
         description: values.description?.trim() ? values.description.trim() : null,
         isActive: values.isActive,
       };
@@ -301,6 +315,34 @@ export default function Estacoes() {
                 )}
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="latitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.latitude")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.latitude")} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="longitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.labels.longitude")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholders.longitude")} {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="description"
@@ -359,6 +401,14 @@ export default function Estacoes() {
                 <div>
                   <span className="text-muted-foreground">{t("details.location")}:</span>
                   <p className="font-medium">{viewItem.location || t("table.emptyCell")}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t("details.coordinates")}:</span>
+                  <p className="font-medium">
+                    {viewItem.latitude != null && viewItem.longitude != null
+                      ? `${viewItem.latitude}, ${viewItem.longitude}`
+                      : t("table.emptyCell")}
+                  </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">{t("details.status")}:</span>

@@ -90,6 +90,8 @@ export const requisicoesHandlers = [
         pontoColheita: a.pontoColheita ?? null,
         colhidaPor: a.colhidaPor ?? null,
         sujeito: a.sujeito ?? null,
+        latitude: null,
+        longitude: null,
         recebidaEm: new Date().toISOString(),
         status: "recebida",
       });

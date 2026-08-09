@@ -1,0 +1,36 @@
+{
+  "page": {
+    "title": "Observatório Veterinário",
+    "description": "Mapeamento georreferenciado das estações e colheitas do IIV a nível nacional."
+  },
+  "kpi": {
+    "estacoes": "Estações no mapa",
+    "estacoesCaption": "Com coordenadas registadas",
+    "colheitas": "Colheitas no mapa",
+    "colheitasCaption": "Com coordenadas registadas",
+    "total": "Pontos no mapa",
+    "totalCaption": "Estações + colheitas"
+  },
+  "map": {
+    "title": "Mapa Nacional",
+    "toggleEstacoes": "Estações",
+    "toggleColheitas": "Colheitas",
+    "empty": "Ainda não existem estações ou colheitas com coordenadas registadas."
+  },
+  "legend": {
+    "estacoes": "Estação",
+    "recebida": "Colheita recebida",
+    "aceite": "Colheita aceite",
+    "rejeitada": "Colheita rejeitada"
+  },
+  "stationType": {
+    "zootecnica": "Zootécnica",
+    "experimental": "Experimental",
+    "campo": "Campo"
+  },
+  "status": {
+    "recebida": "Recebida",
+    "aceite": "Aceite",
+    "rejeitada": "Rejeitada"
+  }
+}

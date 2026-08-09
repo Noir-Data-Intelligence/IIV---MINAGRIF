@@ -1,0 +1,36 @@
+{
+  "page": {
+    "title": "Veterinary Observatory",
+    "description": "Georeferenced mapping of IIV stations and sample collections nationwide."
+  },
+  "kpi": {
+    "estacoes": "Stations on map",
+    "estacoesCaption": "With registered coordinates",
+    "colheitas": "Collections on map",
+    "colheitasCaption": "With registered coordinates",
+    "total": "Points on map",
+    "totalCaption": "Stations + collections"
+  },
+  "map": {
+    "title": "National Map",
+    "toggleEstacoes": "Stations",
+    "toggleColheitas": "Collections",
+    "empty": "There are no stations or collections with registered coordinates yet."
+  },
+  "legend": {
+    "estacoes": "Station",
+    "recebida": "Collection received",
+    "aceite": "Collection accepted",
+    "rejeitada": "Collection rejected"
+  },
+  "stationType": {
+    "zootecnica": "Zootechnical",
+    "experimental": "Experimental",
+    "campo": "Field"
+  },
+  "status": {
+    "recebida": "Received",
+    "aceite": "Accepted",
+    "rejeitada": "Rejected"
+  }
+}

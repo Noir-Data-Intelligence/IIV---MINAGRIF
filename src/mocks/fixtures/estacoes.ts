@@ -15,6 +15,8 @@ export let estacoesFixtures: EstacaoDto[] = [
     name: "Estação Zootécnica da Humpata",
     stationType: "zootecnica",
     location: "Humpata, Huíla",
+    latitude: -15.0167,
+    longitude: 13.3167,
     description:
       "Estação de referência para o melhoramento de bovinos de raça autóctone e ensaios de maneio em pastagens de altitude.",
     isActive: true,
@@ -25,6 +27,8 @@ export let estacoesFixtures: EstacaoDto[] = [
     name: "Estação Experimental da Chianga",
     stationType: "experimental",
     location: "Huambo",
+    latitude: -12.85,
+    longitude: 15.8333,
     description:
       "Ensaios de nutrição animal e avaliação de recursos forrageiros locais no planalto central.",
     isActive: true,
@@ -35,6 +39,8 @@ export let estacoesFixtures: EstacaoDto[] = [
     name: "Estação Zootécnica de Malanje",
     stationType: "zootecnica",
     location: "Malanje",
+    latitude: -9.5402,
+    longitude: 16.341,
     description:
       "Produção e conservação de efectivos caprinos e ovinos adaptados às condições da região.",
     isActive: true,
@@ -45,6 +51,8 @@ export let estacoesFixtures: EstacaoDto[] = [
     name: "Campo Experimental de Mazozo",
     stationType: "campo",
     location: "Icolo e Bengo, Luanda",
+    latitude: -9.2833,
+    longitude: 13.6333,
     description:
       "Campo de demonstração e ensaio de pastagens irrigadas e sistemas silvopastoris.",
     isActive: true,
@@ -55,6 +63,8 @@ export let estacoesFixtures: EstacaoDto[] = [
     name: "Estação Experimental do Namibe",
     stationType: "experimental",
     location: "Namibe",
+    latitude: null,
+    longitude: null,
     description:
       "Estudo da adaptação de raças a zonas áridas e ensaios de suplementação em época seca.",
     isActive: false,
@@ -65,6 +75,8 @@ export let estacoesFixtures: EstacaoDto[] = [
     name: "Estação Zootécnica do Cuando Cubango",
     stationType: "zootecnica",
     location: "Menongue, Cuando Cubango",
+    latitude: -14.6585,
+    longitude: 17.691,
     description:
       "Núcleo de reprodução bovina e apoio técnico à pecuária extensiva do sudeste.",
     isActive: true,

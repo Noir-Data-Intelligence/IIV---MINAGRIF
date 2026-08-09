@@ -10,7 +10,7 @@ import {
   ClipboardList, Package, Pill, Boxes, CalendarRange, Truck, MapPin,
   ClipboardCheck, AlertTriangle, Shield, Menu, X, UserCircle, Search,
   Sparkles, Boxes as BoxesIcon, LineChart, ShieldCheck, ScrollText, MessageSquare, Images, Newspaper, Bell,
-  FolderKanban, FileStack, Workflow, Rabbit, Dna, Sprout, Beef, Wallet, Wrench, Plane, GraduationCap, UserCog, Microscope, BarChart3, Award,
+  FolderKanban, FileStack, Workflow, Rabbit, Dna, Sprout, Beef, Wallet, Wrench, Plane, GraduationCap, UserCog, Microscope, BarChart3, Award, Radar,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,7 @@ const navGroups: NavGroup[] = [
       { icon: Microscope, label: "Investigação", path: "/admin/investigacao", module: "investigacao" },
       { icon: Award, label: "Avaliações", path: "/admin/avaliacoes", module: "avaliacoes" },
       { icon: BarChart3, label: "BI Institucional", path: "/admin/bi", module: "bi" },
+      { icon: Radar, label: "Observatório Veterinário", path: "/admin/observatorio", module: "observatorio" },
     ],
   },
 ];

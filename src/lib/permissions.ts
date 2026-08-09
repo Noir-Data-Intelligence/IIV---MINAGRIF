@@ -63,7 +63,8 @@ export type ModuleKey =
   | "formacoes"
   | "investigacao"
   | "avaliacoes"
-  | "bi";
+  | "bi"
+  | "observatorio";
 
 
 
@@ -80,7 +81,7 @@ export const ALL_MODULES: ModuleKey[] = [
   "acessibilidade", "legislacao", "noticias", "mensagens", "slideshow", "rbac",
   "historico-alertas", "documentos", "processos", "animais", "inseminacao",
   "stock", "agricultura", "pecuaria", "financeiro", "patrimonio",
-  "missoes", "rh", "formacoes", "investigacao", "avaliacoes", "bi",
+  "missoes", "rh", "formacoes", "investigacao", "avaliacoes", "bi", "observatorio",
 ];
 
 
@@ -123,6 +124,7 @@ export const MODULE_LABEL: Record<ModuleKey, string> = {
   investigacao: "Investigação",
   avaliacoes: "Avaliações de Desempenho",
   bi: "BI Institucional",
+  observatorio: "Observatório Veterinário",
 };
 
 
@@ -155,7 +157,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
       "laboratorios", "analises", "resultados", "insumos",
       "animais", "inseminacao", "auditorias", "nao-conformidades", "logs", "acessibilidade",
       "historico-alertas", "documentos", "processos",
-      "missoes", "formacoes", "investigacao", "avaliacoes", "bi",
+      "missoes", "formacoes", "investigacao", "avaliacoes", "bi", "observatorio",
     ],
     write: ["laboratorios", "analises", "resultados", "insumos", "auditorias", "nao-conformidades", "documentos", "processos"],
   },
@@ -174,7 +176,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
       "laboratorios", "analises", "resultados", "insumos",
       "animais", "inseminacao", "historico-alertas", "documentos", "processos",
       "stock", "agricultura", "pecuaria", "patrimonio",
-      "missoes", "formacoes", "investigacao", "avaliacoes",
+      "missoes", "formacoes", "investigacao", "avaliacoes", "observatorio",
     ],
     write: ["analises", "resultados", "insumos", "animais", "inseminacao", "documentos", "processos",
       "stock", "agricultura", "pecuaria", "missoes", "formacoes", "investigacao"],
@@ -202,11 +204,11 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
     write: ["rh", "formacoes", "missoes", "documentos", "processos"],
   },
   "gestor-estacao": {
-    view: ["painel", "perfil", "estacoes", "animais", "inseminacao", "agricultura", "pecuaria", "historico-alertas", "documentos", "processos"],
+    view: ["painel", "perfil", "estacoes", "animais", "inseminacao", "agricultura", "pecuaria", "historico-alertas", "documentos", "processos", "observatorio"],
     write: ["estacoes", "animais", "inseminacao", "agricultura", "pecuaria", "documentos", "processos"],
   },
   isv: {
-    view: ["painel", "processos", "historico-alertas"],
+    view: ["painel", "processos", "historico-alertas", "observatorio"],
     write: [],
   },
 };

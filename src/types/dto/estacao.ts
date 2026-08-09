@@ -13,6 +13,8 @@ export interface EstacaoDto {
   name: string;
   stationType: StationType;
   location: string | null;
+  latitude: number | null;
+  longitude: number | null;
   description: string | null;
   isActive: boolean;
   createdAt: string;

@@ -31,6 +31,8 @@
       "name": "Nome",
       "type": "Tipo",
       "location": "Localização",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
       "description": "Descrição",
       "active": "Estação activa"
     },
@@ -38,6 +40,8 @@
       "name": "Ex: Estação Zootécnica da Humpata",
       "type": "Seleccionar tipo",
       "location": "Ex: Humpata, Huíla",
+      "latitude": "Ex: -15.0167",
+      "longitude": "Ex: 13.3167",
       "description": "Descrição da estação"
     },
     "submitCreate": "Criar Estação",
@@ -54,6 +58,7 @@
     "name": "Nome",
     "type": "Tipo",
     "location": "Localização",
+    "coordinates": "Coordenadas",
     "status": "Estado",
     "createdAt": "Criada em",
     "description": "Descrição"
@@ -69,7 +74,9 @@
   },
   "validation": {
     "nameShort": "Nome demasiado curto",
-    "typeRequired": "Seleccione um tipo"
+    "typeRequired": "Seleccione um tipo",
+    "latitudeInvalid": "Latitude inválida (-90 a 90)",
+    "longitudeInvalid": "Longitude inválida (-180 a 180)"
   },
   "toast": {
     "createSuccess": "Estação criada com sucesso",

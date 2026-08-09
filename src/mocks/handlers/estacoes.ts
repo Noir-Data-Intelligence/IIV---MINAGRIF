@@ -53,6 +53,8 @@ export const estacoesHandlers = [
       name: payload.name ?? "Sem nome",
       stationType: payload.stationType ?? "zootecnica",
       location: payload.location ?? null,
+      latitude: payload.latitude ?? null,
+      longitude: payload.longitude ?? null,
       description: payload.description ?? null,
       isActive: payload.isActive ?? true,
       createdAt: now,

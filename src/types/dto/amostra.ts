@@ -27,6 +27,8 @@ export interface AmostraDto {
   pontoColheita: string | null;
   colhidaPor: string | null;
   sujeito: Record<string, unknown> | null;
+  latitude: number | null;
+  longitude: number | null;
   recebidaEm: string;
   status: AmostraStatus;
   boletimInterno?: BoletimInternoDto | null;

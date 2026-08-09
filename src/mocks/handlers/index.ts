@@ -38,6 +38,7 @@ import { recursosHumanosLaboratorioHandlers } from "@/mocks/handlers/recursosHum
 import { formacoesHandlers } from "@/mocks/handlers/formacoes";
 import { missoesHandlers } from "@/mocks/handlers/missoes";
 import { investigacaoHandlers } from "@/mocks/handlers/investigacao";
+import { observatorioHandlers } from "@/mocks/handlers/observatorio";
 import { stockHandlers } from "@/mocks/handlers/stock";
 import { avaliacoesHandlers } from "@/mocks/handlers/avaliacoes";
 import { agriculturaHandlers } from "@/mocks/handlers/agricultura";
@@ -94,6 +95,7 @@ export const handlers = [
   ...formacoesHandlers,
   ...missoesHandlers,
   ...investigacaoHandlers,
+  ...observatorioHandlers,
   ...stockHandlers,
   ...avaliacoesHandlers,
   ...agriculturaHandlers,
