@@ -41,6 +41,16 @@ const amostraSchema = z.object({
   origemMatriz: z.string().trim().optional(),
   pontoColheita: z.string().trim().optional(),
   colhidaPor: z.string().trim().optional(),
+  latitude: z
+    .string()
+    .trim()
+    .optional()
+    .refine((v) => !v || (Number.isFinite(Number(v)) && Number(v) >= -90 && Number(v) <= 90), "Latitude inválida (-90 a 90)"),
+  longitude: z
+    .string()
+    .trim()
+    .optional()
+    .refine((v) => !v || (Number.isFinite(Number(v)) && Number(v) >= -180 && Number(v) <= 180), "Longitude inválida (-180 a 180)"),
 });
 
 const requisicaoSchema = z.object({
@@ -70,7 +80,9 @@ function AmostrasFieldArray({ form, t }: { form: UseFormReturn<RequisicaoFormVal
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ tipoAmostra: "", origemMatriz: "", pontoColheita: "", colhidaPor: "" })}
+          onClick={() =>
+            append({ tipoAmostra: "", origemMatriz: "", pontoColheita: "", colhidaPor: "", latitude: "", longitude: "" })
+          }
         >
           <Plus className="mr-1 h-3.5 w-3.5" /> {t("form.amostras.add")}
         </Button>
@@ -138,6 +150,32 @@ function AmostrasFieldArray({ form, t }: { form: UseFormReturn<RequisicaoFormVal
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name={`amostras.${index}.latitude`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">{t("form.amostras.latitude")}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t("form.amostras.latitudePlaceholder")} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name={`amostras.${index}.longitude`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">{t("form.amostras.longitude")}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t("form.amostras.longitudePlaceholder")} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       ))}
     </div>
@@ -152,7 +190,7 @@ const DEFAULT_VALUES: RequisicaoFormValues = {
   veterinarioResponsavel: "",
   consentimento: false,
   assinaturaCliente: "",
-  amostras: [{ tipoAmostra: "", origemMatriz: "", pontoColheita: "", colhidaPor: "" }],
+  amostras: [{ tipoAmostra: "", origemMatriz: "", pontoColheita: "", colhidaPor: "", latitude: "", longitude: "" }],
 };
 
 export default function Requisicoes() {
@@ -199,6 +237,8 @@ export default function Requisicoes() {
           origemMatriz: a.origemMatriz?.trim() || null,
           pontoColheita: a.pontoColheita?.trim() || null,
           colhidaPor: a.colhidaPor?.trim() || null,
+          latitude: a.latitude?.trim() ? Number(a.latitude.trim()) : null,
+          longitude: a.longitude?.trim() ? Number(a.longitude.trim()) : null,
         })),
       });
     },

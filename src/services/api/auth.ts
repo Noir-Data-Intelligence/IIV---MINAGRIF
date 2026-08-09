@@ -76,11 +76,16 @@ export function forgotPassword(email: string): Promise<void> {
 }
 
 export function resetPassword(token: string, email: string, password: string): Promise<void> {
+  // O backend real exige `password_confirmation` (regra `confirmed` do
+  // Laravel) — o formulário (RedefinirSenha.tsx) já valida os dois campos
+  // localmente antes de chamar esta função, por isso reenviar o mesmo valor
+  // é seguro (nunca chega aqui divergente).
   return apiPost<void>(endpoints.auth.resetPassword, {
     token,
     email,
     password,
-  } satisfies ResetPasswordPayload);
+    password_confirmation: password,
+  } satisfies ResetPasswordPayload & { password_confirmation: string });
 }
 
 export function changePassword(password: string): Promise<void> {

@@ -27,7 +27,7 @@ import {
   LayoutDashboard, Users, Building2, FlaskConical, ClipboardList,
   Package, Pill, Boxes, CalendarRange, Truck, MapPin, ClipboardCheck,
   AlertTriangle, Shield, UserCircle, Search, FileStack, Workflow, BarChart3,
-  Settings, Newspaper, Scale, Mail, Images, History, Clock,
+  Settings, Newspaper, Scale, Mail, Images, History, Clock, Wrench, UserCog, Radar,
   type LucideIcon,
 } from "lucide-react";
 import type { ModuleKey } from "@/lib/permissions";
@@ -61,6 +61,11 @@ const PAGES: PageItem[] = [
   { label: "Legislação", path: "/admin/legislacao", module: "legislacao", icon: Scale, group: "Conteúdo" },
   { label: "Mensagens de contacto", path: "/admin/mensagens", module: "mensagens", icon: Mail, group: "Conteúdo" },
   { label: "Slideshow", path: "/admin/slideshow", module: "slideshow", icon: Images, group: "Conteúdo" },
+  { label: "Património Central", path: "/admin/patrimonio-central", module: "patrimonio", icon: Wrench, group: "Financeiro & Património" },
+  { label: "Património de Estação", path: "/admin/patrimonio-estacao", module: "patrimonio", icon: MapPin, group: "Financeiro & Património" },
+  { label: "RH Transversal", path: "/admin/rh-transversal", module: "rh", icon: Building2, group: "Pessoas & Missões" },
+  { label: "RH Laboratorial", path: "/admin/rh-laboratorio", module: "rh", icon: UserCog, group: "Pessoas & Missões" },
+  { label: "Observatório Veterinário", path: "/admin/observatorio", module: "observatorio", icon: Radar, group: "Investigação & BI" },
 ];
 
 interface DataHit {

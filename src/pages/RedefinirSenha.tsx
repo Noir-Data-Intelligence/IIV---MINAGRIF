@@ -49,7 +49,7 @@ export default function RedefinirSenha() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
+    if (password.length < 8) {
       toast({ title: t("toast.shortPasswordTitle"), description: t("toast.shortPasswordDescription"), variant: "destructive" });
       return;
     }
@@ -126,11 +126,11 @@ export default function RedefinirSenha() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">{t("form.passwordLabel")}</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("form.passwordPlaceholder")} required minLength={6} className="h-11" />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("form.passwordPlaceholder")} required minLength={8} className="h-11" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm" className="text-sm font-medium">{t("form.confirmLabel")}</Label>
-              <Input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={6} className="h-11" />
+              <Input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8} className="h-11" />
             </div>
             <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading || !hasRecoverySession}>
               <Lock className="mr-2 h-4 w-4" />

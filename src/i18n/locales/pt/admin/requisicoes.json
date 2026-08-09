@@ -55,7 +55,11 @@
       "tipoAmostraPlaceholder": "Ex: Sangue, Fezes, Zaragatoa",
       "origemMatriz": "Origem/matriz",
       "pontoColheita": "Ponto de colheita",
-      "colhidaPor": "Colhida por"
+      "colhidaPor": "Colhida por",
+      "latitude": "Latitude",
+      "latitudePlaceholder": "Ex: -15.0167",
+      "longitude": "Longitude",
+      "longitudePlaceholder": "Ex: 13.3167"
     },
     "submitCreate": "Criar Requisição",
     "submitting": "A guardar...",

@@ -42,6 +42,8 @@ export interface AmostraPayload {
   pontoColheita?: string | null;
   colhidaPor?: string | null;
   sujeito?: Record<string, unknown> | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 /** Payload de rejeição na triagem — RN "Termo de Rejeição obrigatório". */

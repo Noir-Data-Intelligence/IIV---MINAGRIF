@@ -143,7 +143,7 @@ export default function Registar() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">{t("form.passwordLabel")}</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("form.passwordPlaceholder")} required minLength={6} className="h-11" />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("form.passwordPlaceholder")} required minLength={8} className="h-11" />
             </div>
             <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
               <UserPlus className="mr-2 h-4 w-4" />

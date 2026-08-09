@@ -55,7 +55,11 @@
       "tipoAmostraPlaceholder": "e.g. Blood, Feces, Swab",
       "origemMatriz": "Origin/matrix",
       "pontoColheita": "Collection point",
-      "colhidaPor": "Collected by"
+      "colhidaPor": "Collected by",
+      "latitude": "Latitude",
+      "latitudePlaceholder": "e.g. -15.0167",
+      "longitude": "Longitude",
+      "longitudePlaceholder": "e.g. 13.3167"
     },
     "submitCreate": "Create Requisition",
     "submitting": "Saving...",
