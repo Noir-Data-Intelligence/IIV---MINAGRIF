@@ -1,7 +1,7 @@
 {
   "page": {
-    "title": "Património",
-    "description": "Inventário de bens, activos e histórico de manutenções."
+    "title": "Património de Estação",
+    "description": "Inventário de bens, activos e histórico de manutenções das estações zootécnicas."
   },
   "kpis": {
     "totalAssets": "Total de activos",
@@ -91,7 +91,8 @@
         "responsibleUser": "Nome do técnico responsável",
         "serialNumber": "Ex: EP5810R-2021-0453",
         "notes": "Observações internas",
-        "none": "—"
+        "none": "—",
+        "stationSelect": "Escolher estação"
       }
     },
     "dialog": {
@@ -159,6 +160,7 @@
     "nameShort": "Nome demasiado curto",
     "descriptionShort": "Descrição demasiado curta",
     "assetRequired": "Seleccione um activo",
+    "stationRequired": "Seleccione uma estação",
     "costInvalid": "Valor inválido"
   },
   "form": {

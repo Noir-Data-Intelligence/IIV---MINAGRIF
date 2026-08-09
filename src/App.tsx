@@ -51,7 +51,8 @@ const Stock = lazy(() => import("./pages/admin/Stock"));
 const Agricultura = lazy(() => import("./pages/admin/Agricultura"));
 const ProducaoPecuaria = lazy(() => import("./pages/admin/ProducaoPecuaria"));
 const Financeiro = lazy(() => import("./pages/admin/Financeiro"));
-const Patrimonio = lazy(() => import("./pages/admin/Patrimonio"));
+const PatrimonioCentral = lazy(() => import("./pages/admin/PatrimonioCentral"));
+const PatrimonioEstacao = lazy(() => import("./pages/admin/PatrimonioEstacao"));
 const Missoes = lazy(() => import("./pages/admin/Missoes"));
 const RecursosHumanos = lazy(() => import("./pages/admin/RecursosHumanos"));
 const Formacoes = lazy(() => import("./pages/admin/Formacoes"));
@@ -139,7 +140,8 @@ const App = () => (
               <Route path="agricultura" element={<RoleGuard module="agricultura"><Agricultura /></RoleGuard>} />
               <Route path="pecuaria" element={<RoleGuard module="pecuaria"><ProducaoPecuaria /></RoleGuard>} />
               <Route path="financeiro" element={<RoleGuard module="financeiro"><Financeiro /></RoleGuard>} />
-              <Route path="patrimonio" element={<RoleGuard module="patrimonio"><Patrimonio /></RoleGuard>} />
+              <Route path="patrimonio-central" element={<RoleGuard module="patrimonio"><PatrimonioCentral /></RoleGuard>} />
+              <Route path="patrimonio-estacao" element={<RoleGuard module="patrimonio"><PatrimonioEstacao /></RoleGuard>} />
               <Route path="missoes" element={<RoleGuard module="missoes"><Missoes /></RoleGuard>} />
               <Route path="rh" element={<RoleGuard module="rh"><RecursosHumanos /></RoleGuard>} />
               <Route path="formacoes" element={<RoleGuard module="formacoes"><Formacoes /></RoleGuard>} />

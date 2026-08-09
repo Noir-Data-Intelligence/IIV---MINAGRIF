@@ -113,7 +113,8 @@ const navGroups: NavGroup[] = [
     colorClass: "text-[hsl(45,90%,55%)]",
     items: [
       { icon: Wallet, label: "Financeiro", path: "/admin/financeiro", module: "financeiro" },
-      { icon: Wrench, label: "Património", path: "/admin/patrimonio", module: "patrimonio" },
+      { icon: Wrench, label: "Património Central", path: "/admin/patrimonio-central", module: "patrimonio" },
+      { icon: MapPin, label: "Património de Estação", path: "/admin/patrimonio-estacao", module: "patrimonio" },
     ],
   },
   {

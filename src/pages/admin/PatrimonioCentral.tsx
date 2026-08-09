@@ -29,33 +29,32 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { formatDate, formatKwanza } from "@/lib/format";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 import {
-  useAssetsList,
-  useCreateAsset,
-  useUpdateAsset,
-  useDeleteAsset,
-  useMaintenancesList,
-  useCreateMaintenance,
-  useUpdateMaintenance,
-  useDeleteMaintenance,
-} from "@/hooks/queries/usePatrimonio";
-import { useEstacoesList } from "@/hooks/queries/useEstacoes";
+  useAssetsCentralList,
+  useCreateAssetCentral,
+  useUpdateAssetCentral,
+  useDeleteAssetCentral,
+  useMaintenancesCentralList,
+  useCreateMaintenanceCentral,
+  useUpdateMaintenanceCentral,
+  useDeleteMaintenanceCentral,
+} from "@/hooks/queries/usePatrimonioCentral";
 import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
 import type {
-  AssetDto,
+  AssetCentralDto,
   AssetCategory,
   AssetStatus,
-  MaintenanceDto,
+  MaintenanceCentralDto,
   MaintenanceType,
-} from "@/types/dto/patrimonio";
+} from "@/types/dto/patrimonioCentral";
 import i18n from "@/i18n";
-import ptPatrimonio from "@/i18n/locales/pt/admin/patrimonio.json";
-import enPatrimonio from "@/i18n/locales/en/admin/patrimonio.json";
+import ptPatrimonioCentral from "@/i18n/locales/pt/admin/patrimonioCentral.json";
+import enPatrimonioCentral from "@/i18n/locales/en/admin/patrimonioCentral.json";
 
 // Namespace autónomo registado em runtime, seguindo o padrão de Documentos.tsx.
-if (!i18n.hasResourceBundle("pt", "admin-patrimonio"))
-  i18n.addResourceBundle("pt", "admin-patrimonio", ptPatrimonio, true, true);
-if (!i18n.hasResourceBundle("en", "admin-patrimonio"))
-  i18n.addResourceBundle("en", "admin-patrimonio", enPatrimonio, true, true);
+if (!i18n.hasResourceBundle("pt", "admin-patrimonio-central"))
+  i18n.addResourceBundle("pt", "admin-patrimonio-central", ptPatrimonioCentral, true, true);
+if (!i18n.hasResourceBundle("en", "admin-patrimonio-central"))
+  i18n.addResourceBundle("en", "admin-patrimonio-central", enPatrimonioCentral, true, true);
 
 const ASSET_STATUSES: AssetStatus[] = [
   "activo", "em_manutencao", "avariado", "abatido", "reservado",
@@ -96,7 +95,6 @@ function buildAssetSchema(t: TFunction) {
     ]),
     description: z.string().trim().optional(),
     location: z.string().trim().optional(),
-    stationId: z.string().optional(),
     departmentId: z.string().optional(),
     responsibleUser: z.string().trim().optional(),
     acquisitionDate: z.string().optional(),
@@ -128,8 +126,8 @@ type MaintenanceFormValues = z.infer<ReturnType<typeof buildMaintenanceSchema>>;
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export default function Patrimonio() {
-  const { t } = useTranslation("admin-patrimonio");
+export default function PatrimonioCentral() {
+  const { t } = useTranslation("admin-patrimonio-central");
   const { canWrite } = useUserRole();
   const canEdit = canWrite("patrimonio");
   const reduceMotion = useReducedMotion();
@@ -140,8 +138,8 @@ export default function Patrimonio() {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [categoryFilter, setCategoryFilter] = useState<string>("todas");
   const [assetFormOpen, setAssetFormOpen] = useState(false);
-  const [assetEdit, setAssetEdit] = useState<AssetDto | null>(null);
-  const [assetView, setAssetView] = useState<AssetDto | null>(null);
+  const [assetEdit, setAssetEdit] = useState<AssetCentralDto | null>(null);
+  const [assetView, setAssetView] = useState<AssetCentralDto | null>(null);
   const [assetDeleteId, setAssetDeleteId] = useState<string | null>(null);
 
   // --- Manutenções: estado de tabela ---
@@ -149,17 +147,17 @@ export default function Patrimonio() {
   const [maintSearch, setMaintSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("todos");
   const [maintFormOpen, setMaintFormOpen] = useState(false);
-  const [maintEdit, setMaintEdit] = useState<MaintenanceDto | null>(null);
+  const [maintEdit, setMaintEdit] = useState<MaintenanceCentralDto | null>(null);
   const [maintDeleteId, setMaintDeleteId] = useState<string | null>(null);
 
-  const { data: assetsData, isLoading: assetsLoading } = useAssetsList({
+  const { data: assetsData, isLoading: assetsLoading } = useAssetsCentralList({
     page: assetPagination.pageIndex + 1,
     perPage: assetPagination.pageSize,
     search: assetSearch || undefined,
     status: statusFilter !== "todos" ? statusFilter : undefined,
     category: categoryFilter !== "todas" ? categoryFilter : undefined,
   });
-  const { data: maintData, isLoading: maintLoading } = useMaintenancesList({
+  const { data: maintData, isLoading: maintLoading } = useMaintenancesCentralList({
     page: maintPagination.pageIndex + 1,
     perPage: maintPagination.pageSize,
     search: maintSearch || undefined,
@@ -167,22 +165,20 @@ export default function Patrimonio() {
   });
 
   // Datasets completos (sem filtros) para KPIs precisos e para popular Selects/lookup.
-  const assetsStats = useAssetsList({ page: 1, perPage: 1000 });
-  const maintStats = useMaintenancesList({ page: 1, perPage: 1000 });
+  const assetsStats = useAssetsCentralList({ page: 1, perPage: 1000 });
+  const maintStats = useMaintenancesCentralList({ page: 1, perPage: 1000 });
   const allAssets = useMemo(() => assetsStats.data?.data ?? [], [assetsStats.data]);
   const allMaints = useMemo(() => maintStats.data?.data ?? [], [maintStats.data]);
 
-  const { data: estacoesData } = useEstacoesList({ page: 1, perPage: 1000 });
   const { data: departamentosData } = useDepartamentosList({ page: 1, perPage: 1000 });
-  const estacoes = estacoesData?.data ?? [];
   const departamentos = departamentosData?.data ?? [];
 
-  const createAsset = useCreateAsset();
-  const updateAsset = useUpdateAsset();
-  const deleteAsset = useDeleteAsset();
-  const createMaint = useCreateMaintenance();
-  const updateMaint = useUpdateMaintenance();
-  const deleteMaint = useDeleteMaintenance();
+  const createAsset = useCreateAssetCentral();
+  const updateAsset = useUpdateAssetCentral();
+  const deleteAsset = useDeleteAssetCentral();
+  const createMaint = useCreateMaintenanceCentral();
+  const updateMaint = useUpdateMaintenanceCentral();
+  const deleteMaint = useDeleteMaintenanceCentral();
 
   // --- KPIs ---
   const kpis = useMemo(() => {
@@ -201,8 +197,6 @@ export default function Patrimonio() {
     const a = allAssets.find((x) => x.id === id);
     return a ? `${a.code} — ${a.name}` : t("assets.table.emptyCell");
   };
-  const stationName = (id: string | null) =>
-    id ? estacoes.find((s) => s.id === id)?.name ?? t("assets.table.emptyCell") : t("assets.table.emptyCell");
   const departmentName = (id: string | null) =>
     id ? departamentos.find((d) => d.id === id)?.name ?? t("assets.table.emptyCell") : t("assets.table.emptyCell");
 
@@ -217,7 +211,6 @@ export default function Patrimonio() {
             category: assetEdit.category,
             description: assetEdit.description ?? "",
             location: assetEdit.location ?? "",
-            stationId: assetEdit.stationId ?? "",
             departmentId: assetEdit.departmentId ?? "",
             responsibleUser: assetEdit.responsibleUser ?? "",
             acquisitionDate: assetEdit.acquisitionDate ?? "",
@@ -236,18 +229,17 @@ export default function Patrimonio() {
     initialValues: assetInitial,
     defaultValues: {
       code: "", name: "", category: "equipamento_laboratorio", description: "", location: "",
-      stationId: "", departmentId: "", responsibleUser: "", acquisitionDate: "",
+      departmentId: "", responsibleUser: "", acquisitionDate: "",
       acquisitionCost: "0", currentValue: "", serialNumber: "", status: "activo", notes: "",
     },
     open: assetFormOpen,
     onSubmit: async (values) => {
-      const payload: Partial<AssetDto> = {
+      const payload: Partial<AssetCentralDto> = {
         code: values.code,
         name: values.name,
         category: values.category,
         description: values.description?.trim() || null,
         location: values.location?.trim() || null,
-        stationId: values.stationId || null,
         departmentId: values.departmentId || null,
         responsibleUser: values.responsibleUser?.trim() || null,
         acquisitionDate: values.acquisitionDate || null,
@@ -296,7 +288,7 @@ export default function Patrimonio() {
     },
     open: maintFormOpen,
     onSubmit: async (values) => {
-      const payload: Partial<MaintenanceDto> = {
+      const payload: Partial<MaintenanceCentralDto> = {
         assetId: values.assetId,
         date: values.date,
         type: values.type,
@@ -318,12 +310,12 @@ export default function Patrimonio() {
   });
 
   const openAssetCreate = () => { setAssetEdit(null); setAssetFormOpen(true); };
-  const openAssetEdit = (a: AssetDto) => { setAssetEdit(a); setAssetFormOpen(true); };
+  const openAssetEdit = (a: AssetCentralDto) => { setAssetEdit(a); setAssetFormOpen(true); };
   const openMaintCreate = () => { setMaintEdit(null); setMaintFormOpen(true); };
-  const openMaintEdit = (m: MaintenanceDto) => { setMaintEdit(m); setMaintFormOpen(true); };
+  const openMaintEdit = (m: MaintenanceCentralDto) => { setMaintEdit(m); setMaintFormOpen(true); };
 
   // --- Colunas: Activos ---
-  const assetColumns = useMemo<ColumnDef<AssetDto>[]>(
+  const assetColumns = useMemo<ColumnDef<AssetCentralDto>[]>(
     () => [
       {
         accessorKey: "code",
@@ -352,7 +344,7 @@ export default function Patrimonio() {
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("assets.table.location")} />,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
-            {row.original.location ?? stationName(row.original.stationId)}
+            {row.original.location ?? t("assets.table.emptyCell")}
           </span>
         ),
       },
@@ -373,12 +365,11 @@ export default function Patrimonio() {
         ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, estacoes],
+    [t],
   );
 
   // --- Colunas: Manutenções ---
-  const maintColumns = useMemo<ColumnDef<MaintenanceDto>[]>(
+  const maintColumns = useMemo<ColumnDef<MaintenanceCentralDto>[]>(
     () => [
       {
         accessorKey: "date",
@@ -423,7 +414,7 @@ export default function Patrimonio() {
     [t, allAssets],
   );
 
-  const renderAssetActions = (row: AssetDto) => {
+  const renderAssetActions = (row: AssetCentralDto) => {
     const actions: RowAction[] = [];
     if (canEdit) {
       actions.push({ label: t("assets.actions.edit"), icon: Pencil, onClick: () => openAssetEdit(row) });
@@ -432,7 +423,7 @@ export default function Patrimonio() {
     return <RowActions primary={{ label: t("assets.actions.view"), icon: Eye, onClick: () => setAssetView(row) }} actions={actions} />;
   };
 
-  const renderMaintActions = (row: MaintenanceDto) => {
+  const renderMaintActions = (row: MaintenanceCentralDto) => {
     const actions: RowAction[] = [];
     if (canEdit) {
       actions.push({ label: t("maintenances.actions.edit"), icon: Pencil, onClick: () => openMaintEdit(row) });
@@ -610,19 +601,6 @@ export default function Patrimonio() {
                 <FormItem>
                   <FormLabel>{t("assets.form.labels.serialNumber")}</FormLabel>
                   <FormControl><Input placeholder={t("assets.form.placeholders.serialNumber")} {...field} value={field.value ?? ""} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="stationId" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("assets.form.labels.station")}</FormLabel>
-                  <Select value={field.value || NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)}>
-                    <FormControl><SelectTrigger><SelectValue placeholder={t("assets.form.placeholders.none")} /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value={NONE}>{t("assets.form.placeholders.none")}</SelectItem>
-                      {estacoes.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -825,10 +803,6 @@ export default function Patrimonio() {
                 <div>
                   <p className="text-xs text-muted-foreground">{t("assets.details.location")}</p>
                   <p className="font-medium">{assetView.location ?? t("assets.table.emptyCell")}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">{t("assets.form.labels.station")}</p>
-                  <p className="font-medium">{stationName(assetView.stationId)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("assets.form.labels.department")}</p>

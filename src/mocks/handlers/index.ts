@@ -31,7 +31,8 @@ import { documentPermissionsHandlers } from "@/mocks/handlers/documentPermission
 import { processTypesHandlers } from "@/mocks/handlers/processTypes";
 import { processesHandlers } from "@/mocks/handlers/processes";
 import { financeiroHandlers } from "@/mocks/handlers/financeiro";
-import { patrimonioHandlers } from "@/mocks/handlers/patrimonio";
+import { patrimonioCentralHandlers } from "@/mocks/handlers/patrimonioCentral";
+import { patrimonioEstacaoHandlers } from "@/mocks/handlers/patrimonioEstacao";
 import { recursosHumanosHandlers } from "@/mocks/handlers/recursosHumanos";
 import { formacoesHandlers } from "@/mocks/handlers/formacoes";
 import { missoesHandlers } from "@/mocks/handlers/missoes";
@@ -85,7 +86,8 @@ export const handlers = [
   ...processTypesHandlers,
   ...processesHandlers,
   ...financeiroHandlers,
-  ...patrimonioHandlers,
+  ...patrimonioCentralHandlers,
+  ...patrimonioEstacaoHandlers,
   ...recursosHumanosHandlers,
   ...formacoesHandlers,
   ...missoesHandlers,

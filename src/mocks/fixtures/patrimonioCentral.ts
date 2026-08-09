@@ -1,26 +1,24 @@
-import type { AssetDto, MaintenanceDto } from "@/types/dto/patrimonio";
+import type { AssetCentralDto, MaintenanceCentralDto } from "@/types/dto/patrimonioCentral";
 
 /**
- * Dados fictícios mas realistas do património do IIV (Instituto de Investigação
- * Veterinária de Angola): equipamento de laboratório, viaturas, geradores,
- * câmaras frigoríficas, informática e mobiliário. Valores monetários em Kwanzas
- * (AOA). FKs `stationId` (est-0001..est-0006) e `departmentId` (dep-0001..dep-0010)
- * apontam para as fixtures dos respectivos módulos.
+ * Dados fictícios mas realistas do Património Central (Direcção-Geral e
+ * Laboratório) do IIV — esquema separado do Património de Estação (dualidade
+ * obrigatória, ver SIG-IIV-MEMORIA-PROJETO.md secção 6). Nunca tem
+ * `stationId` — um activo de estação vive em `patrimonioEstacao.ts`.
  *
  * NOTA: exportados como `let` para serem MUTÁVEIS — os handlers create/update/
  * delete operam sobre estes arrays em memória, persistindo alterações durante a
  * sessão do browser (perde-se no refresh, comportamento esperado de um mock).
  */
-export let assetsFixtures: AssetDto[] = [
+export let assetsCentralFixtures: AssetCentralDto[] = [
   {
-    id: "ast-0001",
-    code: "PAT-0001",
+    id: "ast-c-0001",
+    code: "PAT-C-0001",
     name: "Centrífuga refrigerada Eppendorf 5810R",
     category: "equipamento_laboratorio",
     description:
       "Centrífuga de bancada refrigerada para separação de amostras de soro e plasma, com rotor de ângulo fixo.",
     location: "Laboratório de Virologia — Bancada 3",
-    stationId: "est-0001",
     departmentId: "dep-0002",
     responsibleUser: "Dra. Teresa Mbala",
     acquisitionDate: "2021-03-12",
@@ -33,14 +31,13 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2025-11-02T10:30:00.000Z",
   },
   {
-    id: "ast-0002",
-    code: "PAT-0002",
+    id: "ast-c-0002",
+    code: "PAT-C-0002",
     name: "Microscópio óptico Olympus CX43",
     category: "equipamento_laboratorio",
     description:
       "Microscópio binocular para observação de esfregaços e identificação de hemoparasitas.",
     location: "Laboratório de Parasitologia",
-    stationId: "est-0001",
     departmentId: "dep-0004",
     responsibleUser: "Téc. João Kiala",
     acquisitionDate: "2020-07-25",
@@ -53,14 +50,13 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2025-06-18T14:00:00.000Z",
   },
   {
-    id: "ast-0003",
-    code: "PAT-0003",
+    id: "ast-c-0003",
+    code: "PAT-C-0003",
     name: "Autoclave vertical 75L Phoenix",
     category: "equipamento_laboratorio",
     description:
       "Autoclave para esterilização de meios de cultura e material contaminado, câmara de 75 litros.",
     location: "Sala de esterilização",
-    stationId: "est-0001",
     departmentId: "dep-0003",
     responsibleUser: "Téc. Amélia Sunga",
     acquisitionDate: "2019-11-08",
@@ -73,14 +69,13 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2026-05-20T09:00:00.000Z",
   },
   {
-    id: "ast-0004",
-    code: "PAT-0004",
+    id: "ast-c-0004",
+    code: "PAT-C-0004",
     name: "Câmara frigorífica -80°C Thermo Scientific",
     category: "refrigeracao",
     description:
       "Ultracongelador vertical para conservação de estirpes virais, doses seminais e amostras biológicas.",
     location: "Sala de conservação criogénica",
-    stationId: "est-0002",
     departmentId: "dep-0002",
     responsibleUser: "Dra. Teresa Mbala",
     acquisitionDate: "2022-01-30",
@@ -93,14 +88,13 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2026-02-14T08:45:00.000Z",
   },
   {
-    id: "ast-0005",
-    code: "PAT-0005",
+    id: "ast-c-0005",
+    code: "PAT-C-0005",
     name: "Gerador diesel Cummins 60 kVA",
     category: "energia",
     description:
-      "Grupo electrogéneo de emergência para os laboratórios e câmaras de conservação da estação central.",
+      "Grupo electrogéneo de emergência para os laboratórios e câmaras de conservação da sede.",
     location: "Casa das máquinas — exterior",
-    stationId: "est-0001",
     departmentId: "dep-0008",
     responsibleUser: "Eng. Manuel Domingos",
     acquisitionDate: "2018-05-14",
@@ -113,34 +107,12 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2026-04-03T13:20:00.000Z",
   },
   {
-    id: "ast-0006",
-    code: "PAT-0006",
-    name: "Viatura Toyota Hilux 4x4 (cabine dupla)",
-    category: "viatura",
-    description:
-      "Viatura todo-o-terreno para recolha de amostras e missões de campo nas províncias.",
-    location: "Parque automóvel",
-    stationId: "est-0003",
-    departmentId: "dep-0005",
-    responsibleUser: "Sr. Pedro Cassoma",
-    acquisitionDate: "2021-09-02",
-    acquisitionCost: 32000000,
-    currentValue: 24500000,
-    serialNumber: "LN-42-18-AO",
-    status: "activo",
-    notes: "Revisão a cada 10 000 km. Matrícula LN-42-18-AO.",
-    createdAt: "2021-09-02T09:30:00.000Z",
-    updatedAt: "2026-06-10T10:00:00.000Z",
-  },
-  {
-    id: "ast-0007",
-    code: "PAT-0007",
+    id: "ast-c-0006",
+    code: "PAT-C-0006",
     name: "Estufa de incubação bacteriológica Memmert",
     category: "equipamento_laboratorio",
-    description:
-      "Incubadora de temperatura controlada para crescimento de culturas bacterianas.",
+    description: "Incubadora de temperatura controlada para crescimento de culturas bacterianas.",
     location: "Laboratório de Bacteriologia — Bancada 1",
-    stationId: "est-0001",
     departmentId: "dep-0003",
     responsibleUser: "Téc. Amélia Sunga",
     acquisitionDate: "2020-02-19",
@@ -153,14 +125,13 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2025-09-27T11:10:00.000Z",
   },
   {
-    id: "ast-0008",
-    code: "PAT-0008",
+    id: "ast-c-0007",
+    code: "PAT-C-0007",
     name: "Termociclador PCR Bio-Rad T100",
     category: "equipamento_laboratorio",
     description:
       "Termociclador para amplificação de ADN no diagnóstico molecular de agentes patogénicos.",
     location: "Laboratório de Biologia Molecular",
-    stationId: "est-0002",
     departmentId: "dep-0002",
     responsibleUser: "Dr. Anselmo Nzau",
     acquisitionDate: "2023-04-11",
@@ -173,13 +144,12 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2026-01-22T15:30:00.000Z",
   },
   {
-    id: "ast-0009",
-    code: "PAT-0009",
+    id: "ast-c-0008",
+    code: "PAT-C-0008",
     name: "Balança analítica Kern ABT 220-5DM",
     category: "equipamento_laboratorio",
     description: "Balança de precisão (0,01 mg) para preparação de reagentes e pesagem de amostras.",
     location: "Laboratório de Qualidade e Metrologia",
-    stationId: "est-0001",
     departmentId: "dep-0008",
     responsibleUser: "Eng. Sofia Bengui",
     acquisitionDate: "2022-08-16",
@@ -192,14 +162,13 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2026-06-28T08:00:00.000Z",
   },
   {
-    id: "ast-0010",
-    code: "PAT-0010",
+    id: "ast-c-0009",
+    code: "PAT-C-0009",
     name: "Servidor de dados Dell PowerEdge R550",
     category: "informatica",
     description:
       "Servidor local para o sistema de gestão laboratorial (LIMS) e cópias de segurança.",
     location: "Sala técnica — Rack 1",
-    stationId: "est-0001",
     departmentId: "dep-0010",
     responsibleUser: "Téc. Nuno Ferraz",
     acquisitionDate: "2023-10-05",
@@ -212,33 +181,12 @@ export let assetsFixtures: AssetDto[] = [
     updatedAt: "2026-03-19T09:45:00.000Z",
   },
   {
-    id: "ast-0011",
-    code: "PAT-0011",
-    name: "Tanque criogénico de azoto líquido 35L",
-    category: "refrigeracao",
-    description:
-      "Contentor de azoto líquido para armazenamento de sémen e material genético a longo prazo.",
-    location: "Centro de Inseminação Artificial",
-    stationId: "est-0004",
-    departmentId: "dep-0007",
-    responsibleUser: "Dr. Anselmo Nzau",
-    acquisitionDate: "2020-12-01",
-    acquisitionCost: 3600000,
-    currentValue: 2400000,
-    serialNumber: "CRY-N2-35L-0087",
-    status: "activo",
-    notes: "Reposição de azoto quinzenal. Verificar nível semanalmente.",
-    createdAt: "2020-12-01T08:00:00.000Z",
-    updatedAt: "2025-12-15T10:00:00.000Z",
-  },
-  {
-    id: "ast-0012",
-    code: "PAT-0012",
+    id: "ast-c-0010",
+    code: "PAT-C-0010",
     name: "Mobiliário de laboratório (bancada em inox)",
     category: "mobiliario",
     description: "Bancada de trabalho em aço inoxidável com lava-loiças e armários inferiores.",
     location: "Laboratório de Virologia",
-    stationId: "est-0001",
     departmentId: "dep-0002",
     responsibleUser: null,
     acquisitionDate: "2019-06-20",
@@ -250,32 +198,12 @@ export let assetsFixtures: AssetDto[] = [
     createdAt: "2019-06-20T09:00:00.000Z",
     updatedAt: "2024-10-01T09:00:00.000Z",
   },
-  {
-    id: "ast-0013",
-    code: "PAT-0013",
-    name: "Viatura Mitsubishi Canter (frigorífica)",
-    category: "viatura",
-    description:
-      "Camião de caixa isotérmica para transporte de vacinas e amostras a temperatura controlada.",
-    location: "Parque automóvel",
-    stationId: "est-0002",
-    departmentId: "dep-0005",
-    responsibleUser: "Sr. Pedro Cassoma",
-    acquisitionDate: "2017-03-30",
-    acquisitionCost: 28000000,
-    currentValue: 9500000,
-    serialNumber: "LN-08-77-AO",
-    status: "abatido",
-    notes: "Abatido em 2026 por custo de reparação elevado. Aguarda leilão.",
-    createdAt: "2017-03-30T08:00:00.000Z",
-    updatedAt: "2026-05-05T11:00:00.000Z",
-  },
 ];
 
-export let maintenancesFixtures: MaintenanceDto[] = [
+export let maintenancesCentralFixtures: MaintenanceCentralDto[] = [
   {
-    id: "man-0001",
-    assetId: "ast-0001",
+    id: "man-c-0001",
+    assetId: "ast-c-0001",
     date: "2025-11-02",
     type: "calibracao",
     description: "Calibração anual e verificação da temperatura de refrigeração do rotor.",
@@ -286,8 +214,8 @@ export let maintenancesFixtures: MaintenanceDto[] = [
     createdAt: "2025-11-02T10:30:00.000Z",
   },
   {
-    id: "man-0002",
-    assetId: "ast-0003",
+    id: "man-c-0002",
+    assetId: "ast-c-0003",
     date: "2026-05-20",
     type: "correctiva",
     description: "Substituição da válvula de segurança e teste de estanquidade da câmara.",
@@ -298,8 +226,8 @@ export let maintenancesFixtures: MaintenanceDto[] = [
     createdAt: "2026-05-20T09:00:00.000Z",
   },
   {
-    id: "man-0003",
-    assetId: "ast-0004",
+    id: "man-c-0003",
+    assetId: "ast-c-0004",
     date: "2026-02-14",
     type: "preventiva",
     description: "Limpeza dos condensadores, verificação do gás refrigerante e teste do alarme.",
@@ -310,8 +238,8 @@ export let maintenancesFixtures: MaintenanceDto[] = [
     createdAt: "2026-02-14T08:45:00.000Z",
   },
   {
-    id: "man-0004",
-    assetId: "ast-0005",
+    id: "man-c-0004",
+    assetId: "ast-c-0005",
     date: "2026-04-03",
     type: "preventiva",
     description: "Mudança de óleo, filtros de combustível e ar; teste de carga do gerador.",
@@ -322,20 +250,8 @@ export let maintenancesFixtures: MaintenanceDto[] = [
     createdAt: "2026-04-03T13:20:00.000Z",
   },
   {
-    id: "man-0005",
-    assetId: "ast-0006",
-    date: "2026-06-10",
-    type: "preventiva",
-    description: "Revisão dos 40 000 km: óleo, travões, pneus e alinhamento.",
-    cost: 890000,
-    provider: "Toyota de Angola (CST)",
-    nextDueDate: "2026-12-10",
-    notes: null,
-    createdAt: "2026-06-10T10:00:00.000Z",
-  },
-  {
-    id: "man-0006",
-    assetId: "ast-0009",
+    id: "man-c-0005",
+    assetId: "ast-c-0008",
     date: "2026-06-28",
     type: "correctiva",
     description: "Diagnóstico da célula de carga após queda. Reparação não coberta pela garantia.",
@@ -346,68 +262,8 @@ export let maintenancesFixtures: MaintenanceDto[] = [
     createdAt: "2026-06-28T08:00:00.000Z",
   },
   {
-    id: "man-0007",
-    assetId: "ast-0002",
-    date: "2025-06-18",
-    type: "inspeccao",
-    description: "Inspecção óptica, limpeza das lentes e alinhamento do sistema de iluminação.",
-    cost: 95000,
-    provider: "Angolab Assistência Técnica, Lda.",
-    nextDueDate: "2026-06-18",
-    notes: null,
-    createdAt: "2025-06-18T14:00:00.000Z",
-  },
-  {
-    id: "man-0008",
-    assetId: "ast-0001",
-    date: "2024-10-30",
-    type: "preventiva",
-    description: "Substituição das escovas do motor e lubrificação do eixo.",
-    cost: 180000,
-    provider: "Angolab Assistência Técnica, Lda.",
-    nextDueDate: null,
-    notes: null,
-    createdAt: "2024-10-30T09:00:00.000Z",
-  },
-  {
-    id: "man-0009",
-    assetId: "ast-0007",
-    date: "2025-09-27",
-    type: "calibracao",
-    description: "Calibração do sensor de temperatura e verificação da uniformidade da câmara.",
-    cost: 210000,
-    provider: "Metrologia Angola",
-    nextDueDate: "2026-09-27",
-    notes: null,
-    createdAt: "2025-09-27T11:10:00.000Z",
-  },
-  {
-    id: "man-0010",
-    assetId: "ast-0011",
-    date: "2025-12-15",
-    type: "inspeccao",
-    description: "Inspecção do isolamento a vácuo e verificação da taxa de evaporação do azoto.",
-    cost: 130000,
-    provider: "CryoServ Angola",
-    nextDueDate: "2026-12-15",
-    notes: "Taxa de evaporação dentro dos parâmetros normais.",
-    createdAt: "2025-12-15T10:00:00.000Z",
-  },
-  {
-    id: "man-0011",
-    assetId: "ast-0013",
-    date: "2025-08-22",
-    type: "correctiva",
-    description: "Reparação do sistema de refrigeração da caixa isotérmica — compressor avariado.",
-    cost: 2400000,
-    provider: "Frio Técnico de Luanda",
-    nextDueDate: null,
-    notes: "Custo elevado motivou proposta de abate da viatura.",
-    createdAt: "2025-08-22T09:00:00.000Z",
-  },
-  {
-    id: "man-0012",
-    assetId: "ast-0010",
+    id: "man-c-0006",
+    assetId: "ast-c-0009",
     date: "2026-03-19",
     type: "preventiva",
     description: "Actualização de firmware, limpeza interna e substituição de disco em falha (RAID).",
@@ -417,38 +273,14 @@ export let maintenancesFixtures: MaintenanceDto[] = [
     notes: null,
     createdAt: "2026-03-19T09:45:00.000Z",
   },
-  {
-    id: "man-0013",
-    assetId: "ast-0004",
-    date: "2025-08-14",
-    type: "preventiva",
-    description: "Verificação semestral do compressor e recarga parcial de gás refrigerante.",
-    cost: 275000,
-    provider: "Frio Técnico de Luanda",
-    nextDueDate: "2026-02-14",
-    notes: null,
-    createdAt: "2025-08-14T08:45:00.000Z",
-  },
-  {
-    id: "man-0014",
-    assetId: "ast-0005",
-    date: "2025-10-05",
-    type: "preventiva",
-    description: "Inspecção do sistema de arrefecimento e teste da bateria de arranque.",
-    cost: 195000,
-    provider: "Cummins Angola",
-    nextDueDate: "2026-04-05",
-    notes: null,
-    createdAt: "2025-10-05T13:00:00.000Z",
-  },
 ];
 
 /** Substitui o conteúdo do array de activos em memória (usado pelos handlers). */
-export function setAssetsFixtures(next: AssetDto[]) {
-  assetsFixtures = next;
+export function setAssetsCentralFixtures(next: AssetCentralDto[]) {
+  assetsCentralFixtures = next;
 }
 
 /** Substitui o conteúdo do array de manutenções em memória (usado pelos handlers). */
-export function setMaintenancesFixtures(next: MaintenanceDto[]) {
-  maintenancesFixtures = next;
+export function setMaintenancesCentralFixtures(next: MaintenanceCentralDto[]) {
+  maintenancesCentralFixtures = next;
 }

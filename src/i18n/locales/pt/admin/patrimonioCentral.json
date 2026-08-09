@@ -1,0 +1,181 @@
+{
+  "page": {
+    "title": "Património Central",
+    "description": "Inventário de bens, activos e histórico de manutenções da Direcção-Geral e Laboratório."
+  },
+  "kpis": {
+    "totalAssets": "Total de activos",
+    "totalAssetsCaption": "Bens registados no inventário",
+    "totalValue": "Valor do património",
+    "totalValueCaption": "Valor actual estimado",
+    "needsAttention": "Em manutenção / avariados",
+    "needsAttentionCaption": "Activos que requerem atenção",
+    "upcoming": "Manutenções próximas",
+    "upcomingCaption": "Intervenções previstas por realizar"
+  },
+  "tabs": {
+    "assets": "Activos",
+    "maintenances": "Manutenções"
+  },
+  "status": {
+    "activo": "Activo",
+    "em_manutencao": "Em manutenção",
+    "avariado": "Avariado",
+    "abatido": "Abatido",
+    "reservado": "Reservado"
+  },
+  "category": {
+    "equipamento_laboratorio": "Equipamento de laboratório",
+    "viatura": "Viatura",
+    "energia": "Energia",
+    "refrigeracao": "Refrigeração",
+    "informatica": "Informática",
+    "mobiliario": "Mobiliário",
+    "outros": "Outros"
+  },
+  "maintType": {
+    "preventiva": "Preventiva",
+    "correctiva": "Correctiva",
+    "inspeccao": "Inspecção",
+    "calibracao": "Calibração"
+  },
+  "filters": {
+    "statusPlaceholder": "Estado",
+    "statusAll": "Todos os estados",
+    "categoryPlaceholder": "Categoria",
+    "categoryAll": "Todas as categorias",
+    "typePlaceholder": "Tipo",
+    "typeAll": "Todos os tipos"
+  },
+  "assets": {
+    "actions": {
+      "new": "Novo Activo",
+      "view": "Ver",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "table": {
+      "code": "Código",
+      "name": "Nome",
+      "category": "Categoria",
+      "location": "Localização",
+      "acquisition": "Aquisição",
+      "value": "Valor actual",
+      "status": "Estado",
+      "searchPlaceholder": "Pesquisar por código, nome, série...",
+      "empty": "Nenhum activo encontrado.",
+      "emptyCell": "—"
+    },
+    "form": {
+      "labels": {
+        "code": "Código",
+        "name": "Nome",
+        "category": "Categoria",
+        "description": "Descrição",
+        "location": "Localização",
+        "station": "Estação",
+        "department": "Departamento",
+        "responsibleUser": "Responsável",
+        "acquisitionDate": "Data de aquisição",
+        "acquisitionCost": "Custo de aquisição (AOA)",
+        "currentValue": "Valor actual (AOA)",
+        "serialNumber": "Nº de série",
+        "status": "Estado",
+        "notes": "Notas"
+      },
+      "placeholders": {
+        "code": "Ex: PAT-0014",
+        "name": "Ex: Centrífuga refrigerada",
+        "description": "Descrição do bem",
+        "location": "Ex: Laboratório de Virologia — Bancada 3",
+        "responsibleUser": "Nome do técnico responsável",
+        "serialNumber": "Ex: EP5810R-2021-0453",
+        "notes": "Observações internas",
+        "none": "—"
+      }
+    },
+    "dialog": {
+      "createTitle": "Novo Activo",
+      "editTitle": "Editar Activo",
+      "detailsTitle": "Detalhes do Activo"
+    },
+    "details": {
+      "category": "Categoria",
+      "status": "Estado",
+      "location": "Localização",
+      "responsibleUser": "Responsável",
+      "acquisitionDate": "Data de aquisição",
+      "acquisitionCost": "Custo de aquisição",
+      "currentValue": "Valor actual",
+      "serialNumber": "Nº de série",
+      "description": "Descrição",
+      "notes": "Notas"
+    }
+  },
+  "maintenances": {
+    "actions": {
+      "new": "Registar Manutenção",
+      "view": "Ver",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "table": {
+      "date": "Data",
+      "asset": "Activo",
+      "type": "Tipo",
+      "description": "Descrição",
+      "cost": "Custo",
+      "provider": "Fornecedor",
+      "nextDue": "Próxima",
+      "searchPlaceholder": "Pesquisar por descrição ou fornecedor...",
+      "empty": "Nenhuma manutenção registada.",
+      "emptyCell": "—"
+    },
+    "form": {
+      "labels": {
+        "asset": "Activo",
+        "date": "Data",
+        "type": "Tipo",
+        "description": "Descrição",
+        "cost": "Custo (AOA)",
+        "provider": "Fornecedor",
+        "nextDueDate": "Próxima manutenção prevista",
+        "notes": "Notas"
+      },
+      "placeholders": {
+        "assetSelect": "Escolher activo",
+        "description": "Ex: Calibração anual e verificação de temperatura",
+        "provider": "Ex: Angolab Assistência Técnica, Lda.",
+        "notes": "Observações da intervenção"
+      }
+    },
+    "dialog": {
+      "createTitle": "Registar Manutenção",
+      "editTitle": "Editar Manutenção"
+    }
+  },
+  "validation": {
+    "codeShort": "Código demasiado curto",
+    "nameShort": "Nome demasiado curto",
+    "descriptionShort": "Descrição demasiado curta",
+    "assetRequired": "Seleccione um activo",
+    "costInvalid": "Valor inválido"
+  },
+  "form": {
+    "submitCreate": "Criar",
+    "submitEdit": "Guardar Alterações",
+    "submitting": "A guardar...",
+    "cancel": "Cancelar"
+  },
+  "delete": {
+    "title": "Eliminar registo?",
+    "description": "Esta acção é permanente e não pode ser revertida."
+  },
+  "toast": {
+    "assetCreateSuccess": "Activo criado com sucesso",
+    "assetUpdateSuccess": "Activo actualizado",
+    "maintCreateSuccess": "Manutenção registada",
+    "maintUpdateSuccess": "Manutenção actualizada",
+    "error": "Ocorreu um erro. Tente novamente."
+  }
+}

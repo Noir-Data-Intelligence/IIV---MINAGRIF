@@ -1,24 +1,22 @@
 import { http, HttpResponse } from "msw";
-import { assetsFixtures, maintenancesFixtures } from "@/mocks/fixtures/patrimonio";
-import type { AssetDto, MaintenanceDto } from "@/types/dto/patrimonio";
+import { assetsEstacaoFixtures, maintenancesEstacaoFixtures } from "@/mocks/fixtures/patrimonioEstacao";
+import type { AssetEstacaoDto, MaintenanceEstacaoDto } from "@/types/dto/patrimonioEstacao";
 import type { Paginated } from "@/types/dto/paginated";
 
 /**
- * Handlers MSW do módulo Património — recursos `activos` (assets) e
- * `manutencoes` (asset maintenance).
- *
- * Operam sobre os arrays mutáveis de `fixtures/patrimonio.ts`, pelo que as
- * escritas PERSISTEM durante a sessão do browser (reset no refresh). Segue a
- * lógica de paginação/filtragem de `mocks/handlers/departamentos.ts`.
+ * Handlers MSW do Património de Estação — recursos `patrimonio-estacao`
+ * (assets) e `patrimonio-estacao/manutencoes`. Esquema separado de
+ * `handlers/patrimonioCentral.ts` (dualidade obrigatória, ver
+ * SIG-IIV-MEMORIA-PROJETO.md secção 6) — replica fielmente o backend Laravel
+ * real (`/patrimonio-estacao`), não o antigo `/activos` unificado.
  *
  * Regra de negócio: apagar um activo remove em cascata as suas manutenções.
  */
 
-const ASSETS = "*/api/activos";
-const MAINTENANCES = "*/api/manutencoes";
+const ASSETS = "*/api/patrimonio-estacao";
+const MAINTENANCES = "*/api/patrimonio-estacao/manutencoes";
 
-export const patrimonioHandlers = [
-  // GET /api/activos -> lista paginada + filtrada (search/status/categoria), ordenada por código
+export const patrimonioEstacaoHandlers = [
   http.get(ASSETS, ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page") ?? "1") || 1;
@@ -27,7 +25,7 @@ export const patrimonioHandlers = [
     const status = url.searchParams.get("status") ?? "";
     const category = url.searchParams.get("category") ?? "";
 
-    let rows = [...assetsFixtures].sort((a, b) => a.code.localeCompare(b.code));
+    let rows = [...assetsEstacaoFixtures].sort((a, b) => a.code.localeCompare(b.code));
 
     if (search) {
       rows = rows.filter(
@@ -47,25 +45,24 @@ export const patrimonioHandlers = [
     const start = (page - 1) * perPage;
     const data = rows.slice(start, start + perPage);
 
-    const body: Paginated<AssetDto> = {
+    const body: Paginated<AssetEstacaoDto> = {
       data,
       meta: { currentPage: page, perPage, total, lastPage },
     };
     return HttpResponse.json(body);
   }),
 
-  // POST /api/activos -> cria activo em memória
   http.post(ASSETS, async ({ request }) => {
-    const payload = (await request.json().catch(() => ({}))) as Partial<AssetDto>;
+    const payload = (await request.json().catch(() => ({}))) as Partial<AssetEstacaoDto>;
     const now = new Date().toISOString();
-    const created: AssetDto = {
-      id: `ast-${Date.now()}`,
-      code: payload.code ?? `PAT-${Date.now()}`,
+    const created: AssetEstacaoDto = {
+      id: `ast-e-${Date.now()}`,
+      code: payload.code ?? `PAT-E-${Date.now()}`,
       name: payload.name ?? "Sem nome",
       category: payload.category ?? "outros",
       description: payload.description ?? null,
       location: payload.location ?? null,
-      stationId: payload.stationId ?? null,
+      stationId: payload.stationId ?? "",
       departmentId: payload.departmentId ?? null,
       responsibleUser: payload.responsibleUser ?? null,
       acquisitionDate: payload.acquisitionDate ?? null,
@@ -77,45 +74,41 @@ export const patrimonioHandlers = [
       createdAt: now,
       updatedAt: now,
     };
-    assetsFixtures.unshift(created);
+    assetsEstacaoFixtures.unshift(created);
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  // PUT /api/activos/:id -> actualiza activo em memória
   http.put(`${ASSETS}/:id`, async ({ params, request }) => {
     const { id } = params as { id: string };
-    const index = assetsFixtures.findIndex((a) => a.id === id);
+    const index = assetsEstacaoFixtures.findIndex((a) => a.id === id);
     if (index === -1) {
       return HttpResponse.json({ message: "Activo não encontrado." }, { status: 404 });
     }
-    const payload = (await request.json().catch(() => ({}))) as Partial<AssetDto>;
-    const updated: AssetDto = {
-      ...assetsFixtures[index],
+    const payload = (await request.json().catch(() => ({}))) as Partial<AssetEstacaoDto>;
+    const updated: AssetEstacaoDto = {
+      ...assetsEstacaoFixtures[index],
       ...payload,
-      // Campos imutáveis pelo cliente.
-      id: assetsFixtures[index].id,
-      createdAt: assetsFixtures[index].createdAt,
+      id: assetsEstacaoFixtures[index].id,
+      createdAt: assetsEstacaoFixtures[index].createdAt,
       updatedAt: new Date().toISOString(),
     };
-    assetsFixtures[index] = updated;
+    assetsEstacaoFixtures[index] = updated;
     return HttpResponse.json(updated);
   }),
 
-  // DELETE /api/activos/:id -> remove activo + manutenções em cascata
   http.delete(`${ASSETS}/:id`, ({ params }) => {
     const { id } = params as { id: string };
-    const index = assetsFixtures.findIndex((a) => a.id === id);
+    const index = assetsEstacaoFixtures.findIndex((a) => a.id === id);
     if (index === -1) {
       return HttpResponse.json({ message: "Activo não encontrado." }, { status: 404 });
     }
-    assetsFixtures.splice(index, 1);
-    for (let i = maintenancesFixtures.length - 1; i >= 0; i--) {
-      if (maintenancesFixtures[i].assetId === id) maintenancesFixtures.splice(i, 1);
+    assetsEstacaoFixtures.splice(index, 1);
+    for (let i = maintenancesEstacaoFixtures.length - 1; i >= 0; i--) {
+      if (maintenancesEstacaoFixtures[i].assetId === id) maintenancesEstacaoFixtures.splice(i, 1);
     }
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // GET /api/manutencoes -> lista paginada + filtrada (search/asset/tipo), ordenada por data desc
   http.get(MAINTENANCES, ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get("page") ?? "1") || 1;
@@ -124,7 +117,7 @@ export const patrimonioHandlers = [
     const assetId = url.searchParams.get("asset_id") ?? "";
     const type = url.searchParams.get("type") ?? "";
 
-    let rows = [...maintenancesFixtures].sort((a, b) => b.date.localeCompare(a.date));
+    let rows = [...maintenancesEstacaoFixtures].sort((a, b) => b.date.localeCompare(a.date));
 
     if (search) {
       rows = rows.filter(
@@ -141,20 +134,18 @@ export const patrimonioHandlers = [
     const start = (page - 1) * perPage;
     const data = rows.slice(start, start + perPage);
 
-    const body: Paginated<MaintenanceDto> = {
+    const body: Paginated<MaintenanceEstacaoDto> = {
       data,
       meta: { currentPage: page, perPage, total, lastPage },
     };
     return HttpResponse.json(body);
   }),
 
-  // POST /api/manutencoes -> cria manutenção; se o activo estava avariado/em
-  // manutenção, uma intervenção correctiva/preventiva devolve-o a "activo".
   http.post(MAINTENANCES, async ({ request }) => {
-    const payload = (await request.json().catch(() => ({}))) as Partial<MaintenanceDto>;
+    const payload = (await request.json().catch(() => ({}))) as Partial<MaintenanceEstacaoDto>;
     const now = new Date().toISOString();
-    const created: MaintenanceDto = {
-      id: `man-${Date.now()}`,
+    const created: MaintenanceEstacaoDto = {
+      id: `man-e-${Date.now()}`,
       assetId: payload.assetId ?? "",
       date: payload.date ?? now.slice(0, 10),
       type: payload.type ?? "preventiva",
@@ -165,38 +156,36 @@ export const patrimonioHandlers = [
       notes: payload.notes ?? null,
       createdAt: now,
     };
-    maintenancesFixtures.unshift(created);
+    maintenancesEstacaoFixtures.unshift(created);
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  // PUT /api/manutencoes/:id -> actualiza manutenção em memória
   http.put(`${MAINTENANCES}/:id`, async ({ params, request }) => {
     const { id } = params as { id: string };
-    const index = maintenancesFixtures.findIndex((m) => m.id === id);
+    const index = maintenancesEstacaoFixtures.findIndex((m) => m.id === id);
     if (index === -1) {
       return HttpResponse.json({ message: "Manutenção não encontrada." }, { status: 404 });
     }
-    const payload = (await request.json().catch(() => ({}))) as Partial<MaintenanceDto>;
-    const updated: MaintenanceDto = {
-      ...maintenancesFixtures[index],
+    const payload = (await request.json().catch(() => ({}))) as Partial<MaintenanceEstacaoDto>;
+    const updated: MaintenanceEstacaoDto = {
+      ...maintenancesEstacaoFixtures[index],
       ...payload,
-      id: maintenancesFixtures[index].id,
-      createdAt: maintenancesFixtures[index].createdAt,
+      id: maintenancesEstacaoFixtures[index].id,
+      createdAt: maintenancesEstacaoFixtures[index].createdAt,
     };
-    maintenancesFixtures[index] = updated;
+    maintenancesEstacaoFixtures[index] = updated;
     return HttpResponse.json(updated);
   }),
 
-  // DELETE /api/manutencoes/:id -> remove manutenção em memória
   http.delete(`${MAINTENANCES}/:id`, ({ params }) => {
     const { id } = params as { id: string };
-    const index = maintenancesFixtures.findIndex((m) => m.id === id);
+    const index = maintenancesEstacaoFixtures.findIndex((m) => m.id === id);
     if (index === -1) {
       return HttpResponse.json({ message: "Manutenção não encontrada." }, { status: 404 });
     }
-    maintenancesFixtures.splice(index, 1);
+    maintenancesEstacaoFixtures.splice(index, 1);
     return new HttpResponse(null, { status: 204 });
   }),
 ];
 
-export default patrimonioHandlers;
+export default patrimonioEstacaoHandlers;

@@ -225,13 +225,19 @@ export const endpoints = {
     list: "/orcamentos",
     detail: (id: string) => `/orcamentos/${id}`,
   },
-  activos: {
-    list: "/activos",
-    detail: (id: string) => `/activos/${id}`,
+  // Dualidade obrigatória (ver SIG-IIV-MEMORIA-PROJETO.md secção 6): activos
+  // central vs de estação são esquemas separados, nunca um único `/activos`.
+  patrimonioCentral: {
+    list: "/patrimonio-central",
+    detail: (id: string) => `/patrimonio-central/${id}`,
+    manutencoes: "/patrimonio-central/manutencoes",
+    manutencao: (id: string) => `/patrimonio-central/manutencoes/${id}`,
   },
-  manutencoes: {
-    list: "/manutencoes",
-    detail: (id: string) => `/manutencoes/${id}`,
+  patrimonioEstacao: {
+    list: "/patrimonio-estacao",
+    detail: (id: string) => `/patrimonio-estacao/${id}`,
+    manutencoes: "/patrimonio-estacao/manutencoes",
+    manutencao: (id: string) => `/patrimonio-estacao/manutencoes/${id}`,
   },
 
   // --- PESSOAS & MISSÕES ------------------------------------------------
