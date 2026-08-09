@@ -41,16 +41,35 @@ interface LaravelValidationBody {
 /** Chave usada para persistir o token de sessão mock entre refreshes do browser. */
 export const AUTH_TOKEN_STORAGE_KEY = "mock_auth_token";
 
+/** `true` quando a app está a correr contra o backend Laravel real (não o MSW). */
+export const IS_REAL_BACKEND = import.meta.env.VITE_API_MOCK !== "true";
+
 export const http: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   // Cookie-based Sanctum (Fase 4): envia/recebe o cookie de sessão httpOnly.
   withCredentials: true,
+  // Anexa automaticamente o header X-XSRF-TOKEN a partir da cookie XSRF-TOKEN
+  // em pedidos cross-origin (frontend :8080, backend :8000 em dev) — sem
+  // isto o axios só o faz para pedidos same-origin.
+  withXSRFToken: true,
   headers: {
     // Sinaliza XHR ao Laravel (faz o framework devolver JSON em vez de redirect).
     "X-Requested-With": "XMLHttpRequest",
     Accept: "application/json",
   },
 });
+
+/**
+ * Obtém a cookie CSRF do Sanctum antes de qualquer pedido que altere estado
+ * de sessão (login/registo) contra o backend real — exigido pelo fluxo SPA
+ * cookie-based do Sanctum. Não aplicável em modo mock (o MSW não implementa
+ * `/sanctum/csrf-cookie`, nem precisa: usa token em localStorage).
+ */
+export async function ensureCsrfCookie(): Promise<void> {
+  const apiUrl = import.meta.env.VITE_API_URL ?? "";
+  const root = apiUrl.replace(/\/api\/?$/, "");
+  await axios.get(`${root}/sanctum/csrf-cookie`, { withCredentials: true });
+}
 
 // --- Interceptor de request -------------------------------------------------
 http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
