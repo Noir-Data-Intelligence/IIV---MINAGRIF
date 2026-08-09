@@ -5,8 +5,10 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_SITE_URL: ${VITE_SITE_URL:-https://www.iiv.gov.ao}
-        VITE_API_MOCK: ${VITE_API_MOCK:-true}
-        VITE_API_URL: ${VITE_API_URL:-/api}
+        # Backend real (ver Back-end/docker-compose.yml, serviço `nginx`) já
+        # existe e está dockerizado — por omissão liga-se a ele, não ao mock.
+        VITE_API_MOCK: ${VITE_API_MOCK:-false}
+        VITE_API_URL: ${VITE_API_URL:-https://api.iiv.noirdataintelligence.com/api}
     image: iiv-minagrif:latest
     container_name: iiv
     networks:
