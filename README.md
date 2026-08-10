@@ -55,6 +55,8 @@ No `.env` (não versionado): `VITE_API_MOCK=false` e `VITE_API_URL=http://localh
 
 12 papéis institucionais (`src/lib/permissions.ts`, `AppRole`) — `admin`, `diretor`, `director-laboratorio`, `responsavel-qualidade`, `tecnico`, `recepcionista`, `gestor-stock`, `gestor-patrimonio`, `gestor-financeiro`, `gestor-rh`, `gestor-estacao`, `isv`. Matriz de permissões por módulo, editável em runtime na página `/admin/rbac` — tem de espelhar exactamente `Back-end/database/seeders/RolePermissionSeeder.php`.
 
+Contas criadas via registo público nascem inactivas (`isActive: false`) e não conseguem entrar até um administrador as aprovar em `/admin/utilizadores` (acção "Aprovar conta") — as 12 contas de demonstração acima já nascem activas nos fixtures/seeders, por isso não são afectadas.
+
 ## Deploy com Docker
 
 `docker-compose.yml` faz build da SPA (Vite, variáveis `VITE_*` como build args, inlined em tempo de build) e serve-a via nginx, atrás de um Traefik externo (rede `proxy`, já tem de existir — `docker network create proxy`). Por omissão liga-se ao backend real dockerizado (`../Back-end/docker-compose.yml`) no **mesmo host** (`VITE_API_URL=/api`, relativo) — o Traefik encaminha `/api`/`/sanctum` desse host para o backend (ver labels do serviço `nginx` em `Back-end/docker-compose.yml`). Deliberadamente **não** um subdomínio `api.` próprio: um `SESSION_DOMAIN` com wildcard entre subdomínios foi identificado numa auditoria de segurança (2026-08-09) como vector de cookie tossing a partir de outro subdomínio da mesma agência — mesma origem elimina o problema.
