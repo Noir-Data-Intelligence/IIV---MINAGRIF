@@ -59,17 +59,25 @@ Contas criadas via registo público nascem inactivas (`isActive: false`) e não 
 
 ## Deploy com Docker
 
-`docker-compose.yml` faz build da SPA (Vite, variáveis `VITE_*` como build args, inlined em tempo de build) e serve-a via nginx, atrás de um Traefik externo (rede `proxy`, já tem de existir — `docker network create proxy`). Por omissão liga-se ao backend real dockerizado (`../Back-end/docker-compose.yml`) no **mesmo host** (`VITE_API_URL=/api`, relativo) — o Traefik encaminha `/api`/`/sanctum` desse host para o backend (ver labels do serviço `nginx` em `Back-end/docker-compose.yml`). Deliberadamente **não** um subdomínio `api.` próprio: um `SESSION_DOMAIN` com wildcard entre subdomínios foi identificado numa auditoria de segurança (2026-08-09) como vector de cookie tossing a partir de outro subdomínio da mesma agência — mesma origem elimina o problema.
+`docker-compose.yml` faz build da SPA (Vite, variáveis `VITE_*` como build args, inlined em tempo de build) e serve-a via nginx num contentor autónomo, com a porta do host configurável por `PORT` (por omissão `80`). Por omissão liga-se ao backend real dockerizado no **mesmo host** (`VITE_API_URL=/api`, relativo). Se a API estiver noutro domínio/porta, troca `VITE_API_URL` para um URL absoluto.
 
 ```bash
-docker network create proxy   # só da primeira vez, se ainda não existir
 docker compose up -d --build
 ```
 
-Ajustar via variáveis de ambiente antes do build (nenhuma tem segredos, mas `VITE_API_URL`/`VITE_API_MOCK` decidem se a app fala com o backend real ou com dados mock):
+Ajustar via variáveis de ambiente antes do build (nenhuma tem segredos, mas `VITE_API_URL`/`VITE_API_MOCK` decidem se a app fala com o backend real ou com dados mock; `PORT` altera a porta exposta na VPS):
 
 ```bash
-VITE_API_MOCK=false VITE_API_URL=/api docker compose up -d --build
+PORT=8080 VITE_API_MOCK=false VITE_API_URL=/api docker compose up -d --build
+```
+
+Exemplo de `.env` para a VPS:
+
+```env
+VITE_SITE_URL="https://iiv.seudominio.ao"
+VITE_API_MOCK="false"
+VITE_API_URL="/api"
+PORT="80"
 ```
 
 ## Próximas Etapas

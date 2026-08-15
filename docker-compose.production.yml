@@ -12,8 +12,21 @@ services:
         # Mesmo host, sem subdomínio `api.` próprio (auditoria de segurança,
         # 2026-08-09: um SESSION_DOMAIN com wildcard entre subdomínios
         # permitia cookie tossing a partir de outro subdomínio da agência).
+        # O Traefik encaminha /api e /sanctum deste mesmo host para o
+        # backend — ver Back-end/docker-compose.yml, labels do serviço `nginx`.
         VITE_API_URL: ${VITE_API_URL:-/api}
     image: iiv-minagrif:latest
-    ports:
-      - "${PORT:-80}:80"
+
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.iiv.rule=Host(`iiv.noirdataintelligence.com`)"
+      - "traefik.http.routers.iiv.entrypoints=websecure"
+      - "traefik.http.routers.iiv.tls=true"
+      - "traefik.http.routers.iiv.tls.certresolver=<CERTRESOLVER>"
+      - "traefik.http.services.iiv.loadbalancer.server.port=80"
     restart: unless-stopped
+networks:
+  proxy:
+    external: true
