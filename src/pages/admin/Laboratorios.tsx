@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useEntityForm } from "@/hooks/useEntityForm";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -41,11 +42,15 @@ if (!i18n.hasResourceBundle("pt", "admin-laboratorios"))
 if (!i18n.hasResourceBundle("en", "admin-laboratorios"))
   i18n.addResourceBundle("en", "admin-laboratorios", enLaboratorios, true, true);
 
+const LAB_TYPES = [
+  "bacteriologia", "virologia", "parasitologia", "serologia",
+  "biologia_molecular", "bromatologia", "patologia", "outro",
+] as const;
+
 function buildLaboratorioSchema(t: TFunction) {
   return z.object({
-    code: z.string().trim().min(1, t("validation.codeRequired")).max(20),
     name: z.string().trim().min(2, t("validation.nameShort")),
-    type: z.string().trim().min(2, t("validation.typeRequired")),
+    type: z.string().refine((v) => (LAB_TYPES as readonly string[]).includes(v), t("validation.typeRequired")),
     description: z.string().trim().optional(),
     validadorCount: z.coerce.number().int().min(1).max(5),
     slaHoras: z.coerce.number().int().min(1).optional(),
@@ -84,7 +89,6 @@ export default function Laboratorios() {
     () =>
       editItem
         ? {
-            code: editItem.code,
             name: editItem.name,
             type: editItem.type ?? "",
             description: editItem.description ?? "",
@@ -99,11 +103,10 @@ export default function Laboratorios() {
   const entityForm = useEntityForm({
     schema: laboratorioSchema,
     initialValues,
-    defaultValues: { code: "", name: "", type: "", description: "", validadorCount: 2, isActive: true },
+    defaultValues: { name: "", type: "", description: "", validadorCount: 2, isActive: true },
     open: formOpen,
     onSubmit: async (values) => {
       const payload = {
-        code: values.code,
         name: values.name,
         type: values.type,
         description: values.description?.trim() ? values.description.trim() : null,
@@ -161,8 +164,8 @@ export default function Laboratorios() {
         accessorKey: "type",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.type")} />,
         cell: ({ row }) => (
-          <Badge variant="secondary" className="capitalize">
-            {(row.original.type ?? "—").replace(/_/g, " ")}
+          <Badge variant="secondary">
+            {row.original.type ? t(`types.${row.original.type}`, { defaultValue: row.original.type }) : "—"}
           </Badge>
         ),
       },
@@ -278,43 +281,45 @@ export default function Laboratorios() {
       >
         {(form) => (
           <>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("form.labels.code")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("form.placeholders.code")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("form.labels.name")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("form.placeholders.name")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {editItem && (
+              <div>
+                <FormLabel>{t("form.labels.code")}</FormLabel>
+                <Input value={editItem.code} disabled />
+              </div>
+            )}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("form.labels.name")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("form.placeholders.name")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="type"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("form.labels.type")}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t("form.placeholders.type")} {...field} />
-                  </FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("form.placeholders.type")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {LAB_TYPES.map((lt) => (
+                        <SelectItem key={lt} value={lt}>
+                          {t(`types.${lt}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -404,7 +409,7 @@ export default function Laboratorios() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">{t("details.type")}:</span>
-                  <p className="font-medium capitalize">{(viewItem.type ?? "—").replace(/_/g, " ")}</p>
+                  <p className="font-medium">{viewItem.type ? t(`types.${viewItem.type}`, { defaultValue: viewItem.type }) : "—"}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">{t("details.status")}:</span>

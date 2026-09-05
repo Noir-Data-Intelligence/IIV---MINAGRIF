@@ -31,9 +31,14 @@ export interface AlertHistoryDto {
   value: number;
   threshold: number;
   tone: AlertTone;
+  /** Tipo/id do registo que originou o alerta (ex.: "lote"/uuid) — null nos alertas agregados antigos. */
+  entityType: string | null;
+  entityId: string | null;
+  /** "browser" (sessão de utilizador) ou "sistema" (comando agendado — ver GenerateDashboardAlerts). */
+  origem: "browser" | "sistema";
   createdAt: string;
-  /** Utilizador dono do registo ("me" — a sessão actual simulada, ver fixtures). */
-  userId: string;
+  /** Utilizador dono do registo — null quando `origem` é "sistema" (sem sessão). */
+  userId: string | null;
   assignedTo: string | null;
   assignedDepartmentId: string | null;
   actionStatus: AlertActionStatus;

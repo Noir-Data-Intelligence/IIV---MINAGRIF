@@ -50,7 +50,7 @@
     "cancel": "Cancel"
   },
   "dialog": {
-    "createTitle": "Register Station",
+    "createTitle": "Create Station",
     "editTitle": "Edit Station",
     "detailsTitle": "Station Details"
   },

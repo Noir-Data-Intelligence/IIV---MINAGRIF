@@ -32,3 +32,14 @@ export function isExpiringSoon(expiry: string | null | undefined, days = 30): bo
   const d = new Date(expiry);
   return d >= now && d <= limit;
 }
+
+/**
+ * true se `expiry` já passou. Métrica distinta de `isExpiringSoon` — sem
+ * esta, um lote deixa de contar para "a expirar" no exacto momento em que
+ * expira e nunca chega a gerar alerta (ver auditoria funcional — Histórico
+ * de Alertas).
+ */
+export function isExpired(expiry: string | null | undefined): boolean {
+  if (!expiry) return false;
+  return new Date(expiry) < new Date();
+}

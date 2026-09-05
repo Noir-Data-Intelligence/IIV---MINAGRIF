@@ -218,7 +218,12 @@ export default function ProcessoDetalhe() {
     );
   }
 
-  const showActions = !!currentStep && process.status === "em_curso";
+  // Editar/Cancelar devem ficar disponíveis em qualquer estado não-terminal,
+  // mesmo sem etapa activa (ex.: processo "aberto" sem etapas configuradas);
+  // só Avançar/Devolver exigem uma etapa em curso (ver auditoria — Gestão de
+  // Processos, ANL/Crítica).
+  const isTerminal = process.status === "concluido" || process.status === "cancelado";
+  const showFlowActions = !!currentStep && process.status === "em_curso";
   const busy = advance.isPending || returnStep.isPending || cancelProcess.isPending;
 
   const motionProps = prefersReduced
@@ -302,24 +307,32 @@ export default function ProcessoDetalhe() {
               })}
             </div>
 
-            {showActions && (
+            {!isTerminal && (
               <div className="mt-6 pt-5 border-t space-y-3">
-                <p className="text-sm font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-secondary" /> {t("steps.current", { name: currentStep!.name })}
-                </p>
-                <Textarea
-                  placeholder={t("steps.notesPlaceholder")}
-                  value={actionNote}
-                  onChange={(e) => setActionNote(e.target.value)}
-                  rows={2}
-                />
+                {showFlowActions && (
+                  <>
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-secondary" /> {t("steps.current", { name: currentStep!.name })}
+                    </p>
+                    <Textarea
+                      placeholder={t("steps.notesPlaceholder")}
+                      value={actionNote}
+                      onChange={(e) => setActionNote(e.target.value)}
+                      rows={2}
+                    />
+                  </>
+                )}
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={handleAdvance} disabled={busy} className="gap-2">
-                    <CheckCircle2 className="h-4 w-4" /> {t("steps.advance")}
-                  </Button>
-                  <Button variant="outline" onClick={handleReturn} disabled={busy} className="gap-2">
-                    <RotateCcw className="h-4 w-4" /> {t("steps.return")}
-                  </Button>
+                  {showFlowActions && (
+                    <>
+                      <Button onClick={handleAdvance} disabled={busy} className="gap-2">
+                        <CheckCircle2 className="h-4 w-4" /> {t("steps.advance")}
+                      </Button>
+                      <Button variant="outline" onClick={handleReturn} disabled={busy} className="gap-2">
+                        <RotateCcw className="h-4 w-4" /> {t("steps.return")}
+                      </Button>
+                    </>
+                  )}
                   <Button variant="outline" onClick={openEdit} className="gap-2">
                     <Pencil className="h-4 w-4" /> {t("steps.edit")}
                   </Button>

@@ -24,7 +24,8 @@
     "view": "Ver detalhes",
     "edit": "Editar",
     "delete": "Eliminar",
-    "new": "Novo Registo"
+    "new": "Novo Registo",
+    "newDisabledHint": "Crie primeiro uma Estação em Qualidade → Estações"
   },
   "form": {
     "submitCreate": "Criar",

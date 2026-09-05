@@ -76,6 +76,10 @@
     "searchPlaceholder": "Search plans...",
     "emptyCell": "—"
   },
+  "filters": {
+    "statusAll": "All statuses",
+    "statusPlaceholder": "Status"
+  },
   "validation": {
     "productRequired": "Select a product",
     "quantityPositive": "Quantity must be greater than zero",

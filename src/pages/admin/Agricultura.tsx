@@ -482,7 +482,11 @@ export default function Agricultura() {
         <TabsContent value="fields" className="space-y-4">
           <div className="flex justify-end">
             <WriteGuard module="agricultura">
-              <Button onClick={openFieldCreate} disabled={crops.length === 0 || estacoes.length === 0}>
+              <Button
+                onClick={openFieldCreate}
+                disabled={crops.length === 0 || estacoes.length === 0}
+                title={crops.length === 0 || estacoes.length === 0 ? t("fields.emptyDepsHint") : undefined}
+              >
                 <Plus className="mr-2 h-4 w-4" /> {t("fields.new")}
               </Button>
             </WriteGuard>
@@ -532,7 +536,11 @@ export default function Agricultura() {
         <TabsContent value="harvests" className="space-y-4">
           <div className="flex justify-end">
             <WriteGuard module="agricultura">
-              <Button onClick={openHarvestCreate} disabled={allFields.length === 0}>
+              <Button
+                onClick={openHarvestCreate}
+                disabled={allFields.length === 0}
+                title={allFields.length === 0 ? t("harvests.emptyDepsHint") : undefined}
+              >
                 <Plus className="mr-2 h-4 w-4" /> {t("harvests.new")}
               </Button>
             </WriteGuard>

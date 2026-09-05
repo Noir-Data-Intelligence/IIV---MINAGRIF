@@ -52,7 +52,7 @@
       "title": "Amostras do lote",
       "add": "Adicionar amostra",
       "tipoAmostra": "Tipo de amostra",
-      "tipoAmostraPlaceholder": "Ex: Sangue, Fezes, Zaragatoa",
+      "tipoAmostraPlaceholder": "Seleccionar tipo",
       "origemMatriz": "Origem/matriz",
       "pontoColheita": "Ponto de colheita",
       "colhidaPor": "Colhida por",
@@ -68,5 +68,16 @@
   "toast": {
     "createSuccess": "Requisição criada com sucesso",
     "error": "Ocorreu um erro. Tente novamente."
+  },
+  "tipoAmostra": {
+    "sangue": "Sangue",
+    "soro": "Soro",
+    "fezes": "Fezes",
+    "urina": "Urina",
+    "zaragatoa": "Zaragatoa",
+    "tecido": "Tecido",
+    "leite": "Leite",
+    "agua": "Água",
+    "outro": "Outro"
   }
 }

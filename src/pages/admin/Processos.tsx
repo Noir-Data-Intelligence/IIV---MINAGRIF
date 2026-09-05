@@ -17,10 +17,12 @@ import {
   Loader2,
   CheckCircle2,
   Clock,
+  Trash2,
 } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
+import { DeleteConfirmDialog } from "@/components/admin/DeleteConfirmDialog";
 import { RowActions, type RowAction } from "@/components/admin/RowActions";
 import { WriteGuard } from "@/components/WriteGuard";
 import { DataTable, DataTableColumnHeader } from "@/components/data-table";
@@ -36,7 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTableExport } from "@/hooks/useTableExport";
 import { useEntityForm } from "@/hooks/useEntityForm";
-import { useProcessesList, useProcessStats, useCreateProcess } from "@/hooks/queries/useProcesses";
+import { useProcessesList, useProcessStats, useCreateProcess, useDeleteProcess } from "@/hooks/queries/useProcesses";
 import { useProcessTypesList } from "@/hooks/queries/useProcessTypes";
 import { PROCESS_PRIORITY, PROCESS_STATUS } from "@/lib/domain-enums";
 import { fadeIn, fadeInUp, staggerContainer } from "@/lib/motion";
@@ -70,7 +72,8 @@ export default function Processos() {
   const { t } = useTranslation("admin-processos");
   const { user } = useAuth();
   const { toast } = useToast();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, canWrite } = useUserRole();
+  const canEdit = canWrite("processos");
   const { exportCSV } = useTableExport();
   const navigate = useNavigate();
   const prefersReduced = useReducedMotion();
@@ -81,6 +84,7 @@ export default function Processos() {
   const [typeFilter, setTypeFilter] = useState(ALL);
   const [scope, setScope] = useState<"todos" | "meus">("todos");
   const [formOpen, setFormOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading } = useProcessesList({
     page: pagination.pageIndex + 1,
@@ -96,6 +100,7 @@ export default function Processos() {
   const types = typesData?.data ?? [];
 
   const createProcess = useCreateProcess();
+  const deleteProcess = useDeleteProcess();
 
   const processSchema = useMemo(() => buildProcessSchema(t), [t]);
 
@@ -217,12 +222,23 @@ export default function Processos() {
     [t, types],
   );
 
-  const renderRowActions = (row: ProcessDto) => (
-    <RowActions
-      primary={{ label: t("actions.open"), icon: Eye, onClick: () => navigate(`/admin/processos/${row.id}`) }}
-      actions={[]}
-    />
-  );
+  const renderRowActions = (row: ProcessDto) => {
+    const actions: RowAction[] = [];
+    if (canEdit) {
+      actions.push({
+        label: t("actions.delete"),
+        icon: Trash2,
+        destructive: true,
+        onClick: () => setDeleteId(row.id),
+      });
+    }
+    return (
+      <RowActions
+        primary={{ label: t("actions.open"), icon: Eye, onClick: () => navigate(`/admin/processos/${row.id}`) }}
+        actions={actions}
+      />
+    );
+  };
 
   const motionProps = prefersReduced
     ? {}
@@ -463,6 +479,28 @@ export default function Processos() {
           </>
         )}
       </EntityFormDialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          try {
+            await deleteProcess.mutateAsync(deleteId);
+            toast({ title: t("toast.deleteSuccess") });
+          } catch (err) {
+            toast({
+              title: t("toast.error"),
+              description: err instanceof Error ? err.message : undefined,
+              variant: "destructive",
+            });
+          } finally {
+            setDeleteId(null);
+          }
+        }}
+        title={t("delete.title")}
+        description={t("delete.description")}
+      />
     </motion.div>
   );
 }

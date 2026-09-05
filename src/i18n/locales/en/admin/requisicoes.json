@@ -52,7 +52,7 @@
       "title": "Batch samples",
       "add": "Add sample",
       "tipoAmostra": "Sample type",
-      "tipoAmostraPlaceholder": "e.g. Blood, Feces, Swab",
+      "tipoAmostraPlaceholder": "Select type",
       "origemMatriz": "Origin/matrix",
       "pontoColheita": "Collection point",
       "colhidaPor": "Collected by",
@@ -68,5 +68,16 @@
   "toast": {
     "createSuccess": "Requisition created successfully",
     "error": "An error occurred. Please try again."
+  },
+  "tipoAmostra": {
+    "sangue": "Blood",
+    "soro": "Serum",
+    "fezes": "Feces",
+    "urina": "Urine",
+    "zaragatoa": "Swab",
+    "tecido": "Tissue",
+    "leite": "Milk",
+    "agua": "Water",
+    "outro": "Other"
   }
 }

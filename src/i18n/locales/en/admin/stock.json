@@ -9,9 +9,9 @@
     "totalValue": "Total Stock Value",
     "totalValueCaption": "Quantity × unit cost",
     "belowMin": "Items Below Minimum",
-    "belowMinCaption": "Critical stock to replenish",
+    "belowMinCaption": "Stock Integrado items to replenish",
     "expiring": "Expiring Soon",
-    "expiringCaption": "Expiry within the next 30 days"
+    "expiringCaption": "Stock Integrado items — expiry within the next 30 days"
   },
   "tabs": {
     "items": "Items",

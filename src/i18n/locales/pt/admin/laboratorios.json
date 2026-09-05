@@ -28,9 +28,8 @@
       "isActive": "Laboratório activo"
     },
     "placeholders": {
-      "code": "Ex: AB, AP, BM",
       "name": "Ex: Laboratório de Virologia",
-      "type": "Ex: virologia, bacteriologia",
+      "type": "Seleccionar tipo",
       "description": "Descrição do laboratório",
       "slaHoras": "Ex: 72"
     },
@@ -40,7 +39,7 @@
     "cancel": "Cancelar"
   },
   "dialog": {
-    "createTitle": "Cadastrar Laboratório",
+    "createTitle": "Criar Laboratório",
     "editTitle": "Editar Laboratório",
     "detailsTitle": "Detalhes do Laboratório"
   },
@@ -68,9 +67,18 @@
     "emptyCell": "—"
   },
   "validation": {
-    "codeRequired": "Indique o código da área (ex: AB, AP)",
     "nameShort": "Nome demasiado curto",
-    "typeRequired": "Indique o tipo de laboratório"
+    "typeRequired": "Seleccione o tipo de laboratório"
+  },
+  "types": {
+    "bacteriologia": "Bacteriologia",
+    "virologia": "Virologia",
+    "parasitologia": "Parasitologia",
+    "serologia": "Serologia",
+    "biologia_molecular": "Biologia Molecular",
+    "bromatologia": "Bromatologia",
+    "patologia": "Patologia",
+    "outro": "Outro"
   },
   "toast": {
     "createSuccess": "Laboratório criado com sucesso",

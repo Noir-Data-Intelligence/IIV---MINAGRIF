@@ -32,6 +32,8 @@ export interface AnimalEventDto {
   animalId: string;
   eventType: string;
   eventDate: string;
+  /** Obrigatório quando `eventType === "transferencia"`. */
+  destination: string | null;
   notes: string | null;
   createdAt: string;
 }

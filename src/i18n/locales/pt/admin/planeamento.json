@@ -76,6 +76,10 @@
     "searchPlaceholder": "Pesquisar planos...",
     "emptyCell": "—"
   },
+  "filters": {
+    "statusAll": "Todos os estados",
+    "statusPlaceholder": "Estado"
+  },
   "validation": {
     "productRequired": "Seleccione um produto",
     "quantityPositive": "Quantidade deve ser maior que zero",

@@ -92,5 +92,9 @@
     "deleteSuccess": "Process deleted",
     "requiredFields": "Fill in the required fields",
     "error": "An error occurred. Please try again."
+  },
+  "delete": {
+    "title": "Delete process?",
+    "description": "This action is permanent and removes the process and its step history."
   }
 }

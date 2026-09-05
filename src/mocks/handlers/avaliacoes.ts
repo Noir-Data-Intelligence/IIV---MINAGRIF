@@ -293,6 +293,7 @@ export const avaliacoesHandlers = [
       pending,
       avgScore: avg,
       activeCycleName: activeCycle?.name ?? null,
+      totalCycles: cyclesFixtures.length,
     };
     return HttpResponse.json(body);
   }),

@@ -20,6 +20,7 @@ function toQuery(params: PlanoListParams): Record<string, string | number | bool
   };
   if (params.search) query.search = params.search;
   if (params.productId) query.product_id = params.productId;
+  if (params.status) query.status = params.status;
   return query;
 }
 

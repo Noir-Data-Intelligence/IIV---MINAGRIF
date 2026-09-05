@@ -48,22 +48,22 @@ import {
   useAlertAcksList, useCreateAlertAck, useDeleteAlertAck,
 } from "@/hooks/queries/useDashboardAlertAcks";
 import { useCreateAlertHistory } from "@/hooks/queries/useDashboardAlertHistory";
-import { isInMonth, isExpiringSoon } from "@/lib/dashboard-metrics";
+import { isInMonth, isExpiringSoon, isExpired } from "@/lib/dashboard-metrics";
 
 type KpiKey =
   | "analysesPending" | "completionRate" | "batchesActive" | "distributionsMonth"
-  | "ncOpen" | "lowStock" | "expiringSoon" | "users";
+  | "ncOpen" | "lowStock" | "expiringSoon" | "batchesExpired" | "users";
 
 type ChartKey = "monthlyAnalyses" | "analysisStatus" | "monthlyProduction" | "productionStatus" | "productTypes";
 
 const KPIS_BY_ROLE: Record<AppRole, KpiKey[]> = {
-  admin:                  ["analysesPending", "completionRate", "batchesActive", "distributionsMonth", "ncOpen", "lowStock", "expiringSoon", "users"],
-  diretor:                ["analysesPending", "completionRate", "batchesActive", "distributionsMonth", "ncOpen", "lowStock", "expiringSoon", "users"],
+  admin:                  ["analysesPending", "completionRate", "batchesActive", "distributionsMonth", "ncOpen", "lowStock", "expiringSoon", "batchesExpired", "users"],
+  diretor:                ["analysesPending", "completionRate", "batchesActive", "distributionsMonth", "ncOpen", "lowStock", "expiringSoon", "batchesExpired", "users"],
   "director-laboratorio": ["analysesPending", "completionRate", "ncOpen", "lowStock"],
   "responsavel-qualidade": ["ncOpen", "completionRate", "lowStock"],
   tecnico:                ["analysesPending", "completionRate", "lowStock"],
   recepcionista:          ["analysesPending", "distributionsMonth", "expiringSoon"],
-  "gestor-stock":         ["batchesActive", "distributionsMonth", "expiringSoon", "lowStock", "ncOpen", "completionRate"],
+  "gestor-stock":         ["batchesActive", "distributionsMonth", "expiringSoon", "batchesExpired", "lowStock", "ncOpen", "completionRate"],
   "gestor-patrimonio":    ["users"],
   "gestor-financeiro":    ["users"],
   "gestor-rh":            ["users"],
@@ -109,6 +109,7 @@ const KPI_LABELS: Record<KpiKey, string> = {
   ncOpen: "Não Conformidades",
   lowStock: "Stock Crítico",
   expiringSoon: "Lotes a Expirar",
+  batchesExpired: "Lotes Expirados",
   users: "Utilizadores",
 };
 
@@ -121,20 +122,22 @@ const CHART_LABELS: Record<ChartKey, string> = {
 };
 
 /** KPIs que suportam alertas configuráveis (limiar mínimo a partir do qual avisa). */
-type AlertKey = "lowStock" | "expiringSoon" | "ncOpen" | "analysesPending";
+type AlertKey = "lowStock" | "expiringSoon" | "batchesExpired" | "ncOpen" | "analysesPending";
 
-const ALERT_KEYS: AlertKey[] = ["lowStock", "expiringSoon", "ncOpen", "analysesPending"];
+const ALERT_KEYS: AlertKey[] = ["lowStock", "expiringSoon", "batchesExpired", "ncOpen", "analysesPending"];
 
 const DEFAULT_THRESHOLDS: Record<string, number> = {
   lowStock: 1,
   expiringSoon: 1,
+  batchesExpired: 1,
   ncOpen: 1,
   analysesPending: 20,
 };
 
 const ALERT_META: Record<AlertKey, { label: string; help: string; caption: string; icon: LucideIcon; tone: "warning" | "destructive" }> = {
-  lowStock:        { label: "Stock Crítico",         help: "Avisar quando o número de insumos abaixo do mínimo atingir este valor.", caption: "Insumos abaixo do mínimo", icon: PackageX, tone: "destructive" },
-  expiringSoon:    { label: "Lotes a Expirar",       help: "Avisar quando houver pelo menos este número de lotes a expirar em 30 dias.", caption: "Nos próximos 30 dias", icon: CalendarClock, tone: "warning" },
+  lowStock:        { label: "Stock Crítico",         help: "Avisar quando o número de insumos abaixo do mínimo atingir este valor.", caption: "Insumos e reagentes abaixo do mínimo", icon: PackageX, tone: "destructive" },
+  expiringSoon:    { label: "Lotes a Expirar",       help: "Avisar quando houver pelo menos este número de lotes a expirar em 30 dias.", caption: "Lotes de produção — próximos 30 dias", icon: CalendarClock, tone: "warning" },
+  batchesExpired:  { label: "Lotes Expirados",       help: "Avisar quando houver pelo menos este número de lotes já expirados.", caption: "Lotes de produção — validade ultrapassada", icon: PackageX, tone: "destructive" },
   ncOpen:          { label: "Não Conformidades",     help: "Avisar quando o número de não conformidades abertas atingir este valor.", caption: "Abertas ou em análise", icon: AlertTriangle, tone: "destructive" },
   analysesPending: { label: "Análises Pendentes",    help: "Avisar quando o número de análises pendentes atingir este valor.", caption: "Agendadas e em progresso", icon: Activity, tone: "warning" },
 };
@@ -207,6 +210,15 @@ export default function Dashboard() {
     boletinsQuery.isLoading || lotesQuery.isLoading || distribuicaoQuery.isLoading ||
     ncQuery.isLoading || insumosQuery.isLoading || produtosQuery.isLoading ||
     laboratoriosQuery.isLoading || usersQuery.isLoading;
+
+  // Estado real do sistema + hora da última actualização (não hardcoded) —
+  // ver auditoria funcional, Dashboard/Cabeçalho.
+  const dataQueries = [
+    boletinsQuery, lotesQuery, distribuicaoQuery, ncQuery,
+    insumosQuery, produtosQuery, laboratoriosQuery, usersQuery,
+  ];
+  const hasError = dataQueries.some((q) => q.isError);
+  const lastUpdatedAt = Math.max(0, ...dataQueries.map((q) => q.dataUpdatedAt ?? 0));
 
   // ---- Preferências de painel (recurso mock dedicado) ----
   const prefsQuery = useDashboardPrefsQuery();
@@ -337,6 +349,7 @@ export default function Dashboard() {
     const ncOpen = ncs.filter((n) => n.status === "aberta" || n.status === "em_resolucao").length;
     const lowStock = supplies.filter((s) => (s.quantity ?? 0) <= (s.minStock ?? 0)).length;
     const expiringSoon = batches.filter((b) => isExpiringSoon(b.expiryDate)).length;
+    const batchesExpired = batches.filter((b) => isExpired(b.expiryDate)).length;
 
     return {
       users: usersQuery.data?.length ?? 0,
@@ -346,7 +359,7 @@ export default function Dashboard() {
       batchesActive, batchesActivePrev,
       distributionsMonth, distributionsMonthPrev,
       completionRate,
-      ncOpen, lowStock, expiringSoon,
+      ncOpen, lowStock, expiringSoon, batchesExpired,
     };
   }, [
     boletinsQuery.data, lotesQuery.data, distribuicaoQuery.data, ncQuery.data,
@@ -430,6 +443,7 @@ export default function Dashboard() {
     const currentValues: Record<AlertKey, number> = {
       lowStock: stats.lowStock,
       expiringSoon: stats.expiringSoon,
+      batchesExpired: stats.batchesExpired,
       ncOpen: stats.ncOpen,
       analysesPending: stats.analysesPending,
     };
@@ -450,7 +464,22 @@ export default function Dashboard() {
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, prefsLoaded, stats.lowStock, stats.expiringSoon, stats.ncOpen, stats.analysesPending, thresholds, acks]);
+  }, [loading, prefsLoaded, stats.lowStock, stats.expiringSoon, stats.batchesExpired, stats.ncOpen, stats.analysesPending, thresholds, acks]);
+
+  // Erro por KPI (não agregado) — distingue "0" de "falhou a carregar dados
+  // desta métrica" em vez de mostrar sempre um número (ver auditoria
+  // funcional — Dashboard/Estados sem dados).
+  const kpiErrorSource: Record<KpiKey, boolean> = {
+    analysesPending: boletinsQuery.isError,
+    completionRate: boletinsQuery.isError,
+    batchesActive: lotesQuery.isError,
+    distributionsMonth: distribuicaoQuery.isError,
+    ncOpen: ncQuery.isError,
+    lowStock: insumosQuery.isError,
+    expiringSoon: lotesQuery.isError,
+    batchesExpired: lotesQuery.isError,
+    users: usersQuery.isError,
+  };
 
   const allKpis: Array<{
     key: KpiKey; icon: LucideIcon; label: string; value: string | number; caption?: string; trend?: Trend;
@@ -487,12 +516,19 @@ export default function Dashboard() {
     {
       key: "lowStock",
       icon: PackageX, label: "Stock Crítico", value: stats.lowStock,
-      caption: "Insumos abaixo do mínimo", variant: "glass",
+      // Métrica de Insumos e Reagentes — distinta do "Itens Abaixo do Mínimo"
+      // do módulo Stock Integrado (entidade diferente, StockItem).
+      caption: "Insumos e reagentes abaixo do mínimo", variant: "glass",
     },
     {
       key: "expiringSoon",
       icon: CalendarClock, label: "Lotes a Expirar", value: stats.expiringSoon,
-      caption: "Próximos 30 dias", variant: "glass",
+      caption: "Lotes de produção — próximos 30 dias", variant: "glass",
+    },
+    {
+      key: "batchesExpired",
+      icon: PackageX, label: "Lotes Expirados", value: stats.batchesExpired,
+      caption: "Lotes de produção — validade ultrapassada", variant: "glass",
     },
     {
       key: "users",
@@ -505,7 +541,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div className="space-y-8">
-      <div className="rounded-3xl gradient-green h-40 animate-pulse opacity-60" />
+      <div className="rounded-3xl gradient-green h-28 animate-pulse opacity-60" />
       <KPISkeleton count={8} />
       <div className="grid gap-5 lg:grid-cols-3">
         <CardSkeleton /><CardSkeleton /><CardSkeleton />
@@ -523,18 +559,23 @@ export default function Dashboard() {
       <div className="relative overflow-hidden rounded-3xl gradient-green text-primary-foreground shadow-xl animate-fade-up">
         <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-[hsl(var(--iiv-gold))]/20 blur-3xl" />
         <div className="absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-primary-foreground/5 blur-3xl" />
-        <div className="relative p-7 md:p-9 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative p-5 md:p-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="kicker text-[hsl(var(--iiv-gold))] capitalize">{todayLabel}</p>
-            <h1 className="font-serif text-3xl md:text-4xl mt-3 leading-tight">
+            <h1 className="font-serif text-2xl md:text-3xl mt-2 leading-tight">
               {greeting}, <span className="capitalize">{firstName}</span>
             </h1>
-            <p className="text-sm opacity-75 mt-2 max-w-xl">
+            <p className="text-sm opacity-75 mt-1.5 max-w-xl">
               {ROLE_INTRO[activeRole]} · perfil {ROLE_LABEL[activeRole]}
             </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-xs font-medium">
-              <span className="h-2 w-2 rounded-full bg-[hsl(var(--iiv-gold))] animate-pulse" />
-              Sistema operacional · dados em tempo real
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-xs font-medium">
+              <span className={cn("h-2 w-2 rounded-full", hasError ? "bg-destructive" : "bg-[hsl(var(--iiv-gold))] animate-pulse")} />
+              {hasError ? "Erro ao carregar alguns dados" : "Sistema operacional"}
+              {lastUpdatedAt > 0 && (
+                <span className="opacity-70">
+                  · actualizado às {new Date(lastUpdatedAt).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
             </div>
           </div>
           <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>
@@ -774,7 +815,18 @@ export default function Dashboard() {
                   <Icon className="h-6 w-6" strokeWidth={1.75} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-3xl xl:text-4xl font-serif leading-none tracking-tight">{c.value}</p>
+                  {kpiErrorSource[c.key] ? (
+                    <p
+                      className={cn(
+                        "flex items-center gap-1.5 text-sm font-medium",
+                        isGradient ? "text-primary-foreground/90" : "text-destructive",
+                      )}
+                    >
+                      <AlertTriangle className="h-4 w-4 shrink-0" /> Erro ao carregar
+                    </p>
+                  ) : (
+                    <p className="text-3xl xl:text-4xl font-serif leading-none tracking-tight">{c.value}</p>
+                  )}
                   <p className={cn("text-sm mt-2 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
                     {c.label}
                   </p>

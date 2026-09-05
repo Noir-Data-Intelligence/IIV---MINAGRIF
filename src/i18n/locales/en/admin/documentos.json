@@ -119,5 +119,16 @@
   "delete": {
     "title": "Delete document?",
     "description": "This action is permanent and removes all versions, links and permissions."
+  },
+  "categories": {
+    "manage": "Categories",
+    "dialogTitle": "Document Categories",
+    "namePlaceholder": "Category name",
+    "add": "Add",
+    "empty": "No categories created yet.",
+    "createSuccess": "Category created",
+    "deleteSuccess": "Category deleted",
+    "deleteConfirmTitle": "Delete category?",
+    "deleteConfirmDescription": "Only categories with no associated documents can be deleted."
   }
 }

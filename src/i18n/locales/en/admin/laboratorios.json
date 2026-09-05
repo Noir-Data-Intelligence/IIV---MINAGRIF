@@ -28,9 +28,8 @@
       "isActive": "Active laboratory"
     },
     "placeholders": {
-      "code": "e.g. AB, AP, BM",
       "name": "e.g. Virology Laboratory",
-      "type": "e.g. virology, bacteriology",
+      "type": "Select type",
       "description": "Laboratory description",
       "slaHoras": "e.g. 72"
     },
@@ -40,7 +39,7 @@
     "cancel": "Cancel"
   },
   "dialog": {
-    "createTitle": "Register Laboratory",
+    "createTitle": "Create Laboratory",
     "editTitle": "Edit Laboratory",
     "detailsTitle": "Laboratory Details"
   },
@@ -68,9 +67,18 @@
     "emptyCell": "—"
   },
   "validation": {
-    "codeRequired": "Please provide the area code (e.g. AB, AP)",
     "nameShort": "Name too short",
-    "typeRequired": "Please provide the laboratory type"
+    "typeRequired": "Select the laboratory type"
+  },
+  "types": {
+    "bacteriologia": "Bacteriology",
+    "virologia": "Virology",
+    "parasitologia": "Parasitology",
+    "serologia": "Serology",
+    "biologia_molecular": "Molecular Biology",
+    "bromatologia": "Food Science",
+    "patologia": "Pathology",
+    "outro": "Other"
   },
   "toast": {
     "createSuccess": "Laboratory created successfully",

@@ -24,7 +24,8 @@
     "view": "View details",
     "edit": "Edit",
     "delete": "Delete",
-    "new": "New Record"
+    "new": "New Record",
+    "newDisabledHint": "First create a Station under Quality → Stations"
   },
   "form": {
     "submitCreate": "Create",

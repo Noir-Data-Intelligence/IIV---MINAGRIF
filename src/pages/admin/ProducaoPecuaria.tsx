@@ -200,7 +200,11 @@ export default function ProducaoPecuaria() {
     <div className="space-y-6">
       <AdminPageHeader icon={Beef} title={t("page.title")} description={t("page.description")}>
         <WriteGuard module="pecuaria">
-          <Button onClick={openCreate} disabled={estacoes.length === 0}>
+          <Button
+            onClick={openCreate}
+            disabled={estacoes.length === 0}
+            title={estacoes.length === 0 ? t("actions.newDisabledHint") : undefined}
+          >
             <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
           </Button>
         </WriteGuard>

@@ -1,10 +1,18 @@
 import { type ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type LucideIcon, Inbox, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { type LucideIcon, Inbox, ArrowUpRight, ArrowDownRight, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Variant = "glass" | "gradient-green" | "gradient-gold" | "gradient-teal" | "gradient-green-gold";
+
+/**
+ * Estado explícito de um KPI, distinto do próprio valor — sem isto, "0" e
+ * "sem dados"/"erro ao carregar" ficam indistinguíveis (ver auditoria
+ * funcional — Dashboard/Estados sem dados). Por omissão "ok" (comportamento
+ * anterior, inalterado).
+ */
+type KpiState = "ok" | "loading" | "error";
 
 interface AdminCardProps {
   title?: string;
@@ -16,6 +24,8 @@ interface AdminCardProps {
   variant?: Variant;
   /** KPI mode: shows a large metric value and optional trend */
   metric?: string | number;
+  /** Estado do KPI — "loading"/"error" substituem `metric` por um indicador dedicado. */
+  state?: KpiState;
   trend?: { value: string; direction: "up" | "down" };
   /** Caption shown below metric */
   caption?: string;
@@ -66,6 +76,7 @@ export function AdminCard({
   children,
   variant = "glass",
   metric,
+  state = "ok",
   trend,
   caption,
   className,
@@ -102,7 +113,23 @@ export function AdminCard({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className={cn("text-3xl xl:text-4xl font-serif leading-none tracking-tight", isGradient ? "" : "text-foreground")}>{metric}</p>
+            {state === "loading" ? (
+              <Skeleton className={cn("h-8 w-16", isGradient && "bg-white/20")} />
+            ) : state === "error" ? (
+              <p
+                className={cn(
+                  "flex items-center gap-1.5 text-sm font-medium",
+                  isGradient ? "text-primary-foreground/90" : "text-destructive",
+                )}
+                title="Erro ao carregar dados"
+              >
+                <AlertCircle className="h-4 w-4 shrink-0" /> Erro ao carregar
+              </p>
+            ) : (
+              <p className={cn("text-3xl xl:text-4xl font-serif leading-none tracking-tight", isGradient ? "" : "text-foreground")}>
+                {metric}
+              </p>
+            )}
             {title && (
               <p className={cn("text-sm mt-2 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
                 {title}

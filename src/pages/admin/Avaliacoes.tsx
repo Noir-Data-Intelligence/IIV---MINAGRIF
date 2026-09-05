@@ -6,7 +6,7 @@ import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import {
   ClipboardCheck, Plus, Pencil, Trash2, Eye, Award, Users, Send, Star,
-  Check, X, RotateCcw, ShieldCheck, History, FileText,
+  Check, X, RotateCcw, ShieldCheck, History, FileText, CalendarRange,
 } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -130,6 +130,7 @@ export default function Avaliacoes() {
 
   const kpiCards = [
     { key: "cycle", icon: Award, label: t("kpi.activeCycle"), value: stats?.activeCycleName ?? "—", variant: "gradient-green-gold" as const },
+    { key: "totalCycles", icon: CalendarRange, label: t("kpi.totalCycles"), value: stats?.totalCycles ?? 0, variant: "glass" as const },
     { key: "total", icon: Users, label: t("kpi.total"), value: stats?.total ?? 0, variant: "glass" as const },
     { key: "pending", icon: Send, label: t("kpi.pending"), value: stats?.pending ?? 0, variant: "glass" as const },
     { key: "avg", icon: Star, label: t("kpi.avgScore"), value: stats?.avgScore != null ? stats.avgScore : "—", variant: "glass" as const },
@@ -141,7 +142,7 @@ export default function Avaliacoes() {
 
       {/* KPIs */}
       <motion.div
-        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
         variants={prefersReduced ? undefined : staggerContainer}
         initial={prefersReduced ? undefined : "hidden"}
         animate={prefersReduced ? undefined : "visible"}

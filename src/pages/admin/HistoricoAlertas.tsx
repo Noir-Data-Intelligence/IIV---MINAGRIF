@@ -41,7 +41,7 @@ if (!i18n.hasResourceBundle("pt", "admin-historico-alertas"))
 if (!i18n.hasResourceBundle("en", "admin-historico-alertas"))
   i18n.addResourceBundle("en", "admin-historico-alertas", enHistorico, true, true);
 
-const METRIC_KEYS = ["lowStock", "expiringSoon", "ncOpen", "analysesPending"] as const;
+const METRIC_KEYS = ["lowStock", "expiringSoon", "batchesExpired", "ncOpen", "analysesPending"] as const;
 const STATUS_KEYS: AlertActionStatus[] = ["pendente", "em_curso", "resolvido"];
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -212,6 +212,15 @@ export default function HistoricoAlertas() {
         accessorKey: "label",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.metric")} />,
         cell: ({ row }) => <span className="text-sm font-medium">{row.original.label}</span>,
+      },
+      {
+        accessorKey: "origem",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("table.origin")} />,
+        cell: ({ row }) => (
+          <Badge variant={row.original.origem === "sistema" ? "secondary" : "outline"}>
+            {t(`table.origin${row.original.origem === "sistema" ? "System" : "Browser"}`)}
+          </Badge>
+        ),
       },
       {
         accessorKey: "value",

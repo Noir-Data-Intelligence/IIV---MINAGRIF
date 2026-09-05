@@ -5,6 +5,7 @@
   },
   "kpi": {
     "activeCycle": "Active cycle",
+    "totalCycles": "Total Cycles",
     "total": "Total evaluations",
     "pending": "Pending approval",
     "avgScore": "Average score"

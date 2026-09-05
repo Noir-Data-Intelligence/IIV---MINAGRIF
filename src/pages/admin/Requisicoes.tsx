@@ -36,8 +36,12 @@ if (!i18n.hasResourceBundle("pt", "admin-requisicoes"))
 if (!i18n.hasResourceBundle("en", "admin-requisicoes"))
   i18n.addResourceBundle("en", "admin-requisicoes", enRequisicoes, true, true);
 
+const TIPO_AMOSTRA_VALUES = [
+  "sangue", "soro", "fezes", "urina", "zaragatoa", "tecido", "leite", "agua", "outro",
+] as const;
+
 const amostraSchema = z.object({
-  tipoAmostra: z.string().trim().min(2, "Indique o tipo de amostra"),
+  tipoAmostra: z.string().refine((v) => (TIPO_AMOSTRA_VALUES as readonly string[]).includes(v), "Seleccione o tipo de amostra"),
   origemMatriz: z.string().trim().optional(),
   pontoColheita: z.string().trim().optional(),
   colhidaPor: z.string().trim().optional(),
@@ -107,9 +111,20 @@ function AmostrasFieldArray({ form, t }: { form: UseFormReturn<RequisicaoFormVal
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">{t("form.amostras.tipoAmostra")}</FormLabel>
-                <FormControl>
-                  <Input placeholder={t("form.amostras.tipoAmostraPlaceholder")} {...field} />
-                </FormControl>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("form.amostras.tipoAmostraPlaceholder")} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {TIPO_AMOSTRA_VALUES.map((v) => (
+                      <SelectItem key={v} value={v}>
+                        {t(`tipoAmostra.${v}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

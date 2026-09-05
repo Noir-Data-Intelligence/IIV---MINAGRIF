@@ -5,7 +5,7 @@ import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import {
   FileStack, Plus, Upload, Download, Trash2, History, Send, CheckCircle2,
-  XCircle, Eye, Calendar, AlertCircle, Pencil, Clock,
+  XCircle, Eye, Calendar, AlertCircle, Pencil, Clock, FolderCog,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -38,6 +38,8 @@ import {
   useDeleteDocumento,
   useDocVersions,
   useCreateDocVersion,
+  useCreateDocumentCategory,
+  useDeleteDocumentCategory,
 } from "@/hooks/queries/useDocumentos";
 import type { DocStatus, DocumentoDto } from "@/types/dto/documento";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
@@ -104,6 +106,9 @@ export default function Documentos() {
   const [viewDoc, setViewDoc] = useState<DocumentoDto | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<DocumentoDto | null>(null);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
 
   // Ficheiro do formulário de criação (fora do zod — metadados simulados, sem upload real).
   const [file, setFile] = useState<File | null>(null);
@@ -130,6 +135,8 @@ export default function Documentos() {
   const updateDocumento = useUpdateDocumento();
   const deleteDocumento = useDeleteDocumento();
   const createVersion = useCreateDocVersion();
+  const createCategory = useCreateDocumentCategory();
+  const deleteCategory = useDeleteDocumentCategory();
 
   const documentoSchema = useMemo(() => buildDocumentoSchema(t), [t]);
 
@@ -280,6 +287,38 @@ export default function Documentos() {
     }
   };
 
+  const handleCreateCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    try {
+      await createCategory.mutateAsync({ name });
+      toast({ title: t("categories.createSuccess") });
+      setNewCategoryName("");
+    } catch (err) {
+      toast({
+        title: t("toast.error"),
+        description: err instanceof Error ? err.message : undefined,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!deleteCategoryId) return;
+    try {
+      await deleteCategory.mutateAsync(deleteCategoryId);
+      toast({ title: t("categories.deleteSuccess") });
+    } catch (err) {
+      toast({
+        title: t("toast.error"),
+        description: err instanceof Error ? err.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteCategoryId(null);
+    }
+  };
+
   const handleDownload = (label: string) => {
     // Simulação — não há storage real nesta demonstração.
     toast({ title: t("actions.download"), description: t("toast.downloadSimulated") + ` (${label})` });
@@ -361,9 +400,14 @@ export default function Documentos() {
     <div className="space-y-6">
       <AdminPageHeader icon={FileStack} title={t("page.title")} description={t("page.description")}>
         <WriteGuard module="documentos">
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setCategoriesOpen(true)}>
+              <FolderCog className="mr-2 h-4 w-4" /> {t("categories.manage")}
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" /> {t("actions.new")}
+            </Button>
+          </div>
         </WriteGuard>
       </AdminPageHeader>
 
@@ -583,6 +627,61 @@ export default function Documentos() {
         }}
         title={t("delete.title")}
         description={t("delete.description")}
+      />
+
+      {/* Gestão de categorias */}
+      <Dialog open={categoriesOpen} onOpenChange={setCategoriesOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-serif">
+              <FolderCog className="h-5 w-5 text-primary" /> {t("categories.dialogTitle")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder={t("categories.namePlaceholder")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleCreateCategory();
+                  }
+                }}
+              />
+              <Button onClick={handleCreateCategory} disabled={!newCategoryName.trim() || createCategory.isPending}>
+                <Plus className="mr-1 h-4 w-4" /> {t("categories.add")}
+              </Button>
+            </div>
+            <div className="rounded-lg border border-border/40 divide-y">
+              {categories.length === 0 && (
+                <p className="text-sm text-muted-foreground p-3">{t("categories.empty")}</p>
+              )}
+              {categories.map((c) => (
+                <div key={c.id} className="flex items-center justify-between px-3 py-2">
+                  <span className="text-sm">{c.name}</span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-destructive"
+                    onClick={() => setDeleteCategoryId(c.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteCategoryId}
+        onOpenChange={(o) => !o && setDeleteCategoryId(null)}
+        onConfirm={handleDeleteCategory}
+        title={t("categories.deleteConfirmTitle")}
+        description={t("categories.deleteConfirmDescription")}
       />
 
       {/* Detalhes / versões / permissões / workflow */}

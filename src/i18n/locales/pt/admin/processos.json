@@ -92,5 +92,9 @@
     "deleteSuccess": "Processo eliminado",
     "requiredFields": "Preencha os campos obrigatórios",
     "error": "Ocorreu um erro. Tente novamente."
+  },
+  "delete": {
+    "title": "Eliminar processo?",
+    "description": "Esta acção é permanente e remove o processo e o seu histórico de etapas."
   }
 }

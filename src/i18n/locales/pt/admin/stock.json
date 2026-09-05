@@ -9,9 +9,9 @@
     "totalValue": "Valor Total do Stock",
     "totalValueCaption": "Quantidade × custo unitário",
     "belowMin": "Itens Abaixo do Mínimo",
-    "belowMinCaption": "Stock crítico a repor",
+    "belowMinCaption": "Itens do Stock Integrado a repor",
     "expiring": "A Expirar em Breve",
-    "expiringCaption": "Validade nos próximos 30 dias"
+    "expiringCaption": "Itens do Stock Integrado — validade nos próximos 30 dias"
   },
   "tabs": {
     "items": "Itens",

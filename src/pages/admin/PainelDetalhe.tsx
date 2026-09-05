@@ -22,7 +22,7 @@ import { useInsumosList } from "@/hooks/queries/useInsumos";
 import { useDistribuicaoList } from "@/hooks/queries/useDistribuicao";
 import { useProdutosList } from "@/hooks/queries/useProdutos";
 import { useUsersList } from "@/hooks/queries/useUsers";
-import { fmtDate, fmtDateTime, isExpiringSoon, isCurrentMonth } from "@/lib/dashboard-metrics";
+import { fmtDate, fmtDateTime, isExpiringSoon, isExpired, isCurrentMonth } from "@/lib/dashboard-metrics";
 
 type Row = Record<string, unknown>;
 type Col = { key: string; label: string; render?: (r: Row) => React.ReactNode; className?: string };
@@ -177,6 +177,15 @@ const CONFIG: Record<string, MetricConfig> = {
     icon: CalendarClock,
     source: "lotes",
     filter: (r) => isExpiringSoon(r.expiryDate),
+    columns: batchColumns,
+    searchKeys: ["batchNumber"],
+  },
+  batchesExpired: {
+    title: "Lotes Expirados",
+    description: "Lotes com validade já ultrapassada",
+    icon: PackageX,
+    source: "lotes",
+    filter: (r) => isExpired(r.expiryDate),
     columns: batchColumns,
     searchKeys: ["batchNumber"],
   },

@@ -25,4 +25,6 @@ export interface PlanoListParams {
   search?: string;
   /** Filtro opcional por produto. */
   productId?: string;
+  /** Filtro opcional por estado (ANL-002 — auditoria funcional). */
+  status?: PlanoStatus;
 }

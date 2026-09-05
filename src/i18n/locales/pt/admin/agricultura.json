@@ -88,7 +88,7 @@
   },
   "fields": {
     "new": "Novo Talhão",
-    "emptyDepsHint": "Crie primeiro uma cultura para poder registar talhões.",
+    "emptyDepsHint": "Crie primeiro uma Cultura e uma Estação (Qualidade → Estações) para poder registar talhões.",
     "table": {
       "code": "Código",
       "station": "Estação",

@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createDocumento,
+  createDocumentCategory,
   createDocumentLink,
   createDocumentPermission,
   createDocVersion,
   deleteDocumento,
+  deleteDocumentCategory,
   deleteDocumentLink,
   deleteDocumentPermission,
   listDocumentCategories,
@@ -13,8 +15,10 @@ import {
   listDocumentos,
   listDocVersions,
   updateDocumento,
+  updateDocumentCategory,
 } from "@/services/api/documentos";
 import type {
+  DocCategoryDto,
   DocumentoDto,
   DocumentoListParams,
   DocVersionPayload,
@@ -62,6 +66,37 @@ export function useDocumentCategories() {
   return useQuery({
     queryKey: documentoKeys.categories(),
     queryFn: () => listDocumentCategories(),
+  });
+}
+
+export function useCreateDocumentCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Partial<DocCategoryDto>) => createDocumentCategory(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentoKeys.categories() });
+    },
+  });
+}
+
+export function useUpdateDocumentCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<DocCategoryDto> }) =>
+      updateDocumentCategory(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentoKeys.categories() });
+    },
+  });
+}
+
+export function useDeleteDocumentCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteDocumentCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentoKeys.categories() });
+    },
   });
 }
 

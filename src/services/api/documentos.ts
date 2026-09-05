@@ -26,6 +26,7 @@ const ROUTES = {
   detail: (id: string) => `/documentos/${id}`,
   versions: (id: string) => `/documentos/${id}/versions`,
   categories: "/document-categories",
+  category: (id: string) => `/document-categories/${id}`,
   links: "/document-links",
   link: (id: string) => `/document-links/${id}`,
   permissions: "/document-permissions",
@@ -70,6 +71,18 @@ export function deleteDocumento(id: string): Promise<void> {
 
 export function listDocumentCategories(): Promise<DocCategoryDto[]> {
   return apiGet<DocCategoryDto[]>(ROUTES.categories);
+}
+
+export function createDocumentCategory(payload: Partial<DocCategoryDto>): Promise<DocCategoryDto> {
+  return apiPost<DocCategoryDto>(ROUTES.categories, payload);
+}
+
+export function updateDocumentCategory(id: string, payload: Partial<DocCategoryDto>): Promise<DocCategoryDto> {
+  return apiPut<DocCategoryDto>(ROUTES.category(id), payload);
+}
+
+export function deleteDocumentCategory(id: string): Promise<void> {
+  return apiDelete<void>(ROUTES.category(id));
 }
 
 // --- Versões ---------------------------------------------------------------

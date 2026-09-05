@@ -24,6 +24,7 @@
     "all": "Todas as métricas",
     "lowStock": "Stock Crítico",
     "expiringSoon": "Lotes a Expirar",
+    "batchesExpired": "Lotes Expirados",
     "ncOpen": "Não Conformidades",
     "analysesPending": "Análises Pendentes"
   },
@@ -42,6 +43,9 @@
     "title": "Registos",
     "datetime": "Data/Hora",
     "metric": "Métrica",
+    "origin": "Origem",
+    "originSystem": "Sistema",
+    "originBrowser": "Manual",
     "value": "Valor",
     "threshold": "Limiar",
     "assignee": "Responsável",

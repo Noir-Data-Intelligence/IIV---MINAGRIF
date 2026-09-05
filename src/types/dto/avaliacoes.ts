@@ -123,6 +123,8 @@ export interface EvaluationStats {
   avgScore: number | null;
   /** Nome do ciclo activo (estado "aberto"), ou null. */
   activeCycleName: string | null;
+  /** Total de ciclos cadastrados, independentemente do estado. */
+  totalCycles: number;
 }
 
 // --- Parâmetros de listagem / inputs ---------------------------------------

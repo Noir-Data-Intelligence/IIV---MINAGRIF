@@ -80,6 +80,7 @@ export default function Planeamento() {
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<PlanoDto | null>(null);
   const [viewItem, setViewItem] = useState<PlanoDto | null>(null);
@@ -89,6 +90,7 @@ export default function Planeamento() {
     page: pagination.pageIndex + 1,
     perPage: pagination.pageSize,
     search: search || undefined,
+    status: statusFilter !== "todos" ? (statusFilter as PlanoStatus) : undefined,
   });
   const statsQuery = usePlanosList({ page: 1, perPage: 1000 });
   const produtosQuery = useProdutosList({ page: 1, perPage: 1000 });
@@ -332,6 +334,18 @@ export default function Planeamento() {
           )}
         </CardContent>
       </Card>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="sm:w-[200px]"><SelectValue placeholder={t("filters.statusPlaceholder")} /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">{t("filters.statusAll")}</SelectItem>
+            {PLANO_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>{statusLabel(s)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <DataTable
         columns={columns}

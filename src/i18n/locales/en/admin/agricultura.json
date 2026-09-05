@@ -88,7 +88,7 @@
   },
   "fields": {
     "new": "New Field",
-    "emptyDepsHint": "Create a crop first to be able to register fields.",
+    "emptyDepsHint": "Create a Crop and a Station (Quality → Stations) first to be able to register fields.",
     "table": {
       "code": "Code",
       "station": "Station",
