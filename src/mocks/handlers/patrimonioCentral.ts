@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { assetsCentralFixtures, maintenancesCentralFixtures } from "@/mocks/fixtures/patrimonioCentral";
+import { usersFixtures } from "@/mocks/fixtures/users";
 import type { AssetCentralDto, MaintenanceCentralDto } from "@/types/dto/patrimonioCentral";
 import type { Paginated } from "@/types/dto/paginated";
 
@@ -34,7 +35,9 @@ export const patrimonioCentralHandlers = [
           a.name.toLowerCase().includes(search) ||
           (a.serialNumber ?? "").toLowerCase().includes(search) ||
           (a.location ?? "").toLowerCase().includes(search) ||
-          (a.responsibleUser ?? "").toLowerCase().includes(search),
+          (usersFixtures.find((u) => u.id === a.responsibleUserId)?.fullName ?? "")
+            .toLowerCase()
+            .includes(search),
       );
     }
     if (status) rows = rows.filter((a) => a.status === status);
@@ -63,7 +66,7 @@ export const patrimonioCentralHandlers = [
       description: payload.description ?? null,
       location: payload.location ?? null,
       departmentId: payload.departmentId ?? null,
-      responsibleUser: payload.responsibleUser ?? null,
+      responsibleUserId: payload.responsibleUserId ?? null,
       acquisitionDate: payload.acquisitionDate ?? null,
       acquisitionCost: payload.acquisitionCost ?? 0,
       currentValue: payload.currentValue ?? null,

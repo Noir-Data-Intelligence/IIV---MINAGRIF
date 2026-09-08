@@ -12,7 +12,7 @@ import {
 import { DataTable } from "@/components/data-table";
 import {
   Activity, TrendingUp, Boxes, Truck, AlertTriangle, PackageX,
-  CalendarClock, Users, BarChart3, PieChart, Pill, ArrowLeft, Search,
+  CalendarClock, Users, BarChart3, PieChart, Pill, ArrowLeft, Search, Baby,
   type LucideIcon,
 } from "lucide-react";
 import { useBoletinsList } from "@/hooks/queries/useBoletins";
@@ -22,7 +22,10 @@ import { useInsumosList } from "@/hooks/queries/useInsumos";
 import { useDistribuicaoList } from "@/hooks/queries/useDistribuicao";
 import { useProdutosList } from "@/hooks/queries/useProdutos";
 import { useUsersList } from "@/hooks/queries/useUsers";
+import { useRegistosList } from "@/hooks/queries/useInseminacao";
+import { useAnimaisList } from "@/hooks/queries/useAnimais";
 import { fmtDate, fmtDateTime, isExpiringSoon, isExpired, isCurrentMonth } from "@/lib/dashboard-metrics";
+import { isBirthUpcoming } from "@/lib/gestacao";
 
 type Row = Record<string, unknown>;
 type Col = { key: string; label: string; render?: (r: Row) => React.ReactNode; className?: string };
@@ -30,7 +33,7 @@ type Col = { key: string; label: string; render?: (r: Row) => React.ReactNode; c
 type StatusOpt = { value: string; label: string };
 
 /** Fontes de dados subjacentes a cada métrica (hooks já migrados). */
-type Source = "boletins" | "lotes" | "nc" | "insumos" | "distribuicao" | "produtos" | "users";
+type Source = "boletins" | "lotes" | "nc" | "insumos" | "distribuicao" | "produtos" | "users" | "inseminacoes";
 
 type MetricConfig = {
   title: string;
@@ -57,6 +60,10 @@ const STATUS_NC: Record<string, string> = {
   aberta: "Aberta", em_resolucao: "Em Resolução", resolvida: "Resolvida", encerrada: "Encerrada",
 };
 const TYPE_PRODUCT: Record<string, string> = { vacina: "Vacina", soro: "Soro", reagente: "Reagente" };
+const RESULT_INSEM: Record<string, string> = { pendente: "Pendente", confirmada: "Confirmada", falhou: "Falhou" };
+
+/** Mesma janela do alerta `birthsUpcoming` no Dashboard e em `alerts:generate`. */
+const BIRTH_ALERT_DAYS = 7;
 
 function statusBadge(label: string, tone: "default" | "secondary" | "destructive" | "outline" = "secondary") {
   return <Badge variant={tone}>{label}</Badge>;
@@ -189,6 +196,27 @@ const CONFIG: Record<string, MetricConfig> = {
     columns: batchColumns,
     searchKeys: ["batchNumber"],
   },
+  birthsUpcoming: {
+    title: "Partos Previstos",
+    description: `Inseminações com parto previsto nos próximos ${BIRTH_ALERT_DAYS} dias`,
+    icon: Baby,
+    source: "inseminacoes",
+    filter: (r) => r.result !== "falhou" && isBirthUpcoming(r.expectedBirthDate as string | null, BIRTH_ALERT_DAYS),
+    columns: [
+      { key: "animalTag", label: "Animal" },
+      { key: "inseminationDate", label: "Inseminação", render: (r) => fmtDate(r.inseminationDate as string | null) },
+      { key: "expectedBirthDate", label: "Parto previsto", render: (r) => fmtDate(r.expectedBirthDate as string | null) },
+      { key: "result", label: "Resultado", render: (r) => statusBadge(RESULT_INSEM[r.result as string] || String(r.result)) },
+      { key: "notes", label: "Notas", render: (r) => (r.notes as string | null) || "—" },
+    ],
+    searchKeys: ["animalTag", "notes"],
+    statusKey: "result",
+    statusOptions: [
+      { value: "pendente", label: "Pendente" },
+      { value: "confirmada", label: "Confirmada" },
+    ],
+    emptyMessage: "Sem partos previstos para os próximos dias.",
+  },
   users: {
     title: "Utilizadores",
     description: "Todos os utilizadores registados",
@@ -290,6 +318,15 @@ export default function PainelDetalhe() {
   const distribuicaoQuery = useDistribuicaoList({ page: 1, perPage: 1000 });
   const produtosQuery = useProdutosList({ page: 1, perPage: 1000 });
   const usersQuery = useUsersList({});
+  const registosQuery = useRegistosList();
+  const animaisQuery = useAnimaisList({ page: 1, perPage: 1000 });
+
+  // Os registos de inseminação só guardam `animalId`; o brinco vem da lista de
+  // animais e é enxertado na linha para poder ser mostrado e pesquisado.
+  const inseminacoesRows = useMemo(() => {
+    const tagById = new Map((animaisQuery.data?.data ?? []).map((a) => [a.id, a.tag]));
+    return (registosQuery.data ?? []).map((r) => ({ ...r, animalTag: tagById.get(r.animalId) ?? "—" }));
+  }, [registosQuery.data, animaisQuery.data]);
 
   const sources: Record<Source, { rows: Row[]; loading: boolean }> = {
     boletins: { rows: boletinsQuery.data?.data ?? [], loading: boletinsQuery.isLoading },
@@ -299,6 +336,7 @@ export default function PainelDetalhe() {
     distribuicao: { rows: distribuicaoQuery.data?.data ?? [], loading: distribuicaoQuery.isLoading },
     produtos: { rows: produtosQuery.data?.data ?? [], loading: produtosQuery.isLoading },
     users: { rows: usersQuery.data ?? [], loading: usersQuery.isLoading },
+    inseminacoes: { rows: inseminacoesRows, loading: registosQuery.isLoading || animaisQuery.isLoading },
   };
 
   const { rows, loading } = config

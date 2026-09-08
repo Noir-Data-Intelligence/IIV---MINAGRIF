@@ -88,7 +88,7 @@
         "name": "Ex: Centrífuga refrigerada",
         "description": "Descrição do bem",
         "location": "Ex: Laboratório de Virologia — Bancada 3",
-        "responsibleUser": "Nome do técnico responsável",
+        "responsibleUserSelect": "Escolher responsável",
         "serialNumber": "Ex: EP5810R-2021-0453",
         "notes": "Observações internas",
         "none": "—",

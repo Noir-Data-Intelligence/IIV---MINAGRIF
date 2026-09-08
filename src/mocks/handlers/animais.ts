@@ -35,6 +35,7 @@ export const animaisHandlers = [
       animalId,
       eventType: payload.eventType ?? "observacao",
       eventDate: payload.eventDate ?? new Date().toISOString().slice(0, 10),
+      destination: payload.destination ?? null,
       notes: payload.notes ?? null,
       createdAt: new Date().toISOString(),
     };

@@ -76,6 +76,7 @@
     "table": {
       "number": "No.",
       "name": "Name",
+      "position": "Position",
       "department": "Department",
       "phone": "Phone",
       "hireDate": "Hire date",
@@ -95,6 +96,7 @@
     "form": {
       "number": "Staff Number",
       "name": "Full Name",
+      "position": "Position",
       "nationalId": "National ID",
       "phone": "Phone",
       "email": "Email",
@@ -109,6 +111,7 @@
     "details": {
       "number": "Staff Number",
       "name": "Name",
+      "position": "Position",
       "nationalId": "National ID",
       "phone": "Phone",
       "email": "Email",
@@ -227,7 +230,8 @@
     "validation": {
       "employee": "Select an employee",
       "startDate": "Start date is required",
-      "endDate": "End date is required"
+      "endDate": "End date is required",
+      "reason": "Reason is required"
     },
     "toast": {
       "createSuccess": "Leave recorded",

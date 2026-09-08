@@ -11,7 +11,9 @@
     "rate": "Conception Rate",
     "rateCaption": "Evaluated inseminations",
     "lowTanks": "Low N₂ Tanks",
-    "lowTanksCaption": "Below minimum level"
+    "lowTanksCaption": "Below minimum level",
+    "centers": "Total Centres",
+    "centersCaption": "Registered insemination centres"
   },
   "tabs": {
     "centros": "Centres",
@@ -48,7 +50,7 @@
     "status": { "active": "Active", "inactive": "Inactive" },
     "table": { "name": "Name", "location": "Location", "status": "Status" },
     "dialog": { "createTitle": "New centre", "editTitle": "Edit centre" },
-    "form": { "name": "Name", "location": "Location", "notes": "Notes", "active": "Active centre" }
+    "form": { "name": "Name", "location": "Location", "notes": "Notes", "active": "Active centre", "status": "Status" }
   },
   "reprodutores": {
     "title": "Breeders",
@@ -65,6 +67,8 @@
     "dialog": { "createTitle": "New breeder", "editTitle": "Edit breeder" },
     "form": {
       "tag": "Tag",
+      "selectAnimal": "Select a registered animal",
+      "tagHelp": "The animal data is loaded automatically; fill in the Centre and Notes.",
       "name": "Name",
       "species": "Species",
       "breed": "Breed",
@@ -149,6 +153,8 @@
       "result": "Result",
       "pregnancyConfirmed": "Pregnancy confirmed on",
       "expectedBirth": "Expected birth",
+      "expectedBirthHint": "Calculated automatically ({{days}} gestation days).",
+      "expectedBirthEmpty": "Select the animal and the insemination date.",
       "notes": "Notes"
     }
   },
@@ -157,6 +163,7 @@
     "updated": "Record updated",
     "deleted": "Record deleted",
     "requiredFields": "Fill in the required fields",
+    "futureRefillDate": "The last refill date cannot be later than the current date.",
     "error": "An error occurred. Please try again."
   },
   "delete": {

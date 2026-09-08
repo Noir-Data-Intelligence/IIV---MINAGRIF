@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import {
   Users, Activity, Boxes, Truck, TrendingUp,
   AlertTriangle, PackageX, CalendarClock, Settings2, RotateCcw, BellOff, EyeOff,
-  ChevronRight, X, ArrowUpRight, ArrowDownRight, type LucideIcon,
+  ChevronRight, X, ArrowUpRight, ArrowDownRight, Baby, type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -48,7 +48,9 @@ import {
   useAlertAcksList, useCreateAlertAck, useDeleteAlertAck,
 } from "@/hooks/queries/useDashboardAlertAcks";
 import { useCreateAlertHistory } from "@/hooks/queries/useDashboardAlertHistory";
+import { useRegistosList } from "@/hooks/queries/useInseminacao";
 import { isInMonth, isExpiringSoon, isExpired } from "@/lib/dashboard-metrics";
+import { isBirthUpcoming } from "@/lib/gestacao";
 
 type KpiKey =
   | "analysesPending" | "completionRate" | "batchesActive" | "distributionsMonth"
@@ -121,10 +123,17 @@ const CHART_LABELS: Record<ChartKey, string> = {
   productTypes: "Produtos por Tipo",
 };
 
-/** KPIs que suportam alertas configuráveis (limiar mínimo a partir do qual avisa). */
-type AlertKey = "lowStock" | "expiringSoon" | "batchesExpired" | "ncOpen" | "analysesPending";
+/**
+ * Métricas que suportam alertas configuráveis (limiar mínimo a partir do qual
+ * avisa). `birthsUpcoming` não é um KPI do painel — existe só como alerta, tal
+ * como o equivalente do lado servidor em `alerts:generate`.
+ */
+type AlertKey = "lowStock" | "expiringSoon" | "batchesExpired" | "ncOpen" | "analysesPending" | "birthsUpcoming";
 
-const ALERT_KEYS: AlertKey[] = ["lowStock", "expiringSoon", "batchesExpired", "ncOpen", "analysesPending"];
+const ALERT_KEYS: AlertKey[] = ["lowStock", "expiringSoon", "batchesExpired", "ncOpen", "analysesPending", "birthsUpcoming"];
+
+/** Janela (em dias) a partir da qual um parto previsto conta como "a aproximar-se". */
+const BIRTH_ALERT_DAYS = 7;
 
 const DEFAULT_THRESHOLDS: Record<string, number> = {
   lowStock: 1,
@@ -132,6 +141,7 @@ const DEFAULT_THRESHOLDS: Record<string, number> = {
   batchesExpired: 1,
   ncOpen: 1,
   analysesPending: 20,
+  birthsUpcoming: 1,
 };
 
 const ALERT_META: Record<AlertKey, { label: string; help: string; caption: string; icon: LucideIcon; tone: "warning" | "destructive" }> = {
@@ -140,6 +150,7 @@ const ALERT_META: Record<AlertKey, { label: string; help: string; caption: strin
   batchesExpired:  { label: "Lotes Expirados",       help: "Avisar quando houver pelo menos este número de lotes já expirados.", caption: "Lotes de produção — validade ultrapassada", icon: PackageX, tone: "destructive" },
   ncOpen:          { label: "Não Conformidades",     help: "Avisar quando o número de não conformidades abertas atingir este valor.", caption: "Abertas ou em análise", icon: AlertTriangle, tone: "destructive" },
   analysesPending: { label: "Análises Pendentes",    help: "Avisar quando o número de análises pendentes atingir este valor.", caption: "Agendadas e em progresso", icon: Activity, tone: "warning" },
+  birthsUpcoming:  { label: "Partos Previstos",      help: `Avisar quando houver pelo menos este número de partos previstos nos próximos ${BIRTH_ALERT_DAYS} dias.`, caption: `Inseminações — parto nos próximos ${BIRTH_ALERT_DAYS} dias`, icon: Baby, tone: "warning" },
 };
 
 /** Estilos semânticos por tonalidade de alerta (evita hardcode de hex; usa tokens Tailwind/shadcn). */
@@ -205,11 +216,14 @@ export default function Dashboard() {
   const produtosQuery = useProdutosList({ page: 1, perPage: 1000 });
   const laboratoriosQuery = useLaboratoriosList({ page: 1, perPage: 1000 });
   const usersQuery = useUsersList({});
+  // Registos de inseminação — fonte do alerta "Partos Previstos" (lista não
+  // paginada no servidor, ao contrário das restantes deste painel).
+  const registosQuery = useRegistosList();
 
   const loading =
     boletinsQuery.isLoading || lotesQuery.isLoading || distribuicaoQuery.isLoading ||
     ncQuery.isLoading || insumosQuery.isLoading || produtosQuery.isLoading ||
-    laboratoriosQuery.isLoading || usersQuery.isLoading;
+    laboratoriosQuery.isLoading || usersQuery.isLoading || registosQuery.isLoading;
 
   // Estado real do sistema + hora da última actualização (não hardcoded) —
   // ver auditoria funcional, Dashboard/Cabeçalho.
@@ -322,6 +336,7 @@ export default function Dashboard() {
     const dists = distribuicaoQuery.data?.data ?? [];
     const ncs = ncQuery.data?.data ?? [];
     const supplies = insumosQuery.data?.data ?? [];
+    const registos = registosQuery.data ?? [];
 
     const now = new Date();
     const curY = now.getFullYear(), curM = now.getMonth();
@@ -350,6 +365,11 @@ export default function Dashboard() {
     const lowStock = supplies.filter((s) => (s.quantity ?? 0) <= (s.minStock ?? 0)).length;
     const expiringSoon = batches.filter((b) => isExpiringSoon(b.expiryDate)).length;
     const batchesExpired = batches.filter((b) => isExpired(b.expiryDate)).length;
+    // Inseminações cujo parto previsto ocorre nos próximos dias. Exclui as
+    // falhadas (sem gestação não há parto), tal como `alerts:generate`.
+    const birthsUpcoming = registos.filter(
+      (r) => r.result !== "falhou" && isBirthUpcoming(r.expectedBirthDate, BIRTH_ALERT_DAYS),
+    ).length;
 
     return {
       users: usersQuery.data?.length ?? 0,
@@ -359,11 +379,12 @@ export default function Dashboard() {
       batchesActive, batchesActivePrev,
       distributionsMonth, distributionsMonthPrev,
       completionRate,
-      ncOpen, lowStock, expiringSoon, batchesExpired,
+      ncOpen, lowStock, expiringSoon, batchesExpired, birthsUpcoming,
     };
   }, [
     boletinsQuery.data, lotesQuery.data, distribuicaoQuery.data, ncQuery.data,
     insumosQuery.data, usersQuery.data, laboratoriosQuery.data, produtosQuery.data,
+    registosQuery.data,
   ]);
 
   // ---- Séries dos gráficos ----
@@ -446,6 +467,7 @@ export default function Dashboard() {
       batchesExpired: stats.batchesExpired,
       ncOpen: stats.ncOpen,
       analysesPending: stats.analysesPending,
+      birthsUpcoming: stats.birthsUpcoming,
     };
     const active = ALERT_KEYS.filter((k) => {
       const th = thresholds[k] ?? 0;
@@ -464,7 +486,7 @@ export default function Dashboard() {
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, prefsLoaded, stats.lowStock, stats.expiringSoon, stats.batchesExpired, stats.ncOpen, stats.analysesPending, thresholds, acks]);
+  }, [loading, prefsLoaded, stats.lowStock, stats.expiringSoon, stats.batchesExpired, stats.ncOpen, stats.analysesPending, stats.birthsUpcoming, thresholds, acks]);
 
   // Erro por KPI (não agregado) — distingue "0" de "falhou a carregar dados
   // desta métrica" em vez de mostrar sempre um número (ver auditoria
@@ -671,8 +693,12 @@ export default function Dashboard() {
         const currentValues: Record<AlertKey, number> = {
           lowStock: stats.lowStock,
           expiringSoon: stats.expiringSoon,
+          // `batchesExpired` faltava aqui: o alerta era registado no histórico
+          // mas nunca chegava a aparecer na tira de "Alertas Ativos".
+          batchesExpired: stats.batchesExpired,
           ncOpen: stats.ncOpen,
           analysesPending: stats.analysesPending,
+          birthsUpcoming: stats.birthsUpcoming,
         };
         const isAcked = (k: AlertKey) => acks[k] && new Date(acks[k]) > new Date();
         const active = ALERT_KEYS.filter((k) => {

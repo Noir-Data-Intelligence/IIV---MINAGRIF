@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { assetsEstacaoFixtures, maintenancesEstacaoFixtures } from "@/mocks/fixtures/patrimonioEstacao";
+import { usersFixtures } from "@/mocks/fixtures/users";
 import type { AssetEstacaoDto, MaintenanceEstacaoDto } from "@/types/dto/patrimonioEstacao";
 import type { Paginated } from "@/types/dto/paginated";
 
@@ -34,7 +35,9 @@ export const patrimonioEstacaoHandlers = [
           a.name.toLowerCase().includes(search) ||
           (a.serialNumber ?? "").toLowerCase().includes(search) ||
           (a.location ?? "").toLowerCase().includes(search) ||
-          (a.responsibleUser ?? "").toLowerCase().includes(search),
+          (usersFixtures.find((u) => u.id === a.responsibleUserId)?.fullName ?? "")
+            .toLowerCase()
+            .includes(search),
       );
     }
     if (status) rows = rows.filter((a) => a.status === status);
@@ -60,11 +63,11 @@ export const patrimonioEstacaoHandlers = [
       code: payload.code ?? `PAT-E-${Date.now()}`,
       name: payload.name ?? "Sem nome",
       category: payload.category ?? "outros",
-      description: payload.description ?? null,
+      description: payload.description ?? "",
       location: payload.location ?? null,
       stationId: payload.stationId ?? "",
       departmentId: payload.departmentId ?? null,
-      responsibleUser: payload.responsibleUser ?? null,
+      responsibleUserId: payload.responsibleUserId ?? null,
       acquisitionDate: payload.acquisitionDate ?? null,
       acquisitionCost: payload.acquisitionCost ?? 0,
       currentValue: payload.currentValue ?? null,

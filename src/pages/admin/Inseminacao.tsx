@@ -19,7 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
+import { calcExpectedBirthDate, gestationDaysFor } from "@/lib/gestacao";
 import { useAnimaisList } from "@/hooks/queries/useAnimais";
+import type { AnimalDto } from "@/types/dto/animal";
 import {
   useCentrosList,
   useCreateCentro,
@@ -64,6 +66,9 @@ if (!i18n.hasResourceBundle("en", "inseminacao"))
 
 type DeleteTarget = { kind: "centro" | "reprodutor" | "tanque" | "dose" | "registo"; id: string };
 
+/** Hoje em ISO (YYYY-MM-DD) — tecto dos inputs de data que não podem ser futuros. */
+const TODAY = new Date().toISOString().slice(0, 10);
+
 const resultVariant: Record<InseminationResult, "default" | "secondary" | "destructive" | "outline"> = {
   pendente: "outline",
   confirmada: "default",
@@ -98,8 +103,11 @@ export default function Inseminacao() {
   const { data: tanks = [], isLoading: loadingTanks } = useTanquesList();
   const { data: doses = [], isLoading: loadingDoses } = useDosesList();
   const { data: insems = [], isLoading: loadingInsems } = useRegistosList();
-  const { data: animalsData } = useAnimaisList({ page: 1, perPage: 100 });
-  const animals = animalsData?.data ?? [];
+  // perPage alto: a lista alimenta os selects de Brinco (reprodutores) e de
+  // animal (inseminações), que têm de mostrar todos os animais cadastrados.
+  const { data: animalsData } = useAnimaisList({ page: 1, perPage: 1000 });
+  const animals = useMemo(() => animalsData?.data ?? [], [animalsData]);
+  const hasFemales = animals.some((a) => a.sex === "femea");
 
   const createCentro = useCreateCentro();
   const updateCentro = useUpdateCentro();
@@ -136,8 +144,14 @@ export default function Inseminacao() {
     const confirmed = insems.filter((i) => i.result === "confirmada").length;
     const evaluated = insems.filter((i) => i.result !== "pendente").length;
     const rate = evaluated > 0 ? Math.round((confirmed / evaluated) * 100) : 0;
-    return { totalDoses, lowTanks, rate, activeBreeders: breeders.filter((b) => b.status === "activo").length };
-  }, [doses, tanks, insems, breeders]);
+    return {
+      totalDoses,
+      lowTanks,
+      rate,
+      totalCenters: centers.length,
+      activeBreeders: breeders.filter((b) => b.status === "activo").length,
+    };
+  }, [doses, tanks, insems, breeders, centers]);
 
   const centerName = (id: string) => centers.find((c) => c.id === id)?.name ?? t("common.none");
   const breederTag = (id: string) => breeders.find((b) => b.id === id)?.tag ?? t("common.none");
@@ -364,6 +378,10 @@ export default function Inseminacao() {
 
   const saveTank = (form: Partial<TankDto>) => {
     if (!form.centerId || !form.code) return toast({ title: t("toast.requiredFields"), variant: "destructive" });
+    // Espelha `before_or_equal:today` do NitrogenTankRequest — evita o 422.
+    if (form.lastRefillDate && form.lastRefillDate > TODAY) {
+      return toast({ title: t("toast.futureRefillDate"), variant: "destructive" });
+    }
     const payload = {
       centerId: form.centerId,
       code: form.code,
@@ -401,13 +419,18 @@ export default function Inseminacao() {
 
   const saveInsem = (form: Partial<InsemDto>) => {
     if (!form.animalId) return toast({ title: t("toast.requiredFields"), variant: "destructive" });
+    const inseminationDate = form.inseminationDate || TODAY;
+    // A data prevista do parto é sempre derivada (data da inseminação + período
+    // médio de gestação da espécie do animal) — deixou de ser editável à mão
+    // (auditoria funcional, secção 16).
+    const species = animals.find((a) => a.id === form.animalId)?.species;
     const payload = {
       animalId: form.animalId,
       doseId: form.doseId || null,
-      inseminationDate: form.inseminationDate || new Date().toISOString().slice(0, 10),
+      inseminationDate,
       result: (form.result as InseminationResult) || "pendente",
       pregnancyConfirmedAt: form.pregnancyConfirmedAt || null,
-      expectedBirthDate: form.expectedBirthDate || null,
+      expectedBirthDate: calcExpectedBirthDate(inseminationDate, species),
       notes: form.notes || null,
     };
     return runSave(
@@ -440,13 +463,16 @@ export default function Inseminacao() {
       <AdminPageHeader icon={Dna} title={t("page.title")} description={t("page.description")} />
 
       <motion.div
-        className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+        className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
         variants={prefersReducedMotion ? undefined : staggerContainer}
         initial={prefersReducedMotion ? undefined : "hidden"}
         animate={prefersReducedMotion ? undefined : "visible"}
       >
         <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
-          <AdminCard variant="gradient-green-gold" icon={Building2} metric={kpis.activeBreeders} title={t("kpi.activeBreeders")} caption={t("kpi.activeBreedersCaption")} />
+          <AdminCard variant="gradient-green" icon={Building2} metric={kpis.totalCenters} title={t("kpi.centers")} caption={t("kpi.centersCaption")} />
+        </motion.div>
+        <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
+          <AdminCard variant="gradient-green-gold" icon={Dna} metric={kpis.activeBreeders} title={t("kpi.activeBreeders")} caption={t("kpi.activeBreedersCaption")} />
         </motion.div>
         <motion.div variants={prefersReducedMotion ? undefined : fadeInUp}>
           <AdminCard variant="glass" icon={FlaskConical} metric={kpis.totalDoses} title={t("kpi.doses")} caption={t("kpi.dosesCaption")} />
@@ -503,7 +529,7 @@ export default function Inseminacao() {
           <AdminCard title={t("reprodutores.title")}>
             <div className="flex justify-end mb-3">
               {canEdit && (
-                <Button onClick={() => { setBreederEdit(null); setBreederOpen(true); }} size="sm" disabled={centers.length === 0}>
+                <Button onClick={() => { setBreederEdit(null); setBreederOpen(true); }} size="sm" disabled={centers.length === 0 || animals.length === 0}>
                   <Plus className="h-4 w-4 mr-1" /> {t("reprodutores.new")}
                 </Button>
               )}
@@ -593,7 +619,7 @@ export default function Inseminacao() {
           <AdminCard title={t("inseminacoes.title")}>
             <div className="flex justify-end mb-3">
               {canEdit && (
-                <Button onClick={() => { setInsemEdit(null); setInsemOpen(true); }} size="sm" disabled={animals.length === 0}>
+                <Button onClick={() => { setInsemEdit(null); setInsemOpen(true); }} size="sm" disabled={!hasFemales}>
                   <Plus className="h-4 w-4 mr-1" /> {t("inseminacoes.new")}
                 </Button>
               )}
@@ -621,7 +647,7 @@ export default function Inseminacao() {
 
       {/* ============ DIALOGS ============ */}
       <CenterDialog open={centerOpen} onOpenChange={(o) => { setCenterOpen(o); if (!o) setCenterEdit(null); }} initial={centerEdit} onSave={saveCenter} />
-      <BreederDialog open={breederOpen} onOpenChange={(o) => { setBreederOpen(o); if (!o) setBreederEdit(null); }} initial={breederEdit} centers={centers} onSave={saveBreeder} />
+      <BreederDialog open={breederOpen} onOpenChange={(o) => { setBreederOpen(o); if (!o) setBreederEdit(null); }} initial={breederEdit} centers={centers} animals={animals} onSave={saveBreeder} />
       <TankDialog open={tankOpen} onOpenChange={(o) => { setTankOpen(o); if (!o) setTankEdit(null); }} initial={tankEdit} centers={centers} onSave={saveTank} />
       <DoseDialog open={doseOpen} onOpenChange={(o) => { setDoseOpen(o); if (!o) setDoseEdit(null); }} initial={doseEdit} breeders={breeders} tanks={tanks} onSave={saveDose} />
       <InsemDialog open={insemOpen} onOpenChange={(o) => { setInsemOpen(o); if (!o) setInsemEdit(null); }} initial={insemEdit} animals={animals} doses={doses} breeders={breeders} onSave={saveInsem} />
@@ -650,6 +676,18 @@ function CenterDialog({ open, onOpenChange, initial, onSave }: { open: boolean; 
         <div className="space-y-3">
           <div><Label>{t("centros.form.name")} {t("common.required")}</Label><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
           <div><Label>{t("centros.form.location")}</Label><Input value={form.location ?? ""} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+          {/* Estado editável — a entidade já tinha `isActive` e a tabela já o
+              mostrava, mas o formulário nunca o expunha (auditoria, secção 14). */}
+          <div>
+            <Label>{t("centros.form.status")}</Label>
+            <Select value={(form.isActive ?? true) ? "true" : "false"} onValueChange={(v) => setForm({ ...form, isActive: v === "true" })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">{t("centros.status.active")}</SelectItem>
+                <SelectItem value="false">{t("centros.status.inactive")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div><Label>{t("centros.form.notes")}</Label><Textarea value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
@@ -661,19 +699,68 @@ function CenterDialog({ open, onOpenChange, initial, onSave }: { open: boolean; 
   );
 }
 
-function BreederDialog({ open, onOpenChange, initial, centers, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; initial: BreederDto | null; centers: IACenterDto[]; onSave: (f: Partial<BreederDto>) => void }) {
+function BreederDialog({ open, onOpenChange, initial, centers, animals, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; initial: BreederDto | null; centers: IACenterDto[]; animals: AnimalDto[]; onSave: (f: Partial<BreederDto>) => void }) {
   const { t } = useTranslation("inseminacao");
   const [form, setForm] = useState<Partial<BreederDto>>({});
   useEffect(() => { setForm(initial ?? { status: "activo" }); }, [initial, open]);
+
+  // O brinco deixou de ser texto livre: lista os animais já cadastrados e, ao
+  // seleccionar um, carrega automaticamente os dados relacionados (nome,
+  // espécie, raça, nascimento). O utilizador só preenche Centro e Notas
+  // (auditoria funcional, secção 14).
+  const animalsByTag = useMemo(() => {
+    const map = new Map<string, AnimalDto>();
+    animals.forEach((a) => { if (!map.has(a.tag)) map.set(a.tag, a); });
+    return map;
+  }, [animals]);
+
+  // Reprodutores antigos podem ter um brinco que já não existe na lista de
+  // animais — mantém-no seleccionável para não se perder ao editar.
+  const tagOptions = useMemo(() => {
+    const tags = Array.from(animalsByTag.keys());
+    if (initial?.tag && !animalsByTag.has(initial.tag)) tags.unshift(initial.tag);
+    return tags;
+  }, [animalsByTag, initial]);
+
+  const pickAnimal = (tag: string) => {
+    const animal = animalsByTag.get(tag);
+    if (!animal) return setForm({ ...form, tag });
+    setForm({
+      ...form,
+      tag: animal.tag,
+      name: animal.name,
+      species: animal.species,
+      breed: animal.breed,
+      birthDate: animal.birthDate,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader><DialogTitle>{initial ? t("reprodutores.dialog.editTitle") : t("reprodutores.dialog.createTitle")}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3">
-          <div><Label>{t("reprodutores.form.tag")} {t("common.required")}</Label><Input value={form.tag ?? ""} onChange={(e) => setForm({ ...form, tag: e.target.value })} /></div>
-          <div><Label>{t("reprodutores.form.name")}</Label><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div><Label>{t("reprodutores.form.species")} {t("common.required")}</Label><Input value={form.species ?? ""} onChange={(e) => setForm({ ...form, species: e.target.value })} /></div>
-          <div><Label>{t("reprodutores.form.breed")}</Label><Input value={form.breed ?? ""} onChange={(e) => setForm({ ...form, breed: e.target.value })} /></div>
+          <div className="col-span-2">
+            <Label>{t("reprodutores.form.tag")} {t("common.required")}</Label>
+            <Select value={form.tag} onValueChange={pickAnimal}>
+              <SelectTrigger><SelectValue placeholder={t("reprodutores.form.selectAnimal")} /></SelectTrigger>
+              <SelectContent>
+                {tagOptions.map((tag) => {
+                  const animal = animalsByTag.get(tag);
+                  return (
+                    <SelectItem key={tag} value={tag}>
+                      {animal ? `${animal.tag} — ${animal.species}${animal.name ? ` (${animal.name})` : ""}` : tag}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">{t("reprodutores.form.tagHelp")}</p>
+          </div>
+          <div><Label>{t("reprodutores.form.name")}</Label><Input value={form.name ?? ""} disabled readOnly /></div>
+          <div><Label>{t("reprodutores.form.species")} {t("common.required")}</Label><Input value={form.species ?? ""} disabled readOnly /></div>
+          <div><Label>{t("reprodutores.form.breed")}</Label><Input value={form.breed ?? ""} disabled readOnly /></div>
+          <div><Label>{t("reprodutores.form.birthDate")}</Label><Input type="date" value={form.birthDate ?? ""} disabled readOnly /></div>
           <div className="col-span-2">
             <Label>{t("reprodutores.form.center")} {t("common.required")}</Label>
             <Select value={form.centerId} onValueChange={(v) => setForm({ ...form, centerId: v })}>
@@ -681,7 +768,6 @@ function BreederDialog({ open, onOpenChange, initial, centers, onSave }: { open:
               <SelectContent>{centers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div><Label>{t("reprodutores.form.birthDate")}</Label><Input type="date" value={form.birthDate ?? ""} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} /></div>
           <div>
             <Label>{t("reprodutores.form.status")}</Label>
             <Select value={form.status ?? "activo"} onValueChange={(v) => setForm({ ...form, status: v as BreederStatus })}>
@@ -697,7 +783,7 @@ function BreederDialog({ open, onOpenChange, initial, centers, onSave }: { open:
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>
-          <Button onClick={() => onSave(form)}>{t("common.save")}</Button>
+          <Button onClick={() => onSave(form)} disabled={!form.tag || !form.centerId}>{t("common.save")}</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -724,7 +810,8 @@ function TankDialog({ open, onOpenChange, initial, centers, onSave }: { open: bo
           <div><Label>{t("tanques.form.capacity")}</Label><Input type="number" step="0.1" value={form.capacityL ?? ""} onChange={(e) => setForm({ ...form, capacityL: Number(e.target.value) })} /></div>
           <div><Label>{t("tanques.form.current")}</Label><Input type="number" step="0.1" value={form.currentLevelL ?? ""} onChange={(e) => setForm({ ...form, currentLevelL: Number(e.target.value) })} /></div>
           <div><Label>{t("tanques.form.min")}</Label><Input type="number" step="0.1" value={form.minLevelL ?? ""} onChange={(e) => setForm({ ...form, minLevelL: Number(e.target.value) })} /></div>
-          <div><Label>{t("tanques.form.lastRefill")}</Label><Input type="date" value={form.lastRefillDate ?? ""} onChange={(e) => setForm({ ...form, lastRefillDate: e.target.value })} /></div>
+          {/* `max` espelha a validação `before_or_equal:today` do FormRequest. */}
+          <div><Label>{t("tanques.form.lastRefill")}</Label><Input type="date" max={TODAY} value={form.lastRefillDate ?? ""} onChange={(e) => setForm({ ...form, lastRefillDate: e.target.value })} /></div>
           <div className="col-span-2"><Label>{t("tanques.form.notes")}</Label><Textarea value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
@@ -783,11 +870,24 @@ function DoseDialog({ open, onOpenChange, initial, breeders, tanks, onSave }: { 
   );
 }
 
-function InsemDialog({ open, onOpenChange, initial, animals, doses, breeders, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; initial: InsemDto | null; animals: { id: string; tag: string; species: string }[]; doses: DoseDto[]; breeders: BreederDto[]; onSave: (f: Partial<InsemDto>) => void }) {
+function InsemDialog({ open, onOpenChange, initial, animals, doses, breeders, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; initial: InsemDto | null; animals: AnimalDto[]; doses: DoseDto[]; breeders: BreederDto[]; onSave: (f: Partial<InsemDto>) => void }) {
   const { t } = useTranslation("inseminacao");
   const [form, setForm] = useState<Partial<InsemDto>>({});
   useEffect(() => { setForm(initial ?? { result: "pendente" }); }, [initial, open]);
   const breederTag = (id: string) => breeders.find((b) => b.id === id)?.tag ?? "";
+
+  // Só fêmeas podem ser inseminadas (auditoria funcional, secção 16). Um
+  // registo antigo cujo animal já não esteja na lista mantém-se seleccionável.
+  const females = useMemo(() => {
+    const list = animals.filter((a) => a.sex === "femea");
+    const existing = animals.find((a) => a.id === initial?.animalId);
+    if (existing && existing.sex !== "femea") list.unshift(existing);
+    return list;
+  }, [animals, initial]);
+
+  const selectedSpecies = animals.find((a) => a.id === form.animalId)?.species;
+  const expectedBirthDate = calcExpectedBirthDate(form.inseminationDate, selectedSpecies);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -797,7 +897,7 @@ function InsemDialog({ open, onOpenChange, initial, animals, doses, breeders, on
             <Label>{t("inseminacoes.form.animal")} {t("common.required")}</Label>
             <Select value={form.animalId} onValueChange={(v) => setForm({ ...form, animalId: v })}>
               <SelectTrigger><SelectValue placeholder={t("inseminacoes.form.selectAnimal")} /></SelectTrigger>
-              <SelectContent>{animals.map((a) => <SelectItem key={a.id} value={a.id}>{a.tag} — {a.species}</SelectItem>)}</SelectContent>
+              <SelectContent>{females.map((a) => <SelectItem key={a.id} value={a.id}>{a.tag} — {a.species}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="col-span-2">
@@ -827,7 +927,17 @@ function InsemDialog({ open, onOpenChange, initial, animals, doses, breeders, on
             </Select>
           </div>
           <div><Label>{t("inseminacoes.form.pregnancyConfirmed")}</Label><Input type="date" value={form.pregnancyConfirmedAt ?? ""} onChange={(e) => setForm({ ...form, pregnancyConfirmedAt: e.target.value })} /></div>
-          <div><Label>{t("inseminacoes.form.expectedBirth")}</Label><Input type="date" value={form.expectedBirthDate ?? ""} onChange={(e) => setForm({ ...form, expectedBirthDate: e.target.value })} /></div>
+          {/* Calculado, não editável: data da inseminação + período médio de
+              gestação da espécie do animal (ver `@/lib/gestacao`). */}
+          <div>
+            <Label>{t("inseminacoes.form.expectedBirth")}</Label>
+            <p className="mt-2 text-sm font-medium">{expectedBirthDate ?? t("common.none")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {expectedBirthDate
+                ? t("inseminacoes.form.expectedBirthHint", { days: gestationDaysFor(selectedSpecies) })
+                : t("inseminacoes.form.expectedBirthEmpty")}
+            </p>
+          </div>
           <div className="col-span-2"><Label>{t("inseminacoes.form.notes")}</Label><Textarea value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
         </div>
         <div className="flex justify-end gap-2 mt-4">

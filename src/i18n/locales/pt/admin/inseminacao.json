@@ -11,7 +11,9 @@
     "rate": "Taxa de Concepção",
     "rateCaption": "Inseminações avaliadas",
     "lowTanks": "Tanques N₂ Baixos",
-    "lowTanksCaption": "Abaixo do nível mínimo"
+    "lowTanksCaption": "Abaixo do nível mínimo",
+    "centers": "Total de Centros",
+    "centersCaption": "Centros de inseminação registados"
   },
   "tabs": {
     "centros": "Centros",
@@ -48,7 +50,7 @@
     "status": { "active": "Activo", "inactive": "Inactivo" },
     "table": { "name": "Nome", "location": "Localização", "status": "Estado" },
     "dialog": { "createTitle": "Novo centro", "editTitle": "Editar centro" },
-    "form": { "name": "Nome", "location": "Localização", "notes": "Notas", "active": "Centro activo" }
+    "form": { "name": "Nome", "location": "Localização", "notes": "Notas", "active": "Centro activo", "status": "Estado" }
   },
   "reprodutores": {
     "title": "Reprodutores",
@@ -65,6 +67,8 @@
     "dialog": { "createTitle": "Novo reprodutor", "editTitle": "Editar reprodutor" },
     "form": {
       "tag": "Brinco",
+      "selectAnimal": "Seleccionar animal cadastrado",
+      "tagHelp": "Os dados do animal são carregados automaticamente; preencha o Centro e as Notas.",
       "name": "Nome",
       "species": "Espécie",
       "breed": "Raça",
@@ -149,6 +153,8 @@
       "result": "Resultado",
       "pregnancyConfirmed": "Gravidez confirmada em",
       "expectedBirth": "Parto previsto",
+      "expectedBirthHint": "Calculado automaticamente ({{days}} dias de gestação).",
+      "expectedBirthEmpty": "Seleccione o animal e a data da inseminação.",
       "notes": "Notas"
     }
   },
@@ -157,6 +163,7 @@
     "updated": "Registo actualizado",
     "deleted": "Registo eliminado",
     "requiredFields": "Preencha os campos obrigatórios",
+    "futureRefillDate": "A data da última recarga não pode ser posterior à data actual.",
     "error": "Ocorreu um erro. Tente novamente."
   },
   "delete": {

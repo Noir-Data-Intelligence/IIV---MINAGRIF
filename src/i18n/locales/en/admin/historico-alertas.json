@@ -26,7 +26,8 @@
     "expiringSoon": "Batches Expiring",
     "batchesExpired": "Expired Batches",
     "ncOpen": "Non-conformities",
-    "analysesPending": "Pending Analyses"
+    "analysesPending": "Pending Analyses",
+    "birthsUpcoming": "Upcoming Births"
   },
   "status": {
     "all": "All statuses",

@@ -40,6 +40,7 @@ export interface EmployeeDto {
   id: string;
   employeeNumber: string;
   fullName: string;
+  position: string | null;
   nationalId: string | null;
   phone: string | null;
   email: string | null;

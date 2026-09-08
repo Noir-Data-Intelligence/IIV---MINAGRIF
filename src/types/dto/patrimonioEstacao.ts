@@ -21,11 +21,15 @@ export interface AssetEstacaoDto {
   code: string;
   name: string;
   category: AssetCategory;
-  description: string | null;
+  /**
+   * Obrigatória em Estação (ao contrário de Património Central) — auditoria
+   * funcional 01/09/2026, secção 21.
+   */
+  description: string;
   location: string | null;
   stationId: string;
   departmentId: string | null;
-  responsibleUser: string | null;
+  responsibleUserId: string | null;
   acquisitionDate: string | null;
   acquisitionCost: number;
   currentValue: number | null;

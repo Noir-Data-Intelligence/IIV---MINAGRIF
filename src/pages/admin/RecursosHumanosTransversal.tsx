@@ -70,6 +70,7 @@ function buildEmployeeSchema(t: TFunction) {
   return z.object({
     employeeNumber: z.string().trim().min(1, t("employees.validation.number")),
     fullName: z.string().trim().min(2, t("employees.validation.name")),
+    position: z.string().trim().optional(),
     nationalId: z.string().trim().optional(),
     phone: z.string().trim().optional(),
     email: z.string().trim().optional(),
@@ -107,7 +108,7 @@ function buildLeaveSchema(t: TFunction) {
     startDate: z.string().min(1, t("leaves.validation.startDate")),
     endDate: z.string().min(1, t("leaves.validation.endDate")),
     status: z.enum(["pendente", "aprovada", "rejeitada", "concluida"]),
-    reason: z.string().trim().optional(),
+    reason: z.string().trim().min(1, t("leaves.validation.reason")),
   });
 }
 type LeaveFormValues = z.infer<ReturnType<typeof buildLeaveSchema>>;
@@ -215,6 +216,7 @@ export default function RecursosHumanosTransversal() {
         ? {
             employeeNumber: empEdit.employeeNumber,
             fullName: empEdit.fullName,
+            position: empEdit.position ?? "",
             nationalId: empEdit.nationalId ?? "",
             phone: empEdit.phone ?? "",
             email: empEdit.email ?? "",
@@ -231,7 +233,7 @@ export default function RecursosHumanosTransversal() {
     schema: employeeSchema,
     initialValues: employeeInitial,
     defaultValues: {
-      employeeNumber: "", fullName: "", nationalId: "", phone: "", email: "",
+      employeeNumber: "", fullName: "", position: "", nationalId: "", phone: "", email: "",
       departmentId: "", hireDate: "", isActive: "true", qualifications: "", notes: "",
     },
     open: empForm,
@@ -239,6 +241,7 @@ export default function RecursosHumanosTransversal() {
       const payload = {
         employeeNumber: values.employeeNumber,
         fullName: values.fullName,
+        position: values.position?.trim() ? values.position.trim() : null,
         nationalId: values.nationalId?.trim() ? values.nationalId.trim() : null,
         phone: values.phone?.trim() ? values.phone.trim() : null,
         email: values.email?.trim() ? values.email.trim() : null,
@@ -375,6 +378,11 @@ export default function RecursosHumanosTransversal() {
         accessorKey: "fullName",
         header: ({ column }) => <DataTableColumnHeader column={column} title={t("employees.table.name")} />,
         cell: ({ row }) => <span className="font-medium">{row.original.fullName}</span>,
+      },
+      {
+        accessorKey: "position",
+        header: ({ column }) => <DataTableColumnHeader column={column} title={t("employees.table.position")} />,
+        cell: ({ row }) => <span className="text-sm">{row.original.position ?? t("common.emptyCell")}</span>,
       },
       {
         id: "department",
@@ -672,6 +680,13 @@ export default function RecursosHumanosTransversal() {
                 </FormItem>
               )} />
             </div>
+            <FormField control={form.control} name="position" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("employees.form.position")}</FormLabel>
+                <FormControl><Input {...field} value={field.value ?? ""} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="nationalId" render={({ field }) => (
                 <FormItem>
@@ -917,7 +932,7 @@ export default function RecursosHumanosTransversal() {
             </div>
             <FormField control={form.control} name="reason" render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("leaves.form.reason")}</FormLabel>
+                <FormLabel>{t("leaves.form.reason")} <span className="text-destructive">*</span></FormLabel>
                 <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -944,6 +959,7 @@ export default function RecursosHumanosTransversal() {
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">{t("employees.details.number")}:</span><p className="font-medium">{empView.employeeNumber}</p></div>
                 <div><span className="text-muted-foreground">{t("employees.details.name")}:</span><p className="font-medium">{empView.fullName}</p></div>
+                <div><span className="text-muted-foreground">{t("employees.details.position")}:</span><p className="font-medium">{empView.position ?? t("common.emptyCell")}</p></div>
                 <div><span className="text-muted-foreground">{t("employees.details.department")}:</span><p className="font-medium">{deptName(empView.departmentId)}</p></div>
                 <div><span className="text-muted-foreground">{t("employees.details.status")}:</span><p><Badge variant={empView.isActive ? "default" : "outline"}>{empView.isActive ? t("employees.active.yes") : t("employees.active.no")}</Badge></p></div>
                 <div><span className="text-muted-foreground">{t("employees.details.nationalId")}:</span><p className="font-medium">{empView.nationalId ?? t("common.emptyCell")}</p></div>

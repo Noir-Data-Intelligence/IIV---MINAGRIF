@@ -26,7 +26,8 @@
     "expiringSoon": "Lotes a Expirar",
     "batchesExpired": "Lotes Expirados",
     "ncOpen": "Não Conformidades",
-    "analysesPending": "Análises Pendentes"
+    "analysesPending": "Análises Pendentes",
+    "birthsUpcoming": "Partos Previstos"
   },
   "status": {
     "all": "Todos os estados",

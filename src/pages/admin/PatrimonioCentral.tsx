@@ -39,6 +39,7 @@ import {
   useDeleteMaintenanceCentral,
 } from "@/hooks/queries/usePatrimonioCentral";
 import { useDepartamentosList } from "@/hooks/queries/useDepartamentos";
+import { useUsersList } from "@/hooks/queries/useUsers";
 import type {
   AssetCentralDto,
   AssetCategory,
@@ -96,7 +97,13 @@ function buildAssetSchema(t: TFunction) {
     description: z.string().trim().optional(),
     location: z.string().trim().optional(),
     departmentId: z.string().optional(),
-    responsibleUser: z.string().trim().optional(),
+    /**
+     * Auditoria funcional (01/09/2026, secção 21): "Associar Responsável ao
+     * Departamento" — o Responsável passa a ser uma referência a um
+     * Utilizador existente (em vez de texto livre), permitindo derivar o
+     * Departamento apresentado a partir desse utilizador.
+     */
+    responsibleUserId: z.string().optional(),
     acquisitionDate: z.string().optional(),
     acquisitionCost: cost(t("validation.costInvalid")),
     currentValue: optionalCost(t("validation.costInvalid")),
@@ -172,6 +179,7 @@ export default function PatrimonioCentral() {
 
   const { data: departamentosData } = useDepartamentosList({ page: 1, perPage: 1000 });
   const departamentos = departamentosData?.data ?? [];
+  const { data: users = [] } = useUsersList({});
 
   const createAsset = useCreateAssetCentral();
   const updateAsset = useUpdateAssetCentral();
@@ -199,6 +207,8 @@ export default function PatrimonioCentral() {
   };
   const departmentName = (id: string | null) =>
     id ? departamentos.find((d) => d.id === id)?.name ?? t("assets.table.emptyCell") : t("assets.table.emptyCell");
+  const responsibleUserName = (id: string | null) =>
+    id ? users.find((u) => u.id === id)?.fullName ?? t("assets.table.emptyCell") : t("assets.table.emptyCell");
 
   // --- Formulário de Activo ---
   const assetSchema = useMemo(() => buildAssetSchema(t), [t]);
@@ -212,7 +222,7 @@ export default function PatrimonioCentral() {
             description: assetEdit.description ?? "",
             location: assetEdit.location ?? "",
             departmentId: assetEdit.departmentId ?? "",
-            responsibleUser: assetEdit.responsibleUser ?? "",
+            responsibleUserId: assetEdit.responsibleUserId ?? "",
             acquisitionDate: assetEdit.acquisitionDate ?? "",
             acquisitionCost: String(assetEdit.acquisitionCost ?? 0),
             currentValue: assetEdit.currentValue != null ? String(assetEdit.currentValue) : "",
@@ -229,7 +239,7 @@ export default function PatrimonioCentral() {
     initialValues: assetInitial,
     defaultValues: {
       code: "", name: "", category: "equipamento_laboratorio", description: "", location: "",
-      departmentId: "", responsibleUser: "", acquisitionDate: "",
+      departmentId: "", responsibleUserId: "", acquisitionDate: "",
       acquisitionCost: "0", currentValue: "", serialNumber: "", status: "activo", notes: "",
     },
     open: assetFormOpen,
@@ -241,7 +251,7 @@ export default function PatrimonioCentral() {
         description: values.description?.trim() || null,
         location: values.location?.trim() || null,
         departmentId: values.departmentId || null,
-        responsibleUser: values.responsibleUser?.trim() || null,
+        responsibleUserId: values.responsibleUserId || null,
         acquisitionDate: values.acquisitionDate || null,
         acquisitionCost: Number(values.acquisitionCost),
         currentValue: values.currentValue?.trim() ? Number(values.currentValue) : null,
@@ -617,10 +627,29 @@ export default function PatrimonioCentral() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="responsibleUser" render={({ field }) => (
+              <FormField control={form.control} name="responsibleUserId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("assets.form.labels.responsibleUser")}</FormLabel>
-                  <FormControl><Input placeholder={t("assets.form.placeholders.responsibleUser")} {...field} value={field.value ?? ""} /></FormControl>
+                  <Select
+                    value={field.value || NONE}
+                    onValueChange={(v) => {
+                      const userId = v === NONE ? "" : v;
+                      field.onChange(userId);
+                      // Auditoria 01/09/2026: associar Responsável ao Departamento —
+                      // ao escolher o responsável, deriva-se o Departamento a partir
+                      // desse utilizador quando o campo ainda não tiver sido definido.
+                      if (userId && !form.getValues("departmentId")) {
+                        const chosen = users.find((u) => u.id === userId);
+                        if (chosen?.departmentIds?.[0]) form.setValue("departmentId", chosen.departmentIds[0]);
+                      }
+                    }}
+                  >
+                    <FormControl><SelectTrigger><SelectValue placeholder={t("assets.form.placeholders.responsibleUserSelect")} /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value={NONE}>{t("assets.form.placeholders.none")}</SelectItem>
+                      {users.map((u) => <SelectItem key={u.id} value={u.id}>{u.fullName}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -810,7 +839,7 @@ export default function PatrimonioCentral() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("assets.details.responsibleUser")}</p>
-                  <p className="font-medium">{assetView.responsibleUser ?? t("assets.table.emptyCell")}</p>
+                  <p className="font-medium">{responsibleUserName(assetView.responsibleUserId)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("assets.details.serialNumber")}</p>

@@ -83,6 +83,7 @@ export function createRecursosHumanosHandlers(
         id: `${idPrefix}-emp-${Date.now()}`,
         employeeNumber: payload.employeeNumber ?? "IIV-0000",
         fullName: payload.fullName ?? "Sem nome",
+        position: payload.position ?? null,
         nationalId: payload.nationalId ?? null,
         phone: payload.phone ?? null,
         email: payload.email ?? null,

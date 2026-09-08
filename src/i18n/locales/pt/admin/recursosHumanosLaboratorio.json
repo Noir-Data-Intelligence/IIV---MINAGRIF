@@ -76,6 +76,7 @@
     "table": {
       "number": "Nº",
       "name": "Nome",
+      "position": "Cargo",
       "department": "Departamento",
       "phone": "Telefone",
       "hireDate": "Admissão",
@@ -95,6 +96,7 @@
     "form": {
       "number": "Nº Mecanográfico",
       "name": "Nome Completo",
+      "position": "Cargo",
       "nationalId": "Bilhete de Identidade",
       "phone": "Telefone",
       "email": "Email",
@@ -109,6 +111,7 @@
     "details": {
       "number": "Nº Mecanográfico",
       "name": "Nome",
+      "position": "Cargo",
       "nationalId": "Bilhete de Identidade",
       "phone": "Telefone",
       "email": "Email",
@@ -227,7 +230,8 @@
     "validation": {
       "employee": "Seleccione um colaborador",
       "startDate": "Data de início obrigatória",
-      "endDate": "Data de fim obrigatória"
+      "endDate": "Data de fim obrigatória",
+      "reason": "Motivo obrigatório"
     },
     "toast": {
       "createSuccess": "Ausência registada",

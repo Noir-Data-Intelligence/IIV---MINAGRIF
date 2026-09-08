@@ -88,7 +88,7 @@
         "name": "e.g. Refrigerated centrifuge",
         "description": "Asset description",
         "location": "e.g. Virology Lab — Bench 3",
-        "responsibleUser": "Responsible technician name",
+        "responsibleUserSelect": "Choose responsible",
         "serialNumber": "e.g. EP5810R-2021-0453",
         "notes": "Internal notes",
         "none": "—"

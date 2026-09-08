@@ -836,7 +836,7 @@ export default function Financeiro() {
             )} />
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("transactions.form.description")}</FormLabel>
+                <FormLabel>{t("transactions.form.description")} <span className="text-destructive">*</span></FormLabel>
                 <FormControl><Input {...field} /></FormControl>
                 <FormMessage />
               </FormItem>

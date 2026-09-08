@@ -26,7 +26,7 @@ export interface AssetCentralDto {
   description: string | null;
   location: string | null;
   departmentId: string | null;
-  responsibleUser: string | null;
+  responsibleUserId: string | null;
   acquisitionDate: string | null;
   acquisitionCost: number;
   currentValue: number | null;
