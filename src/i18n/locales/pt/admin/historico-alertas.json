@@ -27,7 +27,8 @@
     "batchesExpired": "Lotes Expirados",
     "ncOpen": "Não Conformidades",
     "analysesPending": "Análises Pendentes",
-    "birthsUpcoming": "Partos Previstos"
+    "birthsUpcoming": "Partos Previstos",
+    "slaBreach": "Quebras de SLA"
   },
   "status": {
     "all": "Todos os estados",

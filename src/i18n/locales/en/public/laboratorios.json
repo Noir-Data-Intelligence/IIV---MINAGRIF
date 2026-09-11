@@ -1,0 +1,80 @@
+{
+  "seo": {
+    "title": "Laboratories",
+    "description": "The laboratory areas of the Veterinary Research Institute: diagnostics, testing and specialised technical support."
+  },
+  "hero": {
+    "kicker": "Laboratory Areas",
+    "title": "The IIV laboratories",
+    "lead": "Nine specialised areas cover veterinary diagnostics, food safety and epidemiological surveillance in Angola.",
+    "breadcrumb": "Laboratories"
+  },
+  "grid": {
+    "detailsCta": "See details"
+  },
+  "techniques": {
+    "heading": "Techniques and capabilities"
+  },
+  "cta": {
+    "title": "Need to request a test?",
+    "lead": "Check our services or contact us directly to find out what samples and documentation to prepare.",
+    "servicesLink": "See Services",
+    "contactLink": "Contact us"
+  },
+  "areas": {
+    "parasitologia": {
+      "name": "Parasitology",
+      "short": "Diagnosis of parasitic diseases in livestock.",
+      "description": "Diagnosis of haemoparasitic and endoparasitic diseases in domestic and production animals, using reference microscopy techniques.",
+      "techniques": ["Willis method", "Sedimentation", "Coproculture", "McMaster", "Kato-Katz", "Girão and Ueno"]
+    },
+    "bacteriologia": {
+      "name": "General Bacteriology",
+      "short": "Isolation and identification of bacterial agents.",
+      "description": "Isolation and identification of bacterial agents of animal origin, including antibiograms and antimicrobial resistance surveillance — one of the institute's highest-volume areas.",
+      "techniques": ["Culture and isolation", "Biochemical identification", "Antibiogram", "Antimicrobial resistance surveillance"]
+    },
+    "serologia": {
+      "name": "Serology",
+      "short": "Detection of antibodies and immune response.",
+      "description": "Detection of antibodies and immunological markers by ELISA, SAT and AGID, with continuous cold-chain monitoring of reagents and equipment.",
+      "techniques": ["ELISA", "SAT (Serum Agglutination Test)", "AGID (Agar Gel Immunodiffusion)"]
+    },
+    "biologia-molecular": {
+      "name": "Molecular Biology",
+      "short": "Molecular diagnosis of pathogenic agents.",
+      "description": "Nucleic acid extraction and quantification, PCR and support for genetic sequencing to detect and characterise pathogenic agents at the molecular level.",
+      "techniques": ["Nucleic acid extraction", "PCR / RT-PCR", "Genetic sequencing support"]
+    },
+    "bromatologia": {
+      "name": "Food Science (Bromatology)",
+      "short": "Quality control of animal feed.",
+      "description": "Physicochemical and microbiological analysis of animal feed and raw materials, with strict quality criteria before any batch is released.",
+      "techniques": ["Physicochemical analysis", "Microbiological analysis of feed", "Raw material quality control"]
+    },
+    "microbiologia-alimentar": {
+      "name": "Food Microbiology",
+      "short": "Microbiological safety of water and animal-origin food.",
+      "description": "Microbiological control of water and animal-origin food, with support for on-site sample collection.",
+      "techniques": ["Water microbiological analysis", "On-site sample collection", "Food safety control"]
+    },
+    "raiva": {
+      "name": "Rabies",
+      "short": "Rabies diagnosis and epidemiological surveillance support.",
+      "description": "Laboratory diagnosis of rabies by direct and indirect immunofluorescence, with inter-laboratory referral and mandatory notification to the veterinary health authority given the disease's zoonotic nature.",
+      "techniques": ["Direct immunofluorescence", "Indirect immunofluorescence", "Mandatory notification to ISV"]
+    },
+    "lavagem-esterilizacao": {
+      "name": "Washing, Sterilisation and Culture Media",
+      "short": "Cross-cutting support for all laboratory areas.",
+      "description": "Cross-cutting support area responsible for preparing culture media, sterilisation cycles for equipment, and reagent batch management for all other laboratory areas.",
+      "techniques": ["Culture media preparation", "Sterilisation cycles", "Reagent batch management"]
+    },
+    "sala-incubacao": {
+      "name": "Incubation Room",
+      "short": "Cross-cutting support for nearly every laboratory area.",
+      "description": "One of the laboratory's operational backbones: controls incubation of samples and cultures used by nearly every area, with continuous temperature monitoring.",
+      "techniques": ["Controlled incubation of samples and cultures", "Continuous temperature monitoring"]
+    }
+  }
+}

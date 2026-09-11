@@ -10,6 +10,7 @@ import { contactMessagesHandlers } from "@/mocks/handlers/contactMessages";
 import { notificationsHandlers } from "@/mocks/handlers/notifications";
 import { rbacHandlers } from "@/mocks/handlers/rbac";
 import { laboratoriosHandlers } from "@/mocks/handlers/laboratorios";
+import { laboratorioTecnicosHandlers } from "@/mocks/handlers/laboratorioTecnicos";
 import { insumosHandlers } from "@/mocks/handlers/insumos";
 import { requisicoesHandlers } from "@/mocks/handlers/requisicoes";
 import { amostrasHandlers } from "@/mocks/handlers/amostras";
@@ -67,6 +68,7 @@ export const handlers = [
   ...notificationsHandlers,
   ...rbacHandlers,
   ...laboratoriosHandlers,
+  ...laboratorioTecnicosHandlers,
   ...insumosHandlers,
   ...requisicoesHandlers,
   ...amostrasHandlers,

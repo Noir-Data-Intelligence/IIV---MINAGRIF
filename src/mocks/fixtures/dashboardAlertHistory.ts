@@ -36,6 +36,7 @@ const META: Record<string, { label: string; tone: AlertTone; threshold: number }
   expiringSoon: { label: "Lotes a Expirar", tone: "warning", threshold: 1 },
   ncOpen: { label: "Não Conformidades", tone: "destructive", threshold: 1 },
   analysesPending: { label: "Análises Pendentes", tone: "warning", threshold: 20 },
+  slaBreach: { label: "Quebra de SLA — Laboratório de Bacteriologia", tone: "destructive", threshold: 1 },
 };
 
 // Padrão de disparos ao longo do último mês (métrica, valor, dias atrás, hora,
@@ -61,6 +62,9 @@ const SEEDS: Array<[string, number, number, number, string | null, string | null
   ["analysesPending", 30, 2, 12, "usr-0003", "dep-0002", "pendente", null],
   ["ncOpen", 6, 1, 9, null, "dep-0001", "pendente", null],
   ["expiringSoon", 8, 0, 10, null, null, "pendente", null],
+  // Gerado por `alerts:generate` (origem "sistema"), não pelo browser — ver
+  // build() abaixo, que ajusta `origem`/`entityType`/`entityId` para este caso.
+  ["slaBreach", 1, 0, 6, null, null, "pendente", null],
 ];
 
 function build(seed: Seed): AlertHistoryDto {
@@ -76,11 +80,11 @@ function build(seed: Seed): AlertHistoryDto {
     value: seed.value,
     threshold: seed.threshold,
     tone: seed.tone,
-    entityType: null,
-    entityId: null,
-    origem: "browser",
+    entityType: seed.metricKey === "slaBreach" ? "boletim_interno" : null,
+    entityId: seed.metricKey === "slaBreach" ? "bol-int-0001" : null,
+    origem: seed.metricKey === "slaBreach" ? "sistema" : "browser",
     createdAt,
-    userId: ME_USER_ID,
+    userId: seed.metricKey === "slaBreach" ? null : ME_USER_ID,
     assignedTo: seed.assignedTo,
     assignedDepartmentId: seed.assignedDepartmentId,
     actionStatus: seed.actionStatus,

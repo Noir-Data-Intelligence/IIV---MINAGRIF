@@ -1,8 +1,13 @@
 {
   "home": "Home",
+  "institute": "Institute",
   "about": "About IIV",
+  "stations": "Livestock Stations",
+  "labs": "Laboratories",
   "services": "Services",
+  "newsActivity": "News & Activity",
   "news": "News",
+  "agenda": "Agenda",
   "legislation": "Legislation",
   "contacts": "Contacts",
   "restrictedArea": "Restricted Area",

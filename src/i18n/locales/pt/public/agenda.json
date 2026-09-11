@@ -1,0 +1,31 @@
+{
+  "seo": {
+    "title": "Agenda",
+    "description": "Agenda de actividades institucionais do Instituto de Investigação Veterinária."
+  },
+  "hero": {
+    "kicker": "Notícias & Actividade",
+    "title": "Agenda de actividades",
+    "lead": "Workshops, campanhas de vacinação, visitas técnicas e outras actividades institucionais do IIV.",
+    "breadcrumb": "Agenda"
+  },
+  "empty": {
+    "title": "Sem actividades publicadas de momento",
+    "text": "Estamos a preparar a agenda pública de actividades. Volte a visitar esta página em breve ou acompanhe as nossas notícias."
+  },
+  "categories": {
+    "heading": "Tipos de actividade",
+    "items": [
+      { "title": "Workshops técnicos", "text": "Formação e partilha de conhecimento com profissionais do sector." },
+      { "title": "Campanhas de vacinação", "text": "Acções de saúde animal no terreno, em coordenação com as estações regionais." },
+      { "title": "Visitas técnicas", "text": "Visitas institucionais e de acompanhamento a explorações e parceiros." },
+      { "title": "Acções de vigilância epidemiológica", "text": "Actividades de monitorização e resposta a focos de doença." }
+    ]
+  },
+  "cta": {
+    "title": "Quer acompanhar as nossas actividades?",
+    "lead": "Consulte as nossas notícias ou contacte-nos para saber mais sobre as próximas iniciativas.",
+    "newsLink": "Ver Notícias",
+    "contactLink": "Contactar"
+  }
+}

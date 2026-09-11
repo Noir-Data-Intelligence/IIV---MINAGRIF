@@ -1,0 +1,42 @@
+{
+  "seo": {
+    "title": "Livestock Stations",
+    "description": "The livestock stations of the Veterinary Research Institute, dedicated to rearing and managing reference herds."
+  },
+  "hero": {
+    "kicker": "Institute",
+    "title": "Livestock Stations",
+    "lead": "A network of stations dedicated to rearing, managing and applied research on reference herds, including sheep production.",
+    "breadcrumb": "Livestock Stations"
+  },
+  "intro": {
+    "kicker": "Station network",
+    "title": "Field support for veterinary research",
+    "text": "The IIV's livestock stations maintain reference herds under controlled conditions, supporting field trials, livestock production and direct support to the institute's laboratories. Detailed information for each station — location, herd numbers and ongoing programmes — is being consolidated and will be published on this page as it is confirmed."
+  },
+  "stations": {
+    "heading": "The three stations",
+    "items": [
+      {
+        "title": "Station I",
+        "focus": "Rearing and management of reference herds",
+        "status": "Information pending confirmation"
+      },
+      {
+        "title": "Station II",
+        "focus": "Sheep production and field trials",
+        "status": "Information pending confirmation"
+      },
+      {
+        "title": "Station III",
+        "focus": "Support for applied research programmes",
+        "status": "Information pending confirmation"
+      }
+    ]
+  },
+  "cta": {
+    "title": "Want to know more about our stations?",
+    "lead": "Contact us for up-to-date information on location, herd numbers and ongoing programmes.",
+    "link": "Contact us"
+  }
+}

@@ -158,6 +158,10 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
       "animais", "inseminacao", "auditorias", "nao-conformidades", "logs", "acessibilidade",
       "historico-alertas", "documentos", "processos",
       "missoes", "formacoes", "investigacao", "avaliacoes", "bi", "observatorio",
+      // Gestão de equipas de Técnicos + nomeação de validadores por
+      // laboratório — precisa de ver (não escrever) utilizadores para os
+      // escolher (espelha RolePermissionSeeder.php no backend).
+      "utilizadores",
     ],
     write: ["laboratorios", "analises", "resultados", "insumos", "auditorias", "nao-conformidades", "documentos", "processos"],
   },

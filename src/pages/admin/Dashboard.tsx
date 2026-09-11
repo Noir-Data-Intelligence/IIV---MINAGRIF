@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import {
   Users, Activity, Boxes, Truck, TrendingUp,
   AlertTriangle, PackageX, CalendarClock, Settings2, RotateCcw, BellOff, EyeOff,
-  ChevronRight, X, ArrowUpRight, ArrowDownRight, Baby, type LucideIcon,
+  ChevronRight, X, ArrowUpRight, ArrowDownRight, Baby, AlarmClockOff, type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -47,7 +47,7 @@ import { useDashboardPrefsQuery, useUpdateDashboardPrefs } from "@/hooks/queries
 import {
   useAlertAcksList, useCreateAlertAck, useDeleteAlertAck,
 } from "@/hooks/queries/useDashboardAlertAcks";
-import { useCreateAlertHistory } from "@/hooks/queries/useDashboardAlertHistory";
+import { useAlertHistoryList, useCreateAlertHistory } from "@/hooks/queries/useDashboardAlertHistory";
 import { useRegistosList } from "@/hooks/queries/useInseminacao";
 import { isInMonth, isExpiringSoon, isExpired } from "@/lib/dashboard-metrics";
 import { isBirthUpcoming } from "@/lib/gestacao";
@@ -328,6 +328,16 @@ export default function Dashboard() {
       toast.error("Erro ao reativar alerta");
     }
   };
+
+  // ---- Quebras de SLA por laboratório ----
+  // Ao contrário dos alertas acima (limiar numérico definido pelo
+  // utilizador), a regra de SLA é configurada por laboratório
+  // (Laboratorios.tsx — "total autonomia... para cada componente") e o
+  // registo é gerado pelo comando agendado `alerts:generate`, não aqui.
+  // Por isso só se lê a contagem já persistida (`dashboard_alert_history`),
+  // em vez de recalcular a lógica de prazo por laboratório no cliente.
+  const slaBreachQuery = useAlertHistoryList({ metricKey: "slaBreach", actionStatus: "pendente", perPage: 1 });
+  const slaBreachCount = slaBreachQuery.data?.meta.total ?? 0;
 
   // ---- Agregação de KPIs/estatísticas ----
   const stats = useMemo(() => {
@@ -687,6 +697,32 @@ export default function Dashboard() {
           </Dialog>
         </div>
       </div>
+
+      {/* Quebras de SLA — configuração por laboratório, não por limiar do utilizador */}
+      {slaBreachCount > 0 && (
+        <Link
+          to="/admin/historico-alertas"
+          className={cn(
+            "relative overflow-hidden rounded-2xl border shadow-sm flex items-center gap-4 p-4 pl-5 transition-colors hover:border-foreground/20",
+            ALERT_TONE_STYLES.destructive.card,
+          )}
+        >
+          <span className={cn("absolute inset-y-0 left-0 w-1", ALERT_TONE_STYLES.destructive.accent)} aria-hidden="true" />
+          <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", ALERT_TONE_STYLES.destructive.iconWrap)}>
+            <AlarmClockOff className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold leading-tight text-foreground truncate">Quebras de SLA</p>
+            <p className="mt-1 flex items-baseline gap-1.5">
+              <span className={cn("text-2xl font-serif font-semibold leading-none", ALERT_TONE_STYLES.destructive.value)}>
+                {slaBreachCount}
+              </span>
+              <span className="text-[11px] text-muted-foreground">boletim(ns) além do prazo configurado no laboratório</span>
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+      )}
 
       {/* Alerts — limiares configuráveis */}
       {(() => {

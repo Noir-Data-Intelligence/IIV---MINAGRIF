@@ -1,0 +1,31 @@
+{
+  "seo": {
+    "title": "Agenda",
+    "description": "Institutional activity agenda of the Veterinary Research Institute."
+  },
+  "hero": {
+    "kicker": "News & Activity",
+    "title": "Activity agenda",
+    "lead": "Workshops, vaccination campaigns, technical visits and other institutional activities of the IIV.",
+    "breadcrumb": "Agenda"
+  },
+  "empty": {
+    "title": "No activities published yet",
+    "text": "We are preparing the public activity agenda. Check back soon or follow our news for updates."
+  },
+  "categories": {
+    "heading": "Types of activity",
+    "items": [
+      { "title": "Technical workshops", "text": "Training and knowledge-sharing with sector professionals." },
+      { "title": "Vaccination campaigns", "text": "Field animal health initiatives, coordinated with the regional stations." },
+      { "title": "Technical visits", "text": "Institutional visits and follow-up to farms and partners." },
+      { "title": "Epidemiological surveillance actions", "text": "Monitoring and response activities for disease outbreaks." }
+    ]
+  },
+  "cta": {
+    "title": "Want to follow our activities?",
+    "lead": "Check our news or contact us to learn more about upcoming initiatives.",
+    "newsLink": "See News",
+    "contactLink": "Contact us"
+  }
+}

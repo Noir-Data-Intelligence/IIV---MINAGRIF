@@ -1,0 +1,80 @@
+{
+  "seo": {
+    "title": "Laboratórios",
+    "description": "As áreas laboratoriais do Instituto de Investigação Veterinária: diagnóstico, análises e apoio técnico especializado."
+  },
+  "hero": {
+    "kicker": "Áreas Laboratoriais",
+    "title": "Os laboratórios do IIV",
+    "lead": "Nove áreas especializadas cobrem o diagnóstico veterinário, a segurança alimentar e a vigilância epidemiológica em Angola.",
+    "breadcrumb": "Laboratórios"
+  },
+  "grid": {
+    "detailsCta": "Ver detalhes"
+  },
+  "techniques": {
+    "heading": "Técnicas e capacidades"
+  },
+  "cta": {
+    "title": "Precisa de requisitar uma análise?",
+    "lead": "Consulte os nossos serviços ou contacte-nos directamente para saber que amostras e documentação preparar.",
+    "servicesLink": "Ver Serviços",
+    "contactLink": "Contactar"
+  },
+  "areas": {
+    "parasitologia": {
+      "name": "Parasitologia",
+      "short": "Diagnóstico de doenças parasitárias dos efectivos pecuários.",
+      "description": "Diagnóstico de hemoparasitoses e endoparasitoses em animais domésticos e de produção, através de técnicas microscópicas de referência.",
+      "techniques": ["Método de Willis", "Sedimentação", "Coprocultura", "McMaster", "Kato-Katz", "Girão e Ueno"]
+    },
+    "bacteriologia": {
+      "name": "Bacteriologia Geral",
+      "short": "Isolamento e identificação de agentes bacterianos.",
+      "description": "Isolamento e identificação de agentes bacterianos de origem animal, incluindo antibiogramas e vigilância da resistência antimicrobiana — uma das áreas com maior volume de requisições do instituto.",
+      "techniques": ["Cultura e isolamento", "Identificação bioquímica", "Antibiograma", "Vigilância de resistência antimicrobiana"]
+    },
+    "serologia": {
+      "name": "Serologia",
+      "short": "Detecção de anticorpos e resposta imunitária.",
+      "description": "Detecção de anticorpos e marcadores imunológicos por ELISA, SAT e AGID, com monitorização contínua da cadeia de frio dos reagentes e equipamentos.",
+      "techniques": ["ELISA", "SAT (Soro-Aglutinação em Tubo)", "AGID (Imunodifusão em Gel de Ágar)"]
+    },
+    "biologia-molecular": {
+      "name": "Biologia Molecular",
+      "short": "Diagnóstico molecular de agentes patogénicos.",
+      "description": "Extracção e quantificação de ácidos nucleicos, PCR e apoio à sequenciação genética para detecção e caracterização molecular de agentes patogénicos.",
+      "techniques": ["Extracção de ácidos nucleicos", "PCR / RT-PCR", "Apoio à sequenciação genética"]
+    },
+    "bromatologia": {
+      "name": "Bromatologia",
+      "short": "Controlo de qualidade de rações e alimentos para animais.",
+      "description": "Análises físico-químicas e microbiológicas de rações e matérias-primas para alimentação animal, com critérios de qualidade rigorosos antes da libertação de qualquer lote.",
+      "techniques": ["Análises físico-químicas", "Análises microbiológicas de ração", "Controlo de qualidade de matérias-primas"]
+    },
+    "microbiologia-alimentar": {
+      "name": "Microbiologia Alimentar",
+      "short": "Segurança microbiológica da água e de alimentos de origem animal.",
+      "description": "Controlo microbiológico da água e de alimentos de origem animal, com suporte a colheita de amostras directamente no terreno.",
+      "techniques": ["Análise microbiológica de água", "Colheita in-loco", "Controlo de segurança alimentar"]
+    },
+    "raiva": {
+      "name": "Raiva",
+      "short": "Diagnóstico da raiva e apoio à vigilância epidemiológica.",
+      "description": "Diagnóstico laboratorial da raiva por imunofluorescência directa e indirecta, com encaminhamento inter-laboratorial e notificação obrigatória à autoridade sanitária veterinária, dada a natureza zoonótica da doença.",
+      "techniques": ["Imunofluorescência directa", "Imunofluorescência indirecta", "Notificação obrigatória à ISV"]
+    },
+    "lavagem-esterilizacao": {
+      "name": "Lavagem, Esterilização e Meios de Cultura",
+      "short": "Suporte transversal a todas as áreas laboratoriais.",
+      "description": "Área de suporte transversal responsável pela preparação de meios de cultura, ciclos de esterilização de material e gestão de lotes de reagentes para todas as restantes áreas do laboratório.",
+      "techniques": ["Preparação de meios de cultura", "Ciclos de esterilização", "Gestão de lotes de reagentes"]
+    },
+    "sala-incubacao": {
+      "name": "Sala de Incubação",
+      "short": "Apoio transversal a praticamente todas as áreas do laboratório.",
+      "description": "Um dos pulmões operacionais do laboratório: controla a incubação de amostras e culturas usadas por praticamente todas as áreas, com monitorização contínua de temperatura.",
+      "techniques": ["Incubação controlada de amostras e culturas", "Monitorização contínua de temperatura"]
+    }
+  }
+}

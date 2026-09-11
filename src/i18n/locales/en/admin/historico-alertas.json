@@ -27,7 +27,8 @@
     "batchesExpired": "Expired Batches",
     "ncOpen": "Non-conformities",
     "analysesPending": "Pending Analyses",
-    "birthsUpcoming": "Upcoming Births"
+    "birthsUpcoming": "Upcoming Births",
+    "slaBreach": "SLA Breaches"
   },
   "status": {
     "all": "All statuses",

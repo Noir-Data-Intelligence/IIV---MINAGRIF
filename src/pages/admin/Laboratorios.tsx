@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import type { TFunction } from "i18next";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { FlaskConical, Eye, Pencil, Plus, Trash2, CheckCircle2, Layers } from "lucide-react";
+import { FlaskConical, Eye, Pencil, Plus, Trash2, CheckCircle2, Layers, Users, X, ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -29,6 +29,12 @@ import {
   useLaboratoriosList,
   useUpdateLaboratorio,
 } from "@/hooks/queries/useLaboratorios";
+import {
+  useAddLaboratorioTecnico,
+  useLaboratorioTecnicos,
+  useRemoveLaboratorioTecnico,
+} from "@/hooks/queries/useLaboratorioTecnicos";
+import { useUsersList } from "@/hooks/queries/useUsers";
 import type { LaboratorioDto } from "@/types/dto/laboratorio";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
@@ -47,6 +53,12 @@ const LAB_TYPES = [
   "biologia_molecular", "bromatologia", "patologia", "outro",
 ] as const;
 
+const SLA_RULE_TYPES = [
+  "horas_desde_entrada", "horas_desde_entrada_diferenciado", "dias_uteis", "gate_qualidade",
+] as const;
+const SLA_SEVERITIES = ["warning", "destructive"] as const;
+const NO_SLA_RULE = "__none__";
+
 function buildLaboratorioSchema(t: TFunction) {
   return z.object({
     name: z.string().trim().min(2, t("validation.nameShort")),
@@ -55,6 +67,11 @@ function buildLaboratorioSchema(t: TFunction) {
     validadorCount: z.coerce.number().int().min(1).max(5),
     slaHoras: z.coerce.number().int().min(1).optional(),
     isActive: z.boolean(),
+    slaRuleType: z.union([z.enum(SLA_RULE_TYPES), z.literal(NO_SLA_RULE)]).optional(),
+    slaHorasNegativo: z.coerce.number().int().min(1).optional(),
+    slaDias: z.coerce.number().int().min(1).optional(),
+    slaActive: z.boolean(),
+    slaSeverity: z.enum(SLA_SEVERITIES),
   });
 }
 
@@ -72,6 +89,9 @@ export default function Laboratorios() {
   const [viewItem, setViewItem] = useState<LaboratorioDto | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<LaboratorioDto | null>(null);
+  const [teamItem, setTeamItem] = useState<LaboratorioDto | null>(null);
+  const [newTecnicoUserId, setNewTecnicoUserId] = useState("");
+  const [newTecnicoFuncao, setNewTecnicoFuncao] = useState("");
 
   const { data, isLoading } = useLaboratoriosList({
     page: pagination.pageIndex + 1,
@@ -82,6 +102,29 @@ export default function Laboratorios() {
   const createLaboratorio = useCreateLaboratorio();
   const updateLaboratorio = useUpdateLaboratorio();
   const deleteLaboratorio = useDeleteLaboratorio();
+
+  // ---- Equipa de Técnicos + Validadores Nomeados (pedido do cliente:
+  // "gestão de equipas" + "atribuição do validador final pelo Chefe de
+  // Secção") — dialog próprio, mutações imediatas (não batched no form). ----
+  const tecnicosQuery = useLaboratorioTecnicos(teamItem?.id);
+  const addTecnico = useAddLaboratorioTecnico(teamItem?.id ?? "");
+  const removeTecnico = useRemoveLaboratorioTecnico(teamItem?.id ?? "");
+  const { data: allUsers } = useUsersList({});
+  const team = tecnicosQuery.data ?? [];
+  const teamUserIds = new Set(team.map((m) => m.userId));
+  const candidateUsers = (allUsers ?? []).filter(
+    (u) => (u.roles.includes("tecnico") || u.roles.includes("director-laboratorio")) && !teamUserIds.has(u.id),
+  );
+  const validadoresNomeados = teamItem?.validadoresNomeados ?? [];
+
+  const toggleValidadorNomeado = async (userId: string) => {
+    if (!teamItem) return;
+    const next = validadoresNomeados.includes(userId)
+      ? validadoresNomeados.filter((id) => id !== userId)
+      : [...validadoresNomeados, userId];
+    const updated = await updateLaboratorio.mutateAsync({ id: teamItem.id, payload: { validadoresNomeados: next } });
+    setTeamItem(updated);
+  };
 
   const laboratorioSchema = useMemo(() => buildLaboratorioSchema(t), [t]);
 
@@ -95,6 +138,11 @@ export default function Laboratorios() {
             validadorCount: editItem.validadorCount,
             slaHoras: editItem.slaHoras ?? undefined,
             isActive: editItem.isActive,
+            slaRuleType: editItem.slaRuleType ?? NO_SLA_RULE,
+            slaHorasNegativo: editItem.slaHorasNegativo ?? undefined,
+            slaDias: editItem.slaDias ?? undefined,
+            slaActive: editItem.slaActive,
+            slaSeverity: editItem.slaSeverity,
           }
         : undefined,
     [editItem],
@@ -103,9 +151,13 @@ export default function Laboratorios() {
   const entityForm = useEntityForm({
     schema: laboratorioSchema,
     initialValues,
-    defaultValues: { name: "", type: "", description: "", validadorCount: 2, isActive: true },
+    defaultValues: {
+      name: "", type: "", description: "", validadorCount: 2, isActive: true,
+      slaRuleType: NO_SLA_RULE, slaActive: true, slaSeverity: "warning",
+    },
     open: formOpen,
     onSubmit: async (values) => {
+      const slaRuleType = values.slaRuleType === NO_SLA_RULE ? null : (values.slaRuleType ?? null);
       const payload = {
         name: values.name,
         type: values.type,
@@ -113,6 +165,11 @@ export default function Laboratorios() {
         validadorCount: values.validadorCount,
         slaHoras: values.slaHoras ?? null,
         isActive: values.isActive,
+        slaRuleType,
+        slaHorasNegativo: slaRuleType === "horas_desde_entrada_diferenciado" ? (values.slaHorasNegativo ?? null) : null,
+        slaDias: slaRuleType === "dias_uteis" ? (values.slaDias ?? null) : null,
+        slaActive: values.slaActive,
+        slaSeverity: values.slaSeverity,
       };
       if (editItem) {
         await updateLaboratorio.mutateAsync({ id: editItem.id, payload });
@@ -200,6 +257,7 @@ export default function Laboratorios() {
     const actions: RowAction[] = [{ label: t("actions.view"), icon: Eye, onClick: () => setViewItem(row) }];
     if (canEdit) {
       actions.push({ label: t("actions.edit"), icon: Pencil, onClick: () => openEdit(row) });
+      actions.push({ label: t("actions.manageTeam"), icon: Users, onClick: () => setTeamItem(row) });
       actions.push({
         label: t("actions.delete"),
         icon: Trash2,
@@ -365,6 +423,103 @@ export default function Laboratorios() {
                 </FormItem>
               )}
             />
+
+            <div className="space-y-4 rounded-md border p-4">
+              <p className="text-sm font-medium">{t("form.sections.sla")}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="slaRuleType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("form.labels.slaRuleType")}</FormLabel>
+                      <Select value={field.value ?? NO_SLA_RULE} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("form.placeholders.slaRuleType")} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={NO_SLA_RULE}>{t("form.placeholders.slaRuleType")}</SelectItem>
+                          {SLA_RULE_TYPES.map((rt) => (
+                            <SelectItem key={rt} value={rt}>
+                              {t(`form.slaRuleTypes.${rt}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slaSeverity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("form.labels.slaSeverity")}</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {SLA_SEVERITIES.map((sv) => (
+                            <SelectItem key={sv} value={sv}>
+                              {t(`form.slaSeverities.${sv}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              {form.watch("slaRuleType") === "horas_desde_entrada_diferenciado" && (
+                <FormField
+                  control={form.control}
+                  name="slaHorasNegativo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("form.labels.slaHorasNegativo")}</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={1} placeholder={t("form.placeholders.slaHorasNegativo")} {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {form.watch("slaRuleType") === "dias_uteis" && (
+                <FormField
+                  control={form.control}
+                  name="slaDias"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("form.labels.slaDias")}</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={1} placeholder={t("form.placeholders.slaDias")} {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <FormField
+                control={form.control}
+                name="slaActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="!mt-0 cursor-pointer">{t("form.labels.slaActive")}</FormLabel>
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="isActive"
@@ -429,6 +584,22 @@ export default function Laboratorios() {
                     <p className="font-medium">{viewItem.slaHoras}h</p>
                   </div>
                 )}
+                {viewItem.slaRuleType && (
+                  <div>
+                    <span className="text-muted-foreground">{t("details.slaRuleType")}:</span>
+                    <p className="font-medium">{t(`form.slaRuleTypes.${viewItem.slaRuleType}`)}</p>
+                  </div>
+                )}
+                {viewItem.slaRuleType && (
+                  <div>
+                    <span className="text-muted-foreground">{t("details.slaActive")}:</span>
+                    <p>
+                      <Badge variant={viewItem.slaActive ? "default" : "outline"}>
+                        {viewItem.slaActive ? t("table.active") : t("table.inactive")}
+                      </Badge>
+                    </p>
+                  </div>
+                )}
                 <div>
                   <span className="text-muted-foreground">{t("details.createdAt")}:</span>
                   <p className="font-medium">
@@ -444,6 +615,107 @@ export default function Laboratorios() {
                   <p className="font-medium mt-1">{viewItem.description}</p>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!teamItem}
+        onOpenChange={(o) => {
+          if (!o) {
+            setTeamItem(null);
+            setNewTecnicoUserId("");
+            setNewTecnicoFuncao("");
+          }
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif">{t("team.title", { name: teamItem?.name })}</DialogTitle>
+          </DialogHeader>
+          {teamItem && (
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <p className="text-sm font-medium">{t("team.membersTitle")}</p>
+                {team.length === 0 && (
+                  <p className="text-sm text-muted-foreground">{t("team.empty")}</p>
+                )}
+                <div className="space-y-2">
+                  {team.map((member) => (
+                    <div key={member.userId} className="flex items-center justify-between gap-2 rounded-md border p-2.5">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{member.fullName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{member.funcao || member.email}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeTecnico.mutate(member.userId)}
+                        aria-label={t("team.remove")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Select value={newTecnicoUserId} onValueChange={setNewTecnicoUserId}>
+                    <SelectTrigger className="sm:flex-1">
+                      <SelectValue placeholder={t("team.selectPlaceholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {candidateUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.fullName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    className="sm:w-40"
+                    placeholder={t("team.funcaoPlaceholder")}
+                    value={newTecnicoFuncao}
+                    onChange={(e) => setNewTecnicoFuncao(e.target.value)}
+                  />
+                  <Button
+                    disabled={!newTecnicoUserId || addTecnico.isPending}
+                    onClick={async () => {
+                      await addTecnico.mutateAsync({ userId: newTecnicoUserId, funcao: newTecnicoFuncao || null });
+                      setNewTecnicoUserId("");
+                      setNewTecnicoFuncao("");
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> {t("team.add")}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3 border-t pt-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">{t("team.validadoresTitle")}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">{t("team.validadoresHelp")}</p>
+                {team.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("team.validadoresEmpty")}</p>
+                ) : (
+                  <div className="space-y-2">
+                    {team.map((member) => (
+                      <div key={member.userId} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`val-${member.userId}`}
+                          checked={validadoresNomeados.includes(member.userId)}
+                          onCheckedChange={() => toggleValidadorNomeado(member.userId)}
+                        />
+                        <label htmlFor={`val-${member.userId}`} className="cursor-pointer text-sm">
+                          {member.fullName}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>

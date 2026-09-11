@@ -57,6 +57,11 @@ export const laboratoriosHandlers = [
       slaHoras: payload.slaHoras ?? null,
       validadoresNomeados: payload.validadoresNomeados ?? null,
       isActive: payload.isActive ?? true,
+      slaRuleType: payload.slaRuleType ?? null,
+      slaHorasNegativo: payload.slaHorasNegativo ?? null,
+      slaDias: payload.slaDias ?? null,
+      slaActive: payload.slaActive ?? true,
+      slaSeverity: payload.slaSeverity ?? "warning",
       createdAt: new Date().toISOString(),
     };
     laboratoriosFixtures.unshift(created);

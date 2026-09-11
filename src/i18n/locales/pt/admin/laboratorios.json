@@ -15,9 +15,25 @@
     "new": "Novo Laboratório",
     "view": "Ver",
     "edit": "Editar",
+    "manageTeam": "Gerir Equipa",
     "delete": "Eliminar"
   },
+  "team": {
+    "title": "Equipa — {{name}}",
+    "membersTitle": "Técnicos da equipa",
+    "empty": "Ainda sem técnicos nesta equipa.",
+    "selectPlaceholder": "Seleccionar técnico",
+    "funcaoPlaceholder": "Função (opcional)",
+    "add": "Adicionar",
+    "remove": "Remover",
+    "validadoresTitle": "Validadores nomeados",
+    "validadoresHelp": "Só os membros da equipa marcados aqui podem validar boletins deste laboratório.",
+    "validadoresEmpty": "Adicione técnicos à equipa para poder nomeá-los como validadores."
+  },
   "form": {
+    "sections": {
+      "sla": "Configuração de SLA"
+    },
     "labels": {
       "code": "Código",
       "name": "Nome",
@@ -25,13 +41,31 @@
       "description": "Descrição",
       "validadorCount": "Nº de validadores",
       "slaHoras": "SLA (horas)",
-      "isActive": "Laboratório activo"
+      "isActive": "Laboratório activo",
+      "slaRuleType": "Regra de SLA",
+      "slaHorasNegativo": "SLA — horas (resultado negativo)",
+      "slaDias": "SLA (dias)",
+      "slaActive": "Alerta de SLA activo",
+      "slaSeverity": "Severidade do alerta"
     },
     "placeholders": {
       "name": "Ex: Laboratório de Virologia",
       "type": "Seleccionar tipo",
       "description": "Descrição do laboratório",
-      "slaHoras": "Ex: 72"
+      "slaHoras": "Ex: 72",
+      "slaRuleType": "Sem SLA configurado",
+      "slaHorasNegativo": "Ex: 24",
+      "slaDias": "Ex: 5"
+    },
+    "slaRuleTypes": {
+      "horas_desde_entrada": "Horas desde a entrada",
+      "horas_desde_entrada_diferenciado": "Horas diferenciadas (negativo/positivo)",
+      "dias_uteis": "Dias",
+      "gate_qualidade": "Gate de qualidade (sem prazo)"
+    },
+    "slaSeverities": {
+      "warning": "Aviso",
+      "destructive": "Crítico"
     },
     "submitCreate": "Criar Laboratório",
     "submitEdit": "Guardar Alterações",
@@ -51,6 +85,8 @@
     "description": "Descrição",
     "validadorCount": "Nº de validadores",
     "slaHoras": "SLA",
+    "slaRuleType": "Regra de SLA",
+    "slaActive": "Alerta de SLA",
     "createdAt": "Criado em"
   },
   "table": {

@@ -1,0 +1,42 @@
+{
+  "seo": {
+    "title": "Estações Zootécnicas",
+    "description": "As estações zootécnicas do Instituto de Investigação Veterinária, dedicadas à criação e maneio de efectivos de referência."
+  },
+  "hero": {
+    "kicker": "Instituto",
+    "title": "Estações Zootécnicas",
+    "lead": "Uma rede de estações dedicadas à criação, maneio e investigação aplicada sobre efectivos de referência, incluindo produção ovina.",
+    "breadcrumb": "Estações Zootécnicas"
+  },
+  "intro": {
+    "kicker": "Rede de estações",
+    "title": "Apoio de terreno à investigação veterinária",
+    "text": "As estações zootécnicas do IIV mantêm efectivos de referência em regime controlado, servindo de base a ensaios de campo, produção pecuária e ao apoio directo aos laboratórios do instituto. A informação detalhada de cada estação — localização, efectivos e programas em curso — está a ser consolidada e será publicada nesta página à medida que for confirmada."
+  },
+  "stations": {
+    "heading": "As três estações",
+    "items": [
+      {
+        "title": "Estação I",
+        "focus": "Criação e maneio de efectivos de referência",
+        "status": "Informação a confirmar"
+      },
+      {
+        "title": "Estação II",
+        "focus": "Produção ovina e ensaios de campo",
+        "status": "Informação a confirmar"
+      },
+      {
+        "title": "Estação III",
+        "focus": "Apoio a programas de investigação aplicada",
+        "status": "Informação a confirmar"
+      }
+    ]
+  },
+  "cta": {
+    "title": "Quer saber mais sobre as nossas estações?",
+    "lead": "Contacte-nos para informação actualizada sobre localização, efectivos e programas em curso.",
+    "link": "Contactar"
+  }
+}

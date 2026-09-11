@@ -24,6 +24,11 @@ export let laboratoriosFixtures: LaboratorioDto[] = [
     slaHoras: 48,
     validadoresNomeados: null,
     isActive: true,
+    slaRuleType: null,
+    slaHorasNegativo: null,
+    slaDias: null,
+    slaActive: false,
+    slaSeverity: "warning",
     createdAt: "2023-02-03T10:30:00.000Z",
   },
   {
@@ -38,6 +43,12 @@ export let laboratoriosFixtures: LaboratorioDto[] = [
     // usr-0005 (tecnico@iiv.demo), usr-0003 (director-laboratorio@iiv.demo), usr-0001 (admin@iiv.demo) — ver mocks/fixtures/users.ts.
     validadoresNomeados: ["usr-0005", "usr-0003", "usr-0001"],
     isActive: true,
+    // SIG-IIV-MEMORIA-PROJETO.md §7: Bacteriologia Geral — 24h negativo / 72h positivo.
+    slaRuleType: "horas_desde_entrada_diferenciado",
+    slaHorasNegativo: 24,
+    slaDias: null,
+    slaActive: true,
+    slaSeverity: "destructive",
     createdAt: "2023-02-10T08:45:00.000Z",
   },
   {
@@ -51,6 +62,11 @@ export let laboratoriosFixtures: LaboratorioDto[] = [
     slaHoras: null,
     validadoresNomeados: null,
     isActive: true,
+    slaRuleType: null,
+    slaHorasNegativo: null,
+    slaDias: null,
+    slaActive: false,
+    slaSeverity: "warning",
     createdAt: "2023-03-01T11:15:00.000Z",
   },
   {
@@ -64,6 +80,12 @@ export let laboratoriosFixtures: LaboratorioDto[] = [
     slaHoras: 24,
     validadoresNomeados: null,
     isActive: true,
+    // SIG-IIV-MEMORIA-PROJETO.md §7: Biologia Molecular — ~24h.
+    slaRuleType: "horas_desde_entrada",
+    slaHorasNegativo: null,
+    slaDias: null,
+    slaActive: true,
+    slaSeverity: "warning",
     createdAt: "2023-04-12T09:00:00.000Z",
   },
   {
@@ -77,6 +99,12 @@ export let laboratoriosFixtures: LaboratorioDto[] = [
     slaHoras: 120,
     validadoresNomeados: null,
     isActive: false,
+    // SIG-IIV-MEMORIA-PROJETO.md §7: Microbiologia Alimentar (água) — TRL 5 dias.
+    slaRuleType: "dias_uteis",
+    slaHorasNegativo: null,
+    slaDias: 5,
+    slaActive: true,
+    slaSeverity: "warning",
     createdAt: "2023-05-20T14:30:00.000Z",
   },
   {
@@ -90,6 +118,11 @@ export let laboratoriosFixtures: LaboratorioDto[] = [
     slaHoras: null,
     validadoresNomeados: null,
     isActive: true,
+    slaRuleType: null,
+    slaHorasNegativo: null,
+    slaDias: null,
+    slaActive: false,
+    slaSeverity: "warning",
     createdAt: "2023-06-08T08:20:00.000Z",
   },
 ];

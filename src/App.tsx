@@ -14,6 +14,10 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 
 const Index = lazy(() => import("./pages/Index"));
 const Sobre = lazy(() => import("./pages/Sobre"));
+const EstacoesZootecnicas = lazy(() => import("./pages/EstacoesZootecnicas"));
+const LaboratoriosPublico = lazy(() => import("./pages/Laboratorios"));
+const LaboratorioDetalhe = lazy(() => import("./pages/LaboratorioDetalhe"));
+const Agenda = lazy(() => import("./pages/Agenda"));
 const Servicos = lazy(() => import("./pages/Servicos"));
 const Noticias = lazy(() => import("./pages/Noticias"));
 const NoticiaDetalhe = lazy(() => import("./pages/NoticiaDetalhe"));
@@ -104,9 +108,13 @@ const App = () => (
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/sobre" element={<Sobre />} />
+              <Route path="/sobre/estacoes-zootecnicas" element={<EstacoesZootecnicas />} />
+              <Route path="/laboratorios" element={<LaboratoriosPublico />} />
+              <Route path="/laboratorios/:slug" element={<LaboratorioDetalhe />} />
               <Route path="/servicos" element={<Servicos />} />
               <Route path="/noticias" element={<Noticias />} />
               <Route path="/noticias/:slug" element={<NoticiaDetalhe />} />
+              <Route path="/agenda" element={<Agenda />} />
               <Route path="/legislacao" element={<Legislacao />} />
               <Route path="/legislacao/:slug" element={<LegislacaoDetalhe />} />
 

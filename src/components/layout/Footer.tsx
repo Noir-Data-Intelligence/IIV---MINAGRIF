@@ -20,9 +20,11 @@ export function Footer() {
 
   const navLinks = [
     { to: "/sobre", label: t("nav.links.about") },
+    { to: "/sobre/estacoes-zootecnicas", label: t("nav.links.stations") },
+    { to: "/laboratorios", label: t("nav.links.labs") },
     { to: "/servicos", label: t("nav.links.services") },
-    { to: "/legislacao", label: t("nav.links.legislation") },
     { to: "/noticias", label: t("nav.links.news") },
+    { to: "/agenda", label: t("nav.links.agenda") },
   ];
 
   return (

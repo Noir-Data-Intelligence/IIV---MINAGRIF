@@ -15,9 +15,25 @@
     "new": "New Laboratory",
     "view": "View",
     "edit": "Edit",
+    "manageTeam": "Manage Team",
     "delete": "Delete"
   },
+  "team": {
+    "title": "Team — {{name}}",
+    "membersTitle": "Team technicians",
+    "empty": "No technicians on this team yet.",
+    "selectPlaceholder": "Select technician",
+    "funcaoPlaceholder": "Role (optional)",
+    "add": "Add",
+    "remove": "Remove",
+    "validadoresTitle": "Named validators",
+    "validadoresHelp": "Only team members checked here can validate bulletins for this laboratory.",
+    "validadoresEmpty": "Add technicians to the team before naming validators."
+  },
   "form": {
+    "sections": {
+      "sla": "SLA Configuration"
+    },
     "labels": {
       "code": "Code",
       "name": "Name",
@@ -25,13 +41,31 @@
       "description": "Description",
       "validadorCount": "Validators required",
       "slaHoras": "SLA (hours)",
-      "isActive": "Active laboratory"
+      "isActive": "Active laboratory",
+      "slaRuleType": "SLA rule",
+      "slaHorasNegativo": "SLA — hours (negative result)",
+      "slaDias": "SLA (days)",
+      "slaActive": "SLA alert active",
+      "slaSeverity": "Alert severity"
     },
     "placeholders": {
       "name": "e.g. Virology Laboratory",
       "type": "Select type",
       "description": "Laboratory description",
-      "slaHoras": "e.g. 72"
+      "slaHoras": "e.g. 72",
+      "slaRuleType": "No SLA configured",
+      "slaHorasNegativo": "e.g. 24",
+      "slaDias": "e.g. 5"
+    },
+    "slaRuleTypes": {
+      "horas_desde_entrada": "Hours since intake",
+      "horas_desde_entrada_diferenciado": "Differentiated hours (negative/positive)",
+      "dias_uteis": "Days",
+      "gate_qualidade": "Quality gate (no deadline)"
+    },
+    "slaSeverities": {
+      "warning": "Warning",
+      "destructive": "Critical"
     },
     "submitCreate": "Create Laboratory",
     "submitEdit": "Save Changes",
@@ -51,6 +85,8 @@
     "description": "Description",
     "validadorCount": "Validators required",
     "slaHoras": "SLA",
+    "slaRuleType": "SLA rule",
+    "slaActive": "SLA alert",
     "createdAt": "Created on"
   },
   "table": {

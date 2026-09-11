@@ -41,7 +41,7 @@ if (!i18n.hasResourceBundle("pt", "admin-historico-alertas"))
 if (!i18n.hasResourceBundle("en", "admin-historico-alertas"))
   i18n.addResourceBundle("en", "admin-historico-alertas", enHistorico, true, true);
 
-const METRIC_KEYS = ["lowStock", "expiringSoon", "batchesExpired", "ncOpen", "analysesPending", "birthsUpcoming"] as const;
+const METRIC_KEYS = ["lowStock", "expiringSoon", "batchesExpired", "ncOpen", "analysesPending", "birthsUpcoming", "slaBreach"] as const;
 const STATUS_KEYS: AlertActionStatus[] = ["pendente", "em_curso", "resolvido"];
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {

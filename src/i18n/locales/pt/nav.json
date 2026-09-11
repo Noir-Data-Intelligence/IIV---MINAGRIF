@@ -1,8 +1,13 @@
 {
   "home": "Início",
+  "institute": "Instituto",
   "about": "Sobre o IIV",
+  "stations": "Estações Zootécnicas",
+  "labs": "Laboratórios",
   "services": "Serviços",
+  "newsActivity": "Notícias & Actividade",
   "news": "Notícias",
+  "agenda": "Agenda",
   "legislation": "Legislação",
   "contacts": "Contactos",
   "restrictedArea": "Área Restrita",

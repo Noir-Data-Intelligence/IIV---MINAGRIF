@@ -17,6 +17,23 @@ export interface LaboratorioDto {
   slaHoras: number | null;
   validadoresNomeados: string[] | null;
   isActive: boolean;
+  /**
+   * Regra de SLA aplicada de forma independente por laboratório (pedido do
+   * cliente: "total autonomia de configuração de alertas para cada
+   * componente"). `null` = SLA não configurado para este laboratório.
+   */
+  slaRuleType:
+    | "horas_desde_entrada"
+    | "horas_desde_entrada_diferenciado"
+    | "dias_uteis"
+    | "gate_qualidade"
+    | null;
+  /** Só relevante quando `slaRuleType === "horas_desde_entrada_diferenciado"` (ex. Bacteriologia: 24h negativo). */
+  slaHorasNegativo: number | null;
+  /** Só relevante quando `slaRuleType === "dias_uteis"` (ex. Microbiologia Alimentar: 5 dias). */
+  slaDias: number | null;
+  slaActive: boolean;
+  slaSeverity: "warning" | "destructive";
   createdAt: string;
 }
 

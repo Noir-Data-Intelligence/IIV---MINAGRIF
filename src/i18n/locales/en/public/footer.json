@@ -8,9 +8,12 @@
     "heading": "Navigation",
     "links": {
       "about": "About IIV",
+      "stations": "Livestock Stations",
+      "labs": "Laboratories",
       "services": "Services",
       "legislation": "Legislation",
-      "news": "News"
+      "news": "News",
+      "agenda": "Agenda"
     }
   },
   "legal": {

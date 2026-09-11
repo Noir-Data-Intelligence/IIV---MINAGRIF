@@ -8,9 +8,12 @@
     "heading": "Navegação",
     "links": {
       "about": "Sobre o IIV",
+      "stations": "Estações Zootécnicas",
+      "labs": "Laboratórios",
       "services": "Serviços",
       "legislation": "Legislação",
-      "news": "Notícias"
+      "news": "Notícias",
+      "agenda": "Agenda"
     }
   },
   "legal": {
