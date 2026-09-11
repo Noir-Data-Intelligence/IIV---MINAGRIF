@@ -4,29 +4,28 @@
     "orgNameLine2": "Institute",
     "description": "Public institution dedicated to research, diagnostics and production in the field of animal health in Angola."
   },
-  "nav": {
-    "heading": "Navigation",
-    "links": {
-      "about": "About IIV",
-      "stations": "Livestock Stations",
-      "labs": "Laboratories",
-      "services": "Services",
-      "legislation": "Legislation",
-      "news": "News",
-      "agenda": "Agenda"
-    }
+  "quickLinks": {
+    "news": "News",
+    "agenda": "Agenda",
+    "legislation": "Legislation",
+    "contacts": "Contacts"
   },
-  "legal": {
-    "heading": "Legal",
-    "terms": "Terms of Use",
-    "privacy": "Privacy Policy",
-    "legislation": "Applicable Legislation"
+  "secondaryLinks": {
+    "about": "About",
+    "labs": "Laboratories",
+    "services": "Services",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "siteMap": "Site Map"
   },
   "contact": {
     "heading": "Contacts",
     "address": "Luanda, Angola",
     "phone": "+244 222 000 000",
     "email": "info@iiv.gov.ao"
+  },
+  "partners": {
+    "heading": "Institutional Partnerships"
   },
   "bottom": {
     "copyright": "Veterinary Research Institute",

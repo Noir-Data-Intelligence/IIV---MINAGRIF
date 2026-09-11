@@ -68,8 +68,8 @@ export default function Sobre() {
             viewport={{ once: true, margin: "-80px" }}
           >
             <motion.div variants={revealVariants} className="lg:col-span-5 relative order-2 lg:order-1">
-              <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("intro.kicker")}</p>
-              <h2 className="font-serif text-3xl md:text-5xl mt-6 leading-[1.05] tracking-tight">
+              <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">{t("intro.kicker")}</p>
+              <h2 className="mt-4 font-sans text-2xl md:text-3xl font-bold uppercase tracking-wide">
                 {t("intro.title")}
               </h2>
               <p className="lead mt-6">
@@ -80,24 +80,22 @@ export default function Sobre() {
               </p>
             </motion.div>
             <motion.div variants={revealVariants} className="lg:col-span-6 lg:col-start-7 relative order-1 lg:order-2">
-              <div className="absolute -inset-x-6 -top-8 -bottom-8 -z-10 rounded-[2.5rem] gradient-green-gold opacity-[0.08] blur-2xl" />
-              <div className="relative rounded-[1.75rem] overflow-hidden shadow-2xl">
+              <div className="relative overflow-hidden">
                 <img src={sobreIntroProduction} alt="" className="aspect-[4/5] w-full object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--iiv-green-dark))]/45 via-transparent to-transparent" />
               </div>
               <motion.div
-                className="absolute -bottom-8 -left-6 sm:-left-10 flex items-center gap-3 rounded-2xl bg-card border border-border/60 shadow-2xl p-4 pr-6 max-w-[240px]"
+                className="absolute -bottom-6 -left-6 sm:-left-10 flex items-center gap-3 bg-[hsl(var(--iiv-green-dark))] text-primary-foreground shadow-xl p-4 pr-6 max-w-[240px]"
                 initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.9, y: 10 }}
                 whileInView={prefersReducedMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.2 }}
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl gradient-green text-primary-foreground">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-[hsl(var(--iiv-gold))] text-secondary-foreground">
                   <Landmark className="h-5 w-5" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="font-serif text-xl leading-none">1965</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{t("intro.badgeLabel", "ano de fundação do Instituto")}</p>
+                  <p className="font-sans text-xl font-bold leading-none">1965</p>
+                  <p className="text-[11px] opacity-75 mt-1 leading-snug">{t("intro.badgeLabel", "ano de fundação do Instituto")}</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -109,8 +107,8 @@ export default function Sobre() {
       <section className="section-divider py-24 bg-accent/30 overflow-hidden">
         <div className="container">
           <div className="mb-16 text-center">
-            <p className="kicker text-[hsl(var(--iiv-gold-text))] justify-center inline-flex"><span className="editorial-rule mr-3" /> {t("timeline.kicker")}</p>
-            <h2 className="font-serif text-3xl md:text-5xl mt-5">{t("timeline.title")}</h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">{t("timeline.kicker")}</p>
+            <h2 className="mt-4 font-sans text-2xl font-bold uppercase tracking-wide">{t("timeline.title")}</h2>
           </div>
 
           <motion.div
@@ -143,10 +141,10 @@ export default function Sobre() {
                       <span className="h-2.5 w-2.5 rounded-full bg-current" />
                     </div>
                     <div className="lg:mt-6 lg:px-3">
-                      <p className={`font-serif text-4xl tracking-tight ${isLast ? "text-[hsl(var(--iiv-gold-text))]" : "text-primary"}`}>
+                      <p className={`font-sans text-3xl font-bold tracking-tight ${isLast ? "text-[hsl(var(--iiv-gold-text))]" : "text-primary"}`}>
                         {item.year}
                       </p>
-                      <h3 className="font-serif text-lg leading-tight mt-2">{item.title}</h3>
+                      <h3 className="font-sans text-base font-bold uppercase tracking-wide leading-tight mt-2">{item.title}</h3>
                       <p className="text-sm text-muted-foreground leading-relaxed mt-2">{item.text}</p>
                     </div>
                   </motion.div>
@@ -161,12 +159,12 @@ export default function Sobre() {
       <section className="section-divider py-24">
         <div className="container">
           <div className="mb-14 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("values.kicker")}</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5">{t("values.title")}</h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">{t("values.kicker")}</p>
+            <h2 className="mt-4 font-sans text-2xl font-bold uppercase tracking-wide">{t("values.title")}</h2>
           </div>
           {/* Missão / Visão / Valores lado a lado — 3 colunas, não empilhados */}
           <motion.div
-            className="grid gap-6 md:grid-cols-3"
+            className="grid gap-px bg-border/60 md:grid-cols-3"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -175,21 +173,13 @@ export default function Sobre() {
             {valores.map((v, i) => {
               const Icon = valorIcons[i];
               return (
-                <motion.div
-                  key={v.title}
-                  variants={revealVariants}
-                  className="group relative overflow-hidden rounded-3xl border border-border/60 bg-card p-8 shadow-md hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300"
-                >
-                  <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-[hsl(var(--iiv-gold))]/[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-                  <span className="absolute top-6 right-7 font-serif text-5xl text-primary/10 select-none">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl gradient-green-soft text-primary-foreground shadow-lg mb-6 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+                <motion.div key={v.title} variants={revealVariants} className="bg-card p-8">
+                  <div className="flex h-14 w-14 items-center justify-center bg-[hsl(var(--iiv-green-dark))] text-primary-foreground mb-6">
                     <Icon className="h-6 w-6" strokeWidth={1.75} />
                   </div>
-                  <h3 className="relative font-serif text-2xl">{v.title}</h3>
-                  <div className="mt-3 h-0.5 w-10 rounded-full bg-[hsl(var(--iiv-gold))] transition-all duration-300 group-hover:w-16" />
-                  <p className="relative mt-4 text-sm text-muted-foreground leading-relaxed">{v.text}</p>
+                  <h3 className="font-sans text-lg font-bold uppercase tracking-wide">{v.title}</h3>
+                  <div className="mt-3 h-1 w-10 bg-[hsl(var(--iiv-gold))]" />
+                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">{v.text}</p>
                 </motion.div>
               );
             })}
@@ -207,22 +197,22 @@ export default function Sobre() {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
           >
-            <motion.div variants={revealVariants} className="overflow-hidden rounded-2xl">
+            <motion.div variants={revealVariants} className="overflow-hidden">
               <img src={sobreTeamMeeting} alt={t("structure.imageAlt")} className="aspect-[4/5] w-full object-cover" loading="lazy" />
             </motion.div>
             <motion.div variants={revealVariants}>
-              <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("structure.kicker")}</p>
-              <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("structure.title")}</h2>
+              <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">{t("structure.kicker")}</p>
+              <h2 className="mt-4 font-sans text-2xl font-bold uppercase tracking-wide">{t("structure.title")}</h2>
               <p className="mt-6 text-muted-foreground leading-relaxed">
                 {t("structure.text")}
               </p>
-              <div className="mt-8 grid grid-cols-2 gap-px bg-border rounded-xl overflow-hidden border border-border/60">
+              <div className="mt-8 grid grid-cols-2 gap-px bg-border border border-border/60">
                 {departments.map((d) => (
-                  <div key={d} className="group bg-card p-5 hover:bg-accent/20 transition-colors">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[hsl(var(--iiv-gold-light))] dark:bg-accent mb-3 transition-transform duration-300 group-hover:scale-110">
-                      <Award className="h-4 w-4 text-[hsl(var(--iiv-gold-text))]" />
+                  <div key={d} className="bg-card p-5">
+                    <div className="flex h-9 w-9 items-center justify-center bg-[hsl(var(--iiv-gold))] mb-3">
+                      <Award className="h-4 w-4 text-secondary-foreground" />
                     </div>
-                    <p className="font-serif text-lg">{d}</p>
+                    <p className="font-sans text-sm font-semibold">{d}</p>
                   </div>
                 ))}
               </div>

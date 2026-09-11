@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHeroSlides } from "@/hooks/queries/useHeroSlides";
 
@@ -32,6 +31,15 @@ const defaultSlides: Slide[] = [
 
 const INTERVAL = 6500;
 
+/**
+ * Hero da página inicial — layout dividido (carrossel de imagem + painel de
+ * texto sólido) replicando directamente a anatomia do hero do site de
+ * referência (uchile.cl): imagem a toda a largura à esquerda com setas
+ * circulares de navegação, painel de cor sólida à direita com título curto,
+ * parágrafo de apoio e link "saiba mais". Mantém a mesma fonte de dados
+ * dinâmica (CMS de Slideshow, `useHeroSlides`) — só a composição visual
+ * mudou.
+ */
 export function HeroSlideshow() {
   const [slides, setSlides] = useState<Slide[]>(defaultSlides);
   const [current, setCurrent] = useState(0);
@@ -39,9 +47,6 @@ export function HeroSlideshow() {
   const timerRef = useRef<number | null>(null);
   const { data, isError } = useHeroSlides();
 
-  // Quando os dados chegarem (ou em caso de array vazio/erro), mantém-se o
-  // fallback para `defaultSlides` — mesma resiliência que a versão Supabase já
-  // tinha.
   useEffect(() => {
     if (isError || !data || data.length === 0) return;
     const mapped: Slide[] = data.map((r, i) => ({
@@ -56,8 +61,8 @@ export function HeroSlideshow() {
     setCurrent(0);
   }, [data, isError]);
 
-  const next = useCallback(() => setCurrent((c) => (c + 1) % slides.length), []);
-  const prev = useCallback(() => setCurrent((c) => (c - 1 + slides.length) % slides.length), []);
+  const next = useCallback(() => setCurrent((c) => (c + 1) % slides.length), [slides.length]);
+  const prev = useCallback(() => setCurrent((c) => (c - 1 + slides.length) % slides.length), [slides.length]);
 
   useEffect(() => {
     if (paused) return;
@@ -74,135 +79,77 @@ export function HeroSlideshow() {
 
   return (
     <section
-      className="relative isolate overflow-hidden bg-[hsl(var(--iiv-green-dark))]"
+      className="relative isolate bg-[hsl(var(--iiv-green-dark))]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
       aria-label="Destaques do Instituto"
     >
-      {/* Slides */}
-      <div className="relative h-[88vh] min-h-[600px] max-h-[860px] w-full">
-        {slides.map((s, i) => (
-          <div
-            key={s.image}
-            className={cn(
-              "absolute inset-0 transition-opacity duration-1000 ease-out",
-              i === current ? "opacity-100" : "opacity-0 pointer-events-none",
-            )}
-            aria-hidden={i !== current}
-          >
+      <div className="grid lg:grid-cols-[1.6fr_1fr]">
+        {/* Imagem + navegação */}
+        <div className="relative order-1 h-[46vh] min-h-[320px] md:h-[60vh] md:max-h-[560px] overflow-hidden">
+          {slides.map((s, i) => (
             <img
+              key={s.image}
               src={s.image}
               alt=""
               className={cn(
-                "h-full w-full object-cover will-change-transform",
-                i === current && "animate-kenburns",
+                "absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-out",
+                i === current ? "opacity-100" : "opacity-0",
               )}
               loading={i === 0 ? "eager" : "lazy"}
             />
-            {/* Tint + vignette */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--iiv-green-dark))]/85 via-[hsl(var(--iiv-green-dark))]/55 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-          </div>
-        ))}
+          ))}
 
-        {/* Content */}
-        <div className="relative z-10 container flex h-full items-center">
-          <div
-            key={current}
-            className="max-w-2xl text-primary-foreground animate-fade-up"
-            aria-live="polite"
+          <button
+            onClick={prev}
+            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[hsl(var(--iiv-green-dark))] shadow-lg hover:bg-white/90 transition-colors"
+            aria-label="Slide anterior"
           >
-            {/* --iiv-gold (não -text): sempre sobre o fundo verde escuro do slideshow. */}
-            <div className="kicker mb-5 text-[hsl(var(--iiv-gold))]">
-              <span className="inline-block h-px w-8 align-middle bg-[hsl(var(--iiv-gold))]" />
-              <span className="ml-3">{slide.kicker}</span>
-            </div>
-            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-normal leading-[1.05] tracking-tight">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[hsl(var(--iiv-green-dark))] shadow-lg hover:bg-white/90 transition-colors"
+            aria-label="Próximo slide"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 flex items-center gap-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={cn(
+                  "h-2 rounded-full transition-all",
+                  i === current ? "w-6 bg-[hsl(var(--iiv-gold))]" : "w-2 bg-white/60 hover:bg-white/80",
+                )}
+                aria-label={`Ir para slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Painel de texto */}
+        <div className="relative order-2 flex flex-col justify-center px-6 py-10 md:px-12 md:py-14">
+          <div key={current} className="animate-fade-up">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-[hsl(var(--iiv-gold))]">
+              {slide.kicker}
+            </p>
+            <h1 className="mt-4 font-sans text-2xl md:text-3xl font-bold leading-[1.15] text-primary-foreground">
               {slide.title}
             </h1>
-            <p className="mt-6 max-w-xl text-base md:text-lg opacity-80 leading-relaxed">
+            <p className="mt-5 text-sm md:text-base leading-relaxed text-primary-foreground/85">
               {slide.subtitle}
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Button
-                asChild
-                size="lg"
-                className="gradient-gold text-secondary-foreground hover:opacity-90 shadow-lg h-12 px-6 text-sm font-semibold rounded-xl"
-              >
-                <Link to={slide.link}>
-                  {slide.cta} <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="border-primary-foreground/25 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 h-12 px-6 text-sm rounded-xl"
-              >
-                <Link to="/sobre">Sobre o IIV</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right-side numbered indicators */}
-        <div className="absolute inset-y-0 right-6 z-10 hidden md:flex flex-col items-end justify-center gap-3 text-primary-foreground/80">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className="group flex items-center gap-3"
-              aria-label={`Ir para slide ${i + 1}`}
+            <Link
+              to={slide.link}
+              className="group mt-7 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-foreground hover:text-[hsl(var(--iiv-gold))] transition-colors"
             >
-              <span
-                className={cn(
-                  "font-mono text-xs tabular-nums transition-opacity",
-                  i === current ? "opacity-100" : "opacity-50 group-hover:opacity-80",
-                )}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span
-                className={cn(
-                  "block h-px transition-all duration-500",
-                  i === current
-                    ? "w-12 bg-[hsl(var(--iiv-gold))]"
-                    : "w-6 bg-primary-foreground/30 group-hover:bg-primary-foreground/60",
-                )}
-              />
-            </button>
-          ))}
-        </div>
-
-        {/* Bottom controls */}
-        <div className="absolute bottom-6 left-0 right-0 z-10 container flex items-center justify-between text-primary-foreground/80">
-          <div className="font-mono text-xs tracking-widest">
-            <span className="text-[hsl(var(--iiv-gold))]">{String(current + 1).padStart(2, "0")}</span>
-            <span className="opacity-50"> / {String(slides.length).padStart(2, "0")}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={prev}
-              className="h-9 w-9 rounded-full border border-primary-foreground/20 hover:bg-primary-foreground/10 flex items-center justify-center transition-colors"
-              aria-label="Slide anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setPaused((p) => !p)}
-              className="h-9 w-9 rounded-full border border-primary-foreground/20 hover:bg-primary-foreground/10 flex items-center justify-center transition-colors"
-              aria-label={paused ? "Reproduzir" : "Pausar"}
-            >
-              {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-            </button>
-            <button
-              onClick={next}
-              className="h-9 w-9 rounded-full border border-primary-foreground/20 hover:bg-primary-foreground/10 flex items-center justify-center transition-colors"
-              aria-label="Próximo slide"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+              {slide.cta}
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptEstacoes from "@/i18n/locales/pt/public/estacoesZootecnicas.json";
 import enEstacoes from "@/i18n/locales/en/public/estacoesZootecnicas.json";
+import estacoesHero from "@/assets/hero/hero-cattle-savanna.webp";
 
 if (!i18n.hasResourceBundle("pt", "estacoes-zootecnicas"))
   i18n.addResourceBundle("pt", "estacoes-zootecnicas", ptEstacoes, true, true);
@@ -36,6 +37,7 @@ export default function EstacoesZootecnicas() {
         kicker={t("hero.kicker")}
         title={t("hero.title")}
         lead={t("hero.lead")}
+        image={estacoesHero}
         breadcrumb={[{ label: "Sobre", href: "/sobre" }, { label: t("hero.breadcrumb") }]}
       />
 
@@ -49,12 +51,8 @@ export default function EstacoesZootecnicas() {
             viewport={{ once: true, margin: "-80px" }}
           >
             <motion.div variants={revealVariants}>
-              <p className="kicker text-[hsl(var(--iiv-gold-text))]">
-                <span className="editorial-rule mr-3" /> {t("intro.kicker")}
-              </p>
-              <h2 className="font-serif text-3xl md:text-4xl mt-6 leading-[1.05] tracking-tight">
-                {t("intro.title")}
-              </h2>
+              <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">{t("intro.kicker")}</p>
+              <h2 className="mt-4 font-sans text-2xl font-bold uppercase tracking-wide">{t("intro.title")}</h2>
               <p className="mt-6 text-muted-foreground leading-relaxed">{t("intro.text")}</p>
             </motion.div>
           </motion.div>
@@ -64,22 +62,18 @@ export default function EstacoesZootecnicas() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-60px" }}
-            className="mt-16"
+            className="mt-14"
           >
-            <motion.h3 variants={revealVariants} className="font-serif text-2xl mb-8">
+            <motion.h3 variants={revealVariants} className="mb-6 border-b-2 border-[hsl(var(--iiv-gold))] pb-3 font-sans text-lg font-bold uppercase tracking-wide">
               {t("stations.heading")}
             </motion.h3>
-            <div className="grid gap-6 sm:grid-cols-3">
+            <div className="grid gap-px bg-border/60 sm:grid-cols-3">
               {stations.map((station) => (
-                <motion.div
-                  key={station.title}
-                  variants={revealVariants}
-                  className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl gradient-green-gold text-primary-foreground shadow-md">
+                <motion.div key={station.title} variants={revealVariants} className="bg-card p-6">
+                  <div className="flex h-11 w-11 items-center justify-center bg-[hsl(var(--iiv-green-dark))] text-primary-foreground">
                     <Sprout className="h-5 w-5" strokeWidth={1.75} />
                   </div>
-                  <h4 className="font-serif text-lg mt-5">{station.title}</h4>
+                  <h4 className="mt-5 font-sans text-base font-bold uppercase tracking-wide">{station.title}</h4>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{station.focus}</p>
                   <p className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground/70">
                     <MapPin className="h-3.5 w-3.5" /> {station.status}
@@ -90,16 +84,15 @@ export default function EstacoesZootecnicas() {
           </motion.div>
 
           <motion.div
-            className="mt-16 relative overflow-hidden rounded-3xl gradient-green text-primary-foreground p-10 md:p-14 text-center shadow-xl"
+            className="mt-14 border border-border/60 bg-muted/30 p-10 md:p-14 text-center"
             variants={revealVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[hsl(var(--iiv-gold))]/15 blur-3xl" />
-            <h2 className="relative font-serif text-3xl md:text-4xl leading-tight">{t("cta.title")}</h2>
-            <p className="relative mt-3 opacity-80 max-w-xl mx-auto">{t("cta.lead")}</p>
-            <Button asChild size="lg" className="relative mt-7 gradient-gold text-secondary-foreground hover:opacity-90 h-12 px-7 rounded-xl text-sm font-semibold">
+            <h2 className="font-sans text-xl font-bold uppercase tracking-wide">{t("cta.title")}</h2>
+            <p className="mt-3 text-muted-foreground max-w-xl mx-auto">{t("cta.lead")}</p>
+            <Button asChild size="lg" className="mt-7 rounded-none bg-[hsl(var(--iiv-gold))] text-secondary-foreground hover:opacity-90 h-12 px-7 text-sm font-bold uppercase tracking-wide">
               <Link to="/contactos">
                 {t("cta.link")} <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

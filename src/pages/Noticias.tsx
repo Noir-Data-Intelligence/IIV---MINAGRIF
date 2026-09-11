@@ -92,19 +92,14 @@ export default function Noticias() {
                   key={c}
                   onClick={() => setCat(c)}
                   className={cn(
-                    "relative flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors",
-                    cat === c ? "text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent",
+                    "flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors",
+                    cat === c
+                      ? "border-[hsl(var(--iiv-gold))] text-primary"
+                      : "border-transparent text-muted-foreground hover:text-primary",
                   )}
                 >
-                  {cat === c && (
-                    <motion.span
-                      layoutId="noticias-cat-indicator"
-                      className="absolute inset-0 rounded-full bg-primary shadow-md"
-                      transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 32 }}
-                    />
-                  )}
-                  <Icon className="relative h-3.5 w-3.5" strokeWidth={2} />
-                  <span className="relative">{c === ALL_CATEGORY ? t("list.filters.all") : c}</span>
+                  <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+                  <span>{c === ALL_CATEGORY ? t("list.filters.all") : c}</span>
                 </button>
               );
             })}
@@ -136,7 +131,7 @@ export default function Noticias() {
                 >
                   <Link
                     to={`/noticias/${destaque.slug}`}
-                    className="group relative block overflow-hidden rounded-3xl shadow-elevated hover:shadow-2xl transition-all duration-300"
+                    className="group relative block overflow-hidden"
                   >
                     <div className="relative aspect-[4/5] sm:aspect-[16/10] md:aspect-[21/9] w-full overflow-hidden bg-muted">
                       <img
@@ -147,19 +142,19 @@ export default function Noticias() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--iiv-green-dark))] via-[hsl(var(--iiv-green-dark))]/55 to-transparent" />
 
-                      <span className="absolute top-6 left-6 inline-flex items-center gap-1.5 rounded-full gradient-gold px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-secondary-foreground shadow-lg">
+                      <span className="absolute top-6 left-6 inline-flex items-center gap-1.5 bg-[hsl(var(--iiv-gold))] px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-secondary-foreground">
                         <Sparkles className="h-3.5 w-3.5" strokeWidth={2} /> {t("list.state.featured", "Destaque")}
                       </span>
 
                       <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10 lg:p-14 text-primary-foreground">
                         <div className="flex items-center gap-3 mb-4">
-                          <span className="inline-flex items-center rounded-full bg-white/15 backdrop-blur-sm px-2.5 py-1 font-mono text-[11px] uppercase tracking-widest">
+                          <span className="inline-flex items-center bg-white/15 backdrop-blur-sm px-2.5 py-1 font-mono text-[11px] uppercase tracking-widest">
                             {destaque.categoria}
                           </span>
                           <span className="h-px w-4 bg-white/40" />
                           <time className="text-xs opacity-80">{fmt(destaque.published_at ?? destaque.created_at)}</time>
                         </div>
-                        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-tight max-w-3xl">
+                        <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold leading-tight max-w-3xl">
                           {destaque.titulo}
                         </h2>
                         {destaque.resumo && (
@@ -178,10 +173,10 @@ export default function Noticias() {
 
               {restantes.length > 0 && (
                 <div className="border-t border-border/40 pt-16">
-                  <div className="mb-10">
-                    <p className="kicker text-[hsl(var(--iiv-gold-text))]">
-                      <span className="editorial-rule mr-3" /> {t("list.state.moreNews", "Mais notícias")}
-                    </p>
+                  <div className="mb-10 border-b-2 border-[hsl(var(--iiv-gold))] pb-3">
+                    <h2 className="font-sans text-lg font-bold uppercase tracking-wide">
+                      {t("list.state.moreNews", "Mais notícias")}
+                    </h2>
                   </div>
 
                   <motion.div
@@ -195,32 +190,28 @@ export default function Noticias() {
                       const Icon = categoryIcon(n.categoria);
                       return (
                         <motion.div key={n.id} variants={shouldReduceMotion ? undefined : fadeInUp}>
-                          <Link
-                            to={`/noticias/${n.slug}`}
-                            className="group block rounded-3xl overflow-hidden bg-card border border-border/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                          >
+                          <Link to={`/noticias/${n.slug}`} className="group block border border-border/60 bg-card">
                             <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                               <img
                                 src={imageUrl(n.image_path, i + 1)}
                                 alt={n.titulo}
-                                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 loading="lazy"
                               />
-                              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--iiv-green-dark))]/55 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                              <div className="absolute -bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-xl gradient-gold text-secondary-foreground shadow-lg transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110">
+                              <div className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center bg-[hsl(var(--iiv-gold))] text-secondary-foreground">
                                 <Icon className="h-4 w-4" strokeWidth={1.75} />
                               </div>
                             </div>
-                            <div className="p-5 pt-7">
+                            <div className="p-5">
                               <div className="flex items-center gap-3 mb-3">
-                                <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">
+                                <span className="inline-flex items-center bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">
                                   {n.categoria}
                                 </span>
                                 <time className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                                   {fmt(n.published_at ?? n.created_at)}
                                 </time>
                               </div>
-                              <h3 className="font-serif text-xl leading-tight group-hover:text-primary transition-colors">
+                              <h3 className="font-sans text-base font-bold leading-tight text-primary group-hover:underline">
                                 {n.titulo}
                               </h3>
                               {n.resumo && (

@@ -3,13 +3,6 @@
     "title": "Veterinary Research Institute of Angola",
     "description": "Scientific research, laboratory diagnostics and vaccine production serving animal health and food safety in Angola."
   },
-  "editorial": {
-    "kicker": "Issue No. 01 — 2026",
-    "title": "Researching to protect Angola's animal health.",
-    "lead": "The Veterinary Research Institute is the public institution responsible for scientific research, vaccine production and laboratory diagnostics serving livestock farming and national public health.",
-    "body": "Since 1965, the IIV has supported the development of the agricultural and livestock sector in every province of the country, with an integrated network of laboratories, regional stations and partnerships with leading international organisations.",
-    "cta": "Discover the Institute"
-  },
   "services": {
     "kicker": "What we do",
     "title": "Areas of activity",
@@ -24,22 +17,32 @@
       { "title": "Technical Training", "desc": "Capacity-building for Angola's national veterinary workforce." }
     ]
   },
-  "manifesto": {
-    "quote": "“Our mission is to generate scientific knowledge that protects livestock, strengthens the rural economy and ensures safe food for all Angolans.”",
-    "author": "IIV Board of Directors",
-    "authorRole": "Veterinary Research Institute"
-  },
   "news": {
-    "kicker": "Featured",
-    "title": "Latest news",
-    "viewAll": "Full archive",
+    "title": "News",
+    "viewAll": "More news",
     "empty": "No news published at the moment."
   },
-  "cta": {
-    "kicker": "Work with us",
-    "title": "Need laboratory analysis, vaccines or technical consulting?",
-    "body": "Our team is available to support farmers, veterinarians, public institutions and international partners. Get in touch.",
-    "contact": "Contact us",
-    "services": "View services"
+  "sidebar": {
+    "agendaHeading": "Upcoming Activities",
+    "agendaViewAll": "See agenda",
+    "promos": [
+      { "title": "Laboratories", "cta": "See areas", "link": "/laboratorios" },
+      { "title": "Services", "cta": "Learn more", "link": "/servicos" },
+      { "title": "Contacts", "cta": "Talk to us", "link": "/contactos" }
+    ],
+    "interestHeading": "Links of Interest",
+    "interestLinks": [
+      { "label": "Applicable legislation", "href": "/legislacao", "external": false },
+      { "label": "FAO — Food and Agriculture Organization of the United Nations", "href": "https://www.fao.org", "external": true },
+      { "label": "WOAH — World Organisation for Animal Health", "href": "https://www.woah.org", "external": true },
+      { "label": "WHO — World Health Organization", "href": "https://www.who.int", "external": true }
+    ]
+  },
+  "areasSection": {
+    "heading": "Our areas",
+    "labsBoxTitle": "Laboratories",
+    "viewAllLabs": "See all areas",
+    "servicesBoxTitle": "Services",
+    "viewAllServices": "See all services"
   }
 }

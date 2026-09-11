@@ -144,8 +144,8 @@ export default function Contactos() {
       <section className="py-24 bg-accent/30 overflow-hidden">
         <div className="container">
           <div className="mb-12 max-w-2xl">
-            <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("estacoes.kicker")}</p>
-            <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("estacoes.title")}</h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">{t("estacoes.kicker")}</p>
+            <h2 className="mt-4 font-sans text-2xl font-bold uppercase tracking-wide">{t("estacoes.title")}</h2>
             <p className="mt-4 text-muted-foreground">{t("estacoes.lead")}</p>
           </div>
 
@@ -161,56 +161,51 @@ export default function Contactos() {
               className="lg:col-span-5 order-2 lg:order-1"
               variants={shouldReduceMotion ? undefined : fadeInUp}
             >
-              <div
-                key={provinciaId}
-                className="relative overflow-hidden rounded-3xl border border-border/60 bg-card p-8 shadow-xl animate-fade-up"
-                aria-live="polite"
-              >
-                <div className="absolute -top-14 -right-14 h-40 w-40 rounded-full bg-[hsl(var(--iiv-gold))]/10 blur-3xl" />
+              <div key={provinciaId} className="border border-border/60 bg-card p-8" aria-live="polite">
                 {estacaoActiva ? (
                   <>
-                    <div className="relative flex items-center gap-3 mb-5">
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg text-primary-foreground ${estacaoActiva.sede ? "gradient-gold !text-secondary-foreground" : "gradient-green-soft"}`}>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center text-primary-foreground ${estacaoActiva.sede ? "bg-[hsl(var(--iiv-gold))] !text-secondary-foreground" : "bg-[hsl(var(--iiv-green-dark))]"}`}>
                         <MapPin className="h-5 w-5" strokeWidth={1.75} />
                       </div>
-                      <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-3 py-1 kicker text-[hsl(var(--iiv-gold-text))]">
+                      <span className="inline-flex items-center bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-3 py-1 text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">
                         {estacaoActiva.sede ? "Sede Nacional" : "Estação Regional"}
                       </span>
                     </div>
-                    <h3 className="relative font-serif text-2xl md:text-3xl leading-tight">{estacaoActiva.nome}</h3>
-                    <p className="relative text-sm text-muted-foreground mt-1 uppercase tracking-wider">
+                    <h3 className="font-sans text-xl font-bold uppercase tracking-wide leading-tight">{estacaoActiva.nome}</h3>
+                    <p className="text-sm text-muted-foreground mt-1 uppercase tracking-wider">
                       {estacaoActiva.cidade} · Província de {estacaoActiva.provincia}
                     </p>
-                    <p className="relative mt-4 text-muted-foreground leading-relaxed">{estacaoActiva.descricao}</p>
+                    <p className="mt-4 text-muted-foreground leading-relaxed">{estacaoActiva.descricao}</p>
                   </>
                 ) : (
                   <>
-                    <div className="relative flex items-center gap-3 mb-5">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg bg-muted text-muted-foreground">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-muted text-muted-foreground">
                         <MapPin className="h-5 w-5" strokeWidth={1.75} />
                       </div>
-                      <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 kicker text-muted-foreground">
+                      <span className="inline-flex items-center bg-muted px-3 py-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         Província
                       </span>
                     </div>
-                    <h3 className="relative font-serif text-2xl md:text-3xl leading-tight">{provinciaActiva.name}</h3>
-                    <p className="relative mt-4 text-muted-foreground leading-relaxed">
+                    <h3 className="font-sans text-xl font-bold uppercase tracking-wide leading-tight">{provinciaActiva.name}</h3>
+                    <p className="mt-4 text-muted-foreground leading-relaxed">
                       Sem estação própria — esta província é coberta pela estação regional mais próxima da rede do IIV.
                     </p>
                   </>
                 )}
 
                 {/* Selecção rápida (e alternativa acessível ao mapa) */}
-                <div className="relative mt-7 flex flex-wrap gap-2 border-t border-border/50 pt-5">
+                <div className="mt-7 flex flex-wrap gap-2 border-t border-border/50 pt-5">
                   {estacoes.map((e) => (
                     <button
                       key={e.provinciaId}
                       type="button"
                       onClick={() => setProvinciaId(e.provinciaId)}
                       aria-pressed={e.provinciaId === provinciaId}
-                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                      className={`px-3 py-1.5 text-xs font-medium transition-all ${
                         e.provinciaId === provinciaId
-                          ? "bg-primary text-primary-foreground shadow-md"
+                          ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       }`}
                     >
@@ -326,33 +321,33 @@ export default function Contactos() {
           >
             {/* FORM */}
             <motion.div
-              className="lg:col-span-7 rounded-2xl border border-border/60 bg-card shadow-xl p-8 md:p-10"
+              className="lg:col-span-7 border border-border/60 bg-card p-8 md:p-10"
               variants={shouldReduceMotion ? undefined : fadeInUp}
             >
-              <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("form.kicker")}</p>
-              <h2 className="font-serif text-3xl md:text-4xl mt-5 leading-tight">{t("form.title")}</h2>
+              <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">{t("form.kicker")}</p>
+              <h2 className="mt-4 font-sans text-2xl font-bold uppercase tracking-wide">{t("form.title")}</h2>
               <p className="mt-4 text-muted-foreground">{t("form.lead")}</p>
 
               <form className="mt-10 space-y-5" onSubmit={onSubmit}>
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="nome">{t("form.labels.nome")}</Label>
-                    <Input id="nome" name="nome" required placeholder={t("form.placeholders.nome")} className="h-11 rounded-xl" />
+                    <Input id="nome" name="nome" required placeholder={t("form.placeholders.nome")} className="h-11 rounded-none" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">{t("form.labels.email")}</Label>
-                    <Input id="email" name="email" type="email" required placeholder={t("form.placeholders.email")} className="h-11 rounded-xl" />
+                    <Input id="email" name="email" type="email" required placeholder={t("form.placeholders.email")} className="h-11 rounded-none" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="assunto">{t("form.labels.assunto")}</Label>
-                  <Input id="assunto" name="assunto" required placeholder={t("form.placeholders.assunto")} className="h-11 rounded-xl" />
+                  <Input id="assunto" name="assunto" required placeholder={t("form.placeholders.assunto")} className="h-11 rounded-none" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="mensagem">{t("form.labels.mensagem")}</Label>
-                  <Textarea id="mensagem" name="mensagem" required rows={6} placeholder={t("form.placeholders.mensagem")} className="rounded-xl" />
+                  <Textarea id="mensagem" name="mensagem" required rows={6} placeholder={t("form.placeholders.mensagem")} className="rounded-none" />
                 </div>
-                <Button type="submit" disabled={submitting} size="lg" className="h-12 rounded-xl px-6 text-sm font-semibold">
+                <Button type="submit" disabled={submitting} size="lg" className="h-12 rounded-none px-6 text-sm font-bold uppercase tracking-wide bg-[hsl(var(--iiv-gold))] text-secondary-foreground hover:opacity-90">
                   {submitting ? t("form.submitting") : (<>{t("form.submit")} <Send className="ml-2 h-4 w-4" /></>)}
                 </Button>
               </form>
@@ -363,20 +358,19 @@ export default function Contactos() {
               className="lg:col-span-5 lg:pl-8 space-y-6"
               variants={shouldReduceMotion ? undefined : fadeInUp}
             >
-              <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-                <div className="gradient-green p-7 text-primary-foreground">
-                  {/* --iiv-gold (não -text): este cartão usa gradient-green, fundo escuro. */}
-                  <p className="kicker text-[hsl(var(--iiv-gold))]">{t("sidebar.kicker")}</p>
-                  <h3 className="font-serif text-2xl mt-3 leading-tight">{t("sidebar.title")}</h3>
+              <div className="border border-border/60">
+                <div className="bg-[hsl(var(--iiv-green-dark))] border-b-2 border-[hsl(var(--iiv-gold))] p-7 text-primary-foreground">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold))]">{t("sidebar.kicker")}</p>
+                  <h3 className="mt-3 font-sans text-lg font-bold uppercase tracking-wide leading-tight">{t("sidebar.title")}</h3>
                 </div>
                 <ul className="divide-y divide-border/60">
                   {contactos.map((c) => (
                     <li key={c.label} className="p-5 flex items-start gap-4">
-                      <div className="h-10 w-10 shrink-0 rounded-lg bg-accent text-primary flex items-center justify-center">
+                      <div className="h-10 w-10 shrink-0 bg-accent text-primary flex items-center justify-center">
                         <c.icon className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="kicker text-muted-foreground">{c.label}</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{c.label}</p>
                         <p className="font-medium text-sm mt-1">{c.value}</p>
                       </div>
                     </li>

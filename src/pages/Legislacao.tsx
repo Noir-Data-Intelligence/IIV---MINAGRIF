@@ -91,19 +91,17 @@ export default function Legislacao() {
       <section className="py-12 md:py-16 border-b border-border/40 bg-accent/30 overflow-hidden">
         <div className="container">
           <motion.div
-            className="relative overflow-hidden rounded-3xl border border-border/60 bg-card shadow-lg p-6 md:p-8"
+            className="border border-border/60 bg-card p-6 md:p-8"
             variants={revealVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-60px" }}
           >
-            <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[hsl(var(--iiv-gold))]/10 blur-3xl" />
-
-            <div className="relative flex flex-col gap-7">
+            <div className="flex flex-col gap-7">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <p className="kicker text-[hsl(var(--iiv-gold-text))]"><span className="editorial-rule mr-3" /> {t("filter.kicker")}</p>
-                  <h2 className="font-serif text-2xl md:text-3xl mt-3 leading-tight">{t("filter.title")}</h2>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">{t("filter.kicker")}</p>
+                  <h2 className="mt-3 font-sans text-xl font-bold uppercase tracking-wide">{t("filter.title")}</h2>
                 </div>
                 <div className="relative w-full lg:max-w-xs">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -111,7 +109,7 @@ export default function Legislacao() {
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                     placeholder={t("search.placeholder")}
-                    className="pl-10 h-12 rounded-xl"
+                    className="pl-10 h-12 rounded-none"
                   />
                 </div>
               </div>
@@ -124,7 +122,7 @@ export default function Legislacao() {
                       <TabsTrigger
                         key={tt}
                         value={tt}
-                        className="gap-1.5 rounded-full border border-border/60 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all data-[state=active]:border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+                        className="gap-1.5 rounded-none border border-border/60 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-all data-[state=active]:border-[hsl(var(--iiv-green-dark))] data-[state=active]:bg-[hsl(var(--iiv-green-dark))] data-[state=active]:text-primary-foreground"
                       >
                         {Icon && <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />}
                         {tipoLabels[tt] ?? tt}
@@ -179,40 +177,34 @@ export default function Legislacao() {
                       key={l.id}
                       variants={revealVariants}
                       className={cn(
-                        "group relative overflow-hidden grid grid-cols-12 gap-6 items-center p-6 rounded-2xl border bg-card shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300",
-                        isRecent ? "border-[hsl(var(--iiv-gold))]/40" : "border-border/60",
+                        "group grid grid-cols-12 gap-6 items-center border bg-card p-6",
+                        isRecent ? "border-[hsl(var(--iiv-gold))]" : "border-border/60",
                       )}
                     >
-                      <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[hsl(var(--iiv-gold))]/0 group-hover:bg-[hsl(var(--iiv-gold))]/8 blur-2xl transition-colors duration-300" />
-
-                      <div className="relative col-span-2">
+                      <div className="col-span-2">
                         <Link to={`/legislacao/${l.slug}`} className="flex flex-col items-start gap-2.5">
-                          <div className="hidden sm:flex h-9 w-9 items-center justify-center rounded-xl gradient-green-soft text-primary-foreground shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+                          <div className="hidden sm:flex h-9 w-9 items-center justify-center bg-[hsl(var(--iiv-green-dark))] text-primary-foreground">
                             <Icon className="h-4 w-4" strokeWidth={1.75} />
                           </div>
-                          {/* text-primary/60 (light) e /85 (dark) em vez de /30: a /30 só atinge
-                              1.63:1 mesmo sendo texto grande (mínimo exigido 3:1). --primary muda
-                              de tom entre temas, por isso precisa de opacidades distintas para
-                              ambos atingirem >= 3:1 (/60 ~3.0:1 claro, /85 ~3.4:1 escuro). */}
-                          <p className="font-serif text-2xl md:text-3xl text-primary/60 dark:text-primary/85 group-hover:text-[hsl(var(--iiv-gold-text))] tracking-tight transition-colors">
+                          <p className="font-sans text-lg font-bold text-primary group-hover:text-[hsl(var(--iiv-gold-text))] tracking-tight transition-colors">
                             {l.num}
                           </p>
                         </Link>
                       </div>
-                      <div className="relative col-span-10 md:col-span-7">
+                      <div className="col-span-10 md:col-span-7">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <span className="inline-flex items-center rounded-full bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 kicker text-[hsl(var(--iiv-gold-text))]">
+                          <span className="inline-flex items-center bg-[hsl(var(--iiv-gold-light))] dark:bg-accent px-2.5 py-1 text-xs font-bold uppercase tracking-widest text-[hsl(var(--iiv-gold-text))]">
                             {tipoLabels[l.tipo] ?? l.tipo}
                           </span>
                           <span className="font-mono text-[11px] text-muted-foreground">{l.ano}</span>
                           {isRecent && (
-                            <span className="inline-flex items-center gap-1 rounded-full gradient-gold text-secondary-foreground px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-sm">
+                            <span className="inline-flex items-center gap-1 bg-[hsl(var(--iiv-gold))] text-secondary-foreground px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider">
                               <Sparkles className="h-3 w-3" strokeWidth={1.75} /> {t("list.recentBadge")}
                             </span>
                           )}
                         </div>
                         <Link to={`/legislacao/${l.slug}`}>
-                          <h3 className="font-serif text-xl md:text-2xl leading-tight hover:text-primary transition-colors">
+                          <h3 className="font-sans text-base font-bold leading-tight hover:underline">
                             {l.titulo}
                           </h3>
                         </Link>
@@ -220,7 +212,7 @@ export default function Legislacao() {
                           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{l.descricao}</p>
                         )}
                       </div>
-                      <div className="relative col-span-12 md:col-span-3 md:text-right flex md:justify-end items-center gap-4">
+                      <div className="col-span-12 md:col-span-3 md:text-right flex md:justify-end items-center gap-4">
                         <Link
                           to={`/legislacao/${l.slug}`}
                           className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all"
@@ -234,7 +226,7 @@ export default function Legislacao() {
                             target="_blank"
                             rel="noreferrer"
                             aria-label={`${t("list.download")} — ${l.titulo}`}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[hsl(var(--iiv-gold-light))] dark:bg-accent text-[hsl(var(--iiv-gold-text))] shadow-sm transition-transform duration-300 hover:scale-110"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center bg-[hsl(var(--iiv-gold-light))] dark:bg-accent text-[hsl(var(--iiv-gold-text))]"
                           >
                             <Download className="h-4 w-4" strokeWidth={1.75} />
                           </a>

@@ -94,101 +94,77 @@ export function Header() {
         </div>
       </div>
 
-      {/* Main nav */}
-      <div className="glass-strong shadow-elegant">
-        <div className="container flex h-16 items-center justify-between">
+      {/* Logo row — replica a "fila do logótipo" do site de referência (uchile.cl):
+          crachá + nome à esquerda, utilidades à direita, sem o menu principal
+          nesta linha (o menu vive na faixa de separadores abaixo). */}
+      <div className="bg-background border-b border-border/60">
+        <div className="container flex h-20 items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-primary-foreground font-serif font-bold text-lg shadow-sm transition-transform group-hover:scale-105">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary text-primary-foreground font-serif font-bold text-lg shadow-sm transition-transform group-hover:scale-105">
               IIV
             </div>
-            <div className="hidden sm:block">
-              <p className="font-serif text-base leading-tight tracking-tight">{t("orgNameLine1")}</p>
-              <p className="font-serif text-base leading-tight tracking-tight text-primary">{t("orgNameLine2")}</p>
+            <div>
+              <p className="font-serif text-lg leading-tight tracking-tight">{t("orgNameLine1")}</p>
+              <p className="font-serif text-lg leading-tight tracking-tight text-primary">{t("orgNameLine2")}</p>
             </div>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-0.5">
-            {navItems.map((item) => {
-              const active = isGroupActive(item, location.pathname);
-              if (item.children) {
-                return (
-                  <DropdownMenu key={item.key}>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "relative flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 outline-none",
-                          active
-                            ? "text-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                        )}
-                      >
-                        {active && (
-                          <motion.span
-                            layoutId="header-nav-indicator"
-                            className="absolute inset-0 rounded-lg bg-accent"
-                            transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 32 }}
-                          />
-                        )}
-                        <span className="relative">{t(item.key)}</span>
-                        <ChevronDown className="relative h-3.5 w-3.5 opacity-70" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="min-w-48">
-                      {item.children.map((child) => (
-                        <DropdownMenuItem key={child.path} asChild>
-                          <Link to={child.path} className="cursor-pointer">
-                            {t(child.key)}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                );
-              }
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path as string}
-                  className={cn(
-                    "relative px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200",
-                    active
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                  )}
-                >
-                  {active && (
-                    <motion.span
-                      layoutId="header-nav-indicator"
-                      className="absolute inset-0 rounded-lg bg-accent"
-                      transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative">{t(item.key)}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="hidden lg:flex items-center gap-1">
-            <LanguageSwitcher />
-            <ThemeToggle />
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="flex items-center gap-1 lg:hidden">
+          <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
+              className="lg:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Faixa de separadores — réplica directa da barra PORTADA/ADMISIÓN/... do
+          site de referência: maiúsculas, sublinhado dourado no item activo,
+          fundo sólido em vez dos pills arredondados usados anteriormente. */}
+      <div className="hidden lg:block bg-background border-b border-border shadow-sm">
+        <nav className="container flex items-center gap-1">
+          {navItems.map((item) => {
+            const active = isGroupActive(item, location.pathname);
+            const tabClass = cn(
+              "relative flex items-center gap-1 px-4 py-3.5 text-[13px] font-bold uppercase tracking-wide transition-colors duration-200 outline-none border-b-2",
+              active
+                ? "text-primary border-[hsl(var(--iiv-gold))]"
+                : "text-foreground/80 border-transparent hover:text-primary hover:border-[hsl(var(--iiv-gold))]/50",
+            );
+            if (item.children) {
+              return (
+                <DropdownMenu key={item.key}>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className={tabClass}>
+                      <span>{t(item.key)}</span>
+                      <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-48 rounded-none border-t-2 border-t-[hsl(var(--iiv-gold))]">
+                    {item.children.map((child) => (
+                      <DropdownMenuItem key={child.path} asChild>
+                        <Link to={child.path} className="cursor-pointer">
+                          {t(child.key)}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            return (
+              <Link key={item.path} to={item.path as string} className={tabClass}>
+                <span>{t(item.key)}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       {/* Mobile nav */}

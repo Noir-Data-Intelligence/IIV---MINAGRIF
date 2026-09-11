@@ -27,7 +27,10 @@ export function LiveStats() {
     : [];
 
   return (
-    <section className="relative -mt-16 z-20">
+    <section className="relative py-10">
+      <div className="container mb-4 border-b-2 border-[hsl(var(--iiv-gold))] pb-3">
+        <h2 className="font-sans text-lg font-bold uppercase tracking-wide">O IIV em números</h2>
+      </div>
       <div className="container">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {isLoading || stats.length === 0

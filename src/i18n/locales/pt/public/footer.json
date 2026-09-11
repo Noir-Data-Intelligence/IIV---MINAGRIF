@@ -4,29 +4,28 @@
     "orgNameLine2": "Veterinária",
     "description": "Instituição pública dedicada à investigação, diagnóstico e produção no domínio da saúde animal em Angola."
   },
-  "nav": {
-    "heading": "Navegação",
-    "links": {
-      "about": "Sobre o IIV",
-      "stations": "Estações Zootécnicas",
-      "labs": "Laboratórios",
-      "services": "Serviços",
-      "legislation": "Legislação",
-      "news": "Notícias",
-      "agenda": "Agenda"
-    }
+  "quickLinks": {
+    "news": "Notícias",
+    "agenda": "Agenda",
+    "legislation": "Legislação",
+    "contacts": "Contactos"
   },
-  "legal": {
-    "heading": "Legal",
-    "terms": "Termos de Uso",
-    "privacy": "Política de Privacidade",
-    "legislation": "Legislação Aplicável"
+  "secondaryLinks": {
+    "about": "Sobre",
+    "labs": "Laboratórios",
+    "services": "Serviços",
+    "terms": "Termos",
+    "privacy": "Privacidade",
+    "siteMap": "Mapa do site"
   },
   "contact": {
     "heading": "Contactos",
     "address": "Luanda, Angola",
     "phone": "+244 222 000 000",
     "email": "info@iiv.gov.ao"
+  },
+  "partners": {
+    "heading": "Parcerias Institucionais"
   },
   "bottom": {
     "copyright": "Instituto de Investigação Veterinária",

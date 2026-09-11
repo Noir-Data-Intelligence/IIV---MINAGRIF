@@ -9,6 +9,7 @@ import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptAgenda from "@/i18n/locales/pt/public/agenda.json";
 import enAgenda from "@/i18n/locales/en/public/agenda.json";
+import agendaHero from "@/assets/hero/hero-poultry-vaccination.webp";
 
 if (!i18n.hasResourceBundle("pt", "agenda")) i18n.addResourceBundle("pt", "agenda", ptAgenda, true, true);
 if (!i18n.hasResourceBundle("en", "agenda")) i18n.addResourceBundle("en", "agenda", enAgenda, true, true);
@@ -35,6 +36,7 @@ export default function Agenda() {
         kicker={t("hero.kicker")}
         title={t("hero.title")}
         lead={t("hero.lead")}
+        image={agendaHero}
         breadcrumb={[{ label: t("hero.breadcrumb") }]}
       />
 
@@ -45,11 +47,11 @@ export default function Agenda() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
-            className="rounded-2xl border border-dashed border-border/70 bg-muted/30 p-10 text-center"
+            className="border border-border/60 bg-muted/30 p-10 text-center"
           >
             <motion.div variants={revealVariants}>
               <CalendarDays className="mx-auto h-10 w-10 text-muted-foreground/60" strokeWidth={1.5} />
-              <h2 className="font-serif text-2xl mt-4">{t("empty.title")}</h2>
+              <h2 className="mt-4 font-sans text-xl font-bold uppercase tracking-wide">{t("empty.title")}</h2>
               <p className="mt-2 text-muted-foreground max-w-lg mx-auto">{t("empty.text")}</p>
             </motion.div>
           </motion.div>
@@ -59,24 +61,20 @@ export default function Agenda() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-60px" }}
-            className="mt-16"
+            className="mt-14"
           >
-            <motion.h3 variants={revealVariants} className="font-serif text-2xl mb-8">
+            <motion.h3 variants={revealVariants} className="mb-6 border-b-2 border-[hsl(var(--iiv-gold))] pb-3 font-sans text-lg font-bold uppercase tracking-wide">
               {t("categories.heading")}
             </motion.h3>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-px bg-border/60 sm:grid-cols-2 lg:grid-cols-4">
               {categories.map((cat, i) => {
                 const Icon = categoryIcons[i % categoryIcons.length];
                 return (
-                  <motion.div
-                    key={cat.title}
-                    variants={revealVariants}
-                    className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm"
-                  >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl gradient-green-gold text-primary-foreground shadow-md">
+                  <motion.div key={cat.title} variants={revealVariants} className="bg-card p-6">
+                    <div className="flex h-11 w-11 items-center justify-center bg-[hsl(var(--iiv-green-dark))] text-primary-foreground">
                       <Icon className="h-5 w-5" strokeWidth={1.75} />
                     </div>
-                    <h4 className="font-serif text-base mt-5">{cat.title}</h4>
+                    <h4 className="mt-5 font-sans text-sm font-bold uppercase tracking-wide">{cat.title}</h4>
                     <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{cat.text}</p>
                   </motion.div>
                 );
@@ -85,22 +83,21 @@ export default function Agenda() {
           </motion.div>
 
           <motion.div
-            className="mt-16 relative overflow-hidden rounded-3xl gradient-green text-primary-foreground p-10 md:p-14 text-center shadow-xl"
+            className="mt-14 border border-border/60 bg-muted/30 p-10 md:p-14 text-center"
             variants={revealVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[hsl(var(--iiv-gold))]/15 blur-3xl" />
-            <h2 className="relative font-serif text-3xl md:text-4xl leading-tight">{t("cta.title")}</h2>
-            <p className="relative mt-3 opacity-80 max-w-xl mx-auto">{t("cta.lead")}</p>
-            <div className="relative mt-7 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild size="lg" className="gradient-gold text-secondary-foreground hover:opacity-90 h-12 px-7 rounded-xl text-sm font-semibold">
+            <h2 className="font-sans text-xl font-bold uppercase tracking-wide">{t("cta.title")}</h2>
+            <p className="mt-3 text-muted-foreground max-w-xl mx-auto">{t("cta.lead")}</p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <Button asChild size="lg" className="rounded-none bg-[hsl(var(--iiv-gold))] text-secondary-foreground hover:opacity-90 h-12 px-7 text-sm font-bold uppercase tracking-wide">
                 <Link to="/noticias">
                   {t("cta.newsLink")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-12 px-7 rounded-xl text-sm font-semibold border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
+              <Button asChild size="lg" variant="outline" className="rounded-none h-12 px-7 text-sm font-bold uppercase tracking-wide">
                 <Link to="/contactos">{t("cta.contactLink")}</Link>
               </Button>
             </div>

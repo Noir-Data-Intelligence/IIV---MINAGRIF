@@ -10,6 +10,7 @@ import { findLaboratorioPublico } from "@/data/laboratoriosPublicos";
 import i18n from "@/i18n";
 import ptLaboratorios from "@/i18n/locales/pt/public/laboratorios.json";
 import enLaboratorios from "@/i18n/locales/en/public/laboratorios.json";
+import laboratorioHero from "@/assets/hero/hero-lab.jpg";
 
 if (!i18n.hasResourceBundle("pt", "public-laboratorios"))
   i18n.addResourceBundle("pt", "public-laboratorios", ptLaboratorios, true, true);
@@ -40,6 +41,7 @@ export default function LaboratorioDetalhe() {
         kicker={t("hero.kicker")}
         title={t(`areas.${lab.slug}.name`)}
         lead={t(`areas.${lab.slug}.short`)}
+        image={laboratorioHero}
         breadcrumb={[{ label: t("hero.breadcrumb"), href: "/laboratorios" }, { label: t(`areas.${lab.slug}.name`) }]}
       />
 
@@ -53,7 +55,7 @@ export default function LaboratorioDetalhe() {
             viewport={{ once: true, margin: "-80px" }}
           >
             <motion.div variants={revealVariants} className="lg:col-span-7">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl gradient-green-gold text-primary-foreground shadow-md">
+              <div className="flex h-14 w-14 items-center justify-center bg-[hsl(var(--iiv-green-dark))] text-primary-foreground">
                 <Icon className="h-7 w-7" strokeWidth={1.75} />
               </div>
               <p className="mt-8 text-lg text-muted-foreground leading-relaxed">
@@ -62,21 +64,25 @@ export default function LaboratorioDetalhe() {
             </motion.div>
 
             <motion.aside variants={revealVariants} className="lg:col-span-5">
-              <div className="rounded-2xl border border-border/60 bg-card p-7 shadow-sm">
-                <h2 className="font-serif text-xl">{t("techniques.heading")}</h2>
-                <ul className="mt-5 space-y-3">
+              <div className="border border-border/60">
+                <h2 className="border-b-2 border-[hsl(var(--iiv-gold))] bg-[hsl(var(--iiv-green-dark))] px-6 py-4 font-sans text-sm font-bold uppercase tracking-wide text-primary-foreground">
+                  {t("techniques.heading")}
+                </h2>
+                <ul className="p-6">
                   {techniques.map((technique) => (
-                    <li key={technique} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <li key={technique} className="flex items-start gap-2.5 border-b border-border/50 py-2.5 text-sm text-muted-foreground last:border-0">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--iiv-gold-text))]" />
                       <span>{technique}</span>
                     </li>
                   ))}
                 </ul>
-                <Button asChild className="mt-7 w-full gradient-gold text-secondary-foreground hover:opacity-90">
-                  <Link to="/contactos">
-                    {t("cta.contactLink")} <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                <div className="p-6 pt-0">
+                  <Button asChild className="w-full rounded-none bg-[hsl(var(--iiv-gold))] text-secondary-foreground hover:opacity-90">
+                    <Link to="/contactos">
+                      {t("cta.contactLink")} <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </motion.aside>
           </motion.div>
