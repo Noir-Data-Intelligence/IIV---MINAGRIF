@@ -92,8 +92,8 @@ export function Footer() {
           <div className="grid gap-10 md:grid-cols-2">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/10 font-serif font-bold text-lg">
-                  IIV
+                <div className="flex h-11 items-center justify-center rounded-xl bg-white px-2.5">
+                  <img src="/logo.jpeg" alt="IIV" className="h-7 w-auto object-contain" />
                 </div>
                 <div>
                   <p className="font-serif text-sm leading-tight">{t("brand.orgNameLine1")}</p>

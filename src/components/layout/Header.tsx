@@ -100,9 +100,11 @@ export function Header() {
       <div className="bg-background border-b border-border/60">
         <div className="container flex h-20 items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary text-primary-foreground font-serif font-bold text-lg shadow-sm transition-transform group-hover:scale-105">
-              IIV
-            </div>
+            <img
+              src="/logo.jpeg"
+              alt="IIV"
+              className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
+            />
             <div>
               <p className="font-serif text-lg leading-tight tracking-tight">{t("orgNameLine1")}</p>
               <p className="font-serif text-lg leading-tight tracking-tight text-primary">{t("orgNameLine2")}</p>

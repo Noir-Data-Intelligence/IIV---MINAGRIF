@@ -278,7 +278,7 @@ export function AdminLayout() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 rounded-xl gradient-green flex items-center justify-center text-primary-foreground font-serif font-bold animate-pulse">IIV</div>
+          <img src="/logo.jpeg" alt="IIV" className="h-10 w-auto object-contain animate-pulse" />
           <p className="text-sm text-muted-foreground">A carregar...</p>
         </div>
       </div>
@@ -303,8 +303,8 @@ export function AdminLayout() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="absolute inset-0 rounded-xl gradient-gold opacity-40 blur-md" />
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-serif font-bold text-sm shadow-elegant">
-              IIV
+            <div className="relative flex h-10 items-center justify-center rounded-xl bg-white px-2 shadow-elegant">
+              <img src="/logo.jpeg" alt="IIV" className="h-6 w-auto object-contain" />
             </div>
           </div>
           <div className="min-w-0">
