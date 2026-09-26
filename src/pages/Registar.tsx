@@ -87,9 +87,7 @@ export default function Registar() {
           </div>
 
           <div className="space-y-6">
-            <div className="flex h-16 items-center justify-center rounded-2xl bg-white/95 backdrop-blur-sm border border-primary-foreground/15 px-3">
-              <img src="/logo.jpeg" alt="IIV" className="h-9 w-auto object-contain" />
-            </div>
+            <img src="/logo.png" alt="IIV" className="h-16 w-auto object-contain" />
             <div>
               <h1 className="font-serif text-4xl leading-[1.15]">
                 {renderMultiline(t("brand.title"))}

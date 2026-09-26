@@ -101,7 +101,7 @@ export function Header() {
         <div className="container flex h-20 items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             <img
-              src="/logo.jpeg"
+              src="/logo.png"
               alt="IIV"
               className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
             />
