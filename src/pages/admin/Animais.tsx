@@ -50,7 +50,7 @@ import {
   useUpdateAnimal,
 } from "@/hooks/queries/useAnimais";
 import { useEstacoesList } from "@/hooks/queries/useEstacoes";
-import type { AnimalDto, AnimalSex, AnimalStatus } from "@/types/dto/animal";
+import type { AnimalDto, AnimalReproductiveStatus, AnimalSex, AnimalStatus } from "@/types/dto/animal";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 import i18n from "@/i18n";
 import ptAnimais from "@/i18n/locales/pt/admin/animais.json";
@@ -65,6 +65,9 @@ if (!i18n.hasResourceBundle("en", "animais"))
 
 const SEX_VALUES: AnimalSex[] = ["macho", "femea"];
 const STATUS_VALUES: AnimalStatus[] = ["activo", "vendido", "morto", "abatido", "transferido"];
+// Campo exclusivo de fêmeas — o select só é apresentado no formulário quando
+// `sex === "femea"` (CT-012, relatório de QA).
+const REPRODUCTIVE_STATUS_VALUES: AnimalReproductiveStatus[] = ["vazia", "cio", "coberta", "gestante", "lactante"];
 const EVENT_TYPES = [
   "nascimento",
   "pesagem",
@@ -97,6 +100,9 @@ function buildAnimalSchema(t: TFunction) {
     sex: z.enum(["macho", "femea"], {
       errorMap: () => ({ message: t("validation.sexRequired") }),
     }),
+    // Exclusivo de fêmeas (CT-012) — o campo só é apresentado/editável no
+    // formulário quando `sex === "femea"`; para machos é sempre limpo no submit.
+    reproductiveStatus: z.enum(["vazia", "cio", "coberta", "gestante", "lactante"]).optional(),
     birthDate: z.string().optional(),
     motherTag: z.string().trim().optional(),
     fatherTag: z.string().trim().optional(),
@@ -157,6 +163,7 @@ export default function Animais() {
             species: editItem.species,
             breed: editItem.breed ?? "",
             sex: editItem.sex,
+            reproductiveStatus: editItem.reproductiveStatus ?? undefined,
             birthDate: editItem.birthDate ?? "",
             motherTag: editItem.motherTag ?? "",
             fatherTag: editItem.fatherTag ?? "",
@@ -178,6 +185,7 @@ export default function Animais() {
       species: "",
       breed: "",
       sex: undefined,
+      reproductiveStatus: undefined,
       birthDate: "",
       motherTag: "",
       fatherTag: "",
@@ -193,6 +201,9 @@ export default function Animais() {
         species: values.species,
         breed: values.breed?.trim() ? values.breed.trim() : null,
         sex: values.sex,
+        // Campo exclusivo de fêmeas — nunca enviado para machos, mesmo que
+        // tenha ficado um valor residual no formulário antes de trocar o sexo.
+        reproductiveStatus: values.sex === "femea" ? values.reproductiveStatus ?? null : null,
         birthDate: values.birthDate?.trim() ? values.birthDate : null,
         motherTag: values.motherTag?.trim() ? values.motherTag.trim() : null,
         fatherTag: values.fatherTag?.trim() ? values.fatherTag.trim() : null,
@@ -515,6 +526,32 @@ export default function Animais() {
                   </FormItem>
                 )}
               />
+              {form.watch("sex") === "femea" && (
+                <FormField
+                  control={form.control}
+                  name="reproductiveStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("form.labels.reproductiveStatus")}</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("form.placeholders.reproductiveStatus")} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {REPRODUCTIVE_STATUS_VALUES.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {t(`reproductiveStatus.${s}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="status"
@@ -685,6 +722,16 @@ function AnimalDetailDialog({
                 <DetailField label={t("detail.fields.species")} value={animal.species} />
                 <DetailField label={t("detail.fields.breed")} value={animal.breed || t("table.emptyCell")} />
                 <DetailField label={t("detail.fields.sex")} value={t(`sex.${animal.sex}`)} />
+                {animal.sex === "femea" && (
+                  <DetailField
+                    label={t("detail.fields.reproductiveStatus")}
+                    value={
+                      animal.reproductiveStatus
+                        ? t(`reproductiveStatus.${animal.reproductiveStatus}`)
+                        : t("table.emptyCell")
+                    }
+                  />
+                )}
                 <DetailField label={t("detail.fields.birthDate")} value={fmtDate(animal.birthDate)} />
                 <DetailField label={t("detail.fields.mother")} value={animal.motherTag || t("table.emptyCell")} />
                 <DetailField label={t("detail.fields.father")} value={animal.fatherTag || t("table.emptyCell")} />

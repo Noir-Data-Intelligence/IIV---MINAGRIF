@@ -31,6 +31,13 @@
     "macho": "Macho",
     "femea": "Fêmea"
   },
+  "reproductiveStatus": {
+    "vazia": "Vazia",
+    "cio": "Em cio",
+    "coberta": "Coberta",
+    "gestante": "Gestante",
+    "lactante": "Lactante"
+  },
   "status": {
     "activo": "Activo",
     "vendido": "Vendido",
@@ -69,6 +76,7 @@
       "species": "Espécie",
       "breed": "Raça",
       "sex": "Sexo",
+      "reproductiveStatus": "Estado Reprodutivo",
       "birthDate": "Data de nascimento",
       "motherTag": "Brinco da mãe",
       "fatherTag": "Brinco do pai",
@@ -84,6 +92,7 @@
       "species": "Ex: Bovino",
       "breed": "Ex: Nelore",
       "sex": "Seleccionar",
+      "reproductiveStatus": "Seleccionar estado reprodutivo",
       "status": "Seleccionar estado",
       "notes": "Notas adicionais sobre o animal"
     },
@@ -107,6 +116,7 @@
       "species": "Espécie",
       "breed": "Raça",
       "sex": "Sexo",
+      "reproductiveStatus": "Estado Reprodutivo",
       "birthDate": "Nascimento",
       "mother": "Mãe",
       "father": "Pai",

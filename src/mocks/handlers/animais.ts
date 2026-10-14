@@ -122,6 +122,7 @@ export const animaisHandlers = [
       species: payload.species ?? "",
       breed: payload.breed ?? null,
       sex: payload.sex ?? "femea",
+      reproductiveStatus: payload.sex === "macho" ? null : payload.reproductiveStatus ?? null,
       birthDate: payload.birthDate ?? null,
       motherTag: payload.motherTag ?? null,
       fatherTag: payload.fatherTag ?? null,

@@ -8,6 +8,8 @@
  */
 export type AnimalSex = "macho" | "femea";
 export type AnimalStatus = "activo" | "vendido" | "morto" | "abatido" | "transferido";
+/** Exclusivo de fêmeas — o formulário só apresenta este campo quando `sex === "femea"` (CT-012). */
+export type AnimalReproductiveStatus = "vazia" | "cio" | "coberta" | "gestante" | "lactante";
 
 export interface AnimalDto {
   id: string;
@@ -17,6 +19,7 @@ export interface AnimalDto {
   species: string;
   breed: string | null;
   sex: AnimalSex;
+  reproductiveStatus: AnimalReproductiveStatus | null;
   birthDate: string | null;
   motherTag: string | null;
   fatherTag: string | null;

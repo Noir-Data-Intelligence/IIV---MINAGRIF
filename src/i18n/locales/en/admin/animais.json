@@ -31,6 +31,13 @@
     "macho": "Male",
     "femea": "Female"
   },
+  "reproductiveStatus": {
+    "vazia": "Open",
+    "cio": "In heat",
+    "coberta": "Bred",
+    "gestante": "Pregnant",
+    "lactante": "Lactating"
+  },
   "status": {
     "activo": "Active",
     "vendido": "Sold",
@@ -69,6 +76,7 @@
       "species": "Species",
       "breed": "Breed",
       "sex": "Sex",
+      "reproductiveStatus": "Reproductive Status",
       "birthDate": "Birth date",
       "motherTag": "Mother's tag",
       "fatherTag": "Father's tag",
@@ -84,6 +92,7 @@
       "species": "e.g. Cattle",
       "breed": "e.g. Nelore",
       "sex": "Select",
+      "reproductiveStatus": "Select reproductive status",
       "status": "Select status",
       "notes": "Additional notes about the animal"
     },
@@ -107,6 +116,7 @@
       "species": "Species",
       "breed": "Breed",
       "sex": "Sex",
+      "reproductiveStatus": "Reproductive Status",
       "birthDate": "Birth",
       "mother": "Mother",
       "father": "Father",
