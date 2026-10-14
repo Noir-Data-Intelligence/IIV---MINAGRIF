@@ -6,8 +6,9 @@ import type { Paginated } from "@/types/dto/paginated";
 
 /**
  * Handlers MSW do módulo Planeamento. Ordena por data de início (desc), suporta
- * pesquisa (nome do produto / notas) e filtro por `product_id`. Escrita
- * persistida em memória.
+ * pesquisa (nome do produto / notas), filtro por `product_id` e filtro por
+ * `status` (CT-011 — a página expõe um filtro de estado que o handler tinha
+ * de passar a honrar, em espelho do `PlanoController::index` real).
  */
 
 const BASE = "*/api/planeamento";
@@ -23,10 +24,13 @@ export const planeamentoHandlers = [
     const perPage = Number(url.searchParams.get("per_page") ?? "20") || 20;
     const search = (url.searchParams.get("search") ?? "").trim().toLowerCase();
     const productId = url.searchParams.get("product_id");
+    const status = url.searchParams.get("status");
 
     let rows = [...planeamentoFixtures].sort((a, b) => b.plannedStart.localeCompare(a.plannedStart));
 
     if (productId) rows = rows.filter((p) => p.productId === productId);
+
+    if (status) rows = rows.filter((p) => p.status === status);
 
     if (search) {
       rows = rows.filter(
