@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -41,8 +41,14 @@ const PainelDetalhe = lazy(() => import("./pages/admin/PainelDetalhe"));
 const Utilizadores = lazy(() => import("./pages/admin/Utilizadores"));
 const Departamentos = lazy(() => import("./pages/admin/Departamentos"));
 const Laboratorios = lazy(() => import("./pages/admin/Laboratorios"));
-const Requisicoes = lazy(() => import("./pages/admin/Requisicoes"));
-const RequisicaoDetalhe = lazy(() => import("./pages/admin/RequisicaoDetalhe"));
+// Laboratório por fase (redesenho DEF-001/002/003) — substitui Requisicoes/RequisicaoDetalhe.
+const LabRecepcao = lazy(() => import("./pages/admin/lab/Recepcao"));
+const LabEncaminhamentos = lazy(() => import("./pages/admin/lab/Encaminhamentos"));
+const LabAreaFila = lazy(() => import("./pages/admin/lab/AreaFila"));
+const LabBoletimInterno = lazy(() => import("./pages/admin/lab/BoletimInternoArea"));
+const LabEmissao = lazy(() => import("./pages/admin/lab/Emissao"));
+const LabProcesso = lazy(() => import("./pages/admin/lab/ProcessoLabDetalhe"));
+const LabExames = lazy(() => import("./pages/admin/lab/ExamesCatalogo"));
 const Insumos = lazy(() => import("./pages/admin/Insumos"));
 const Produtos = lazy(() => import("./pages/admin/Produtos"));
 const Lotes = lazy(() => import("./pages/admin/Lotes"));
@@ -85,6 +91,12 @@ import { queryClient } from "@/lib/queryClient";
 // Fallback de rota: cada página já usa Skeleton internos para os seus próprios dados,
 // mas o chunk JS da própria página só chega depois deste primeiro paint — sem isto o
 // utilizador veria um ecrã em branco enquanto o lazy import() resolve.
+/** /admin/requisicoes/:id (antiga página de workflow) -> consulta do processo laboratorial. */
+function LegacyRequisicaoRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/admin/lab/processos/${id}`} replace />;
+}
+
 function RouteFallback() {
   return (
     <div className="flex min-h-[60vh] w-full items-center justify-center">
@@ -136,8 +148,18 @@ const App = () => (
               <Route path="utilizadores" element={<RoleGuard module="utilizadores"><Utilizadores /></RoleGuard>} />
               <Route path="departamentos" element={<RoleGuard module="departamentos"><Departamentos /></RoleGuard>} />
               <Route path="laboratorios" element={<RoleGuard module="laboratorios"><Laboratorios /></RoleGuard>} />
-              <Route path="requisicoes" element={<RoleGuard module="analises"><Requisicoes /></RoleGuard>} />
-              <Route path="requisicoes/:id" element={<RoleGuard module="analises"><RequisicaoDetalhe /></RoleGuard>} />
+              {/* Rotas antigas do Laboratório redireccionam para o fluxo por fase. */}
+              <Route path="requisicoes" element={<Navigate to="/admin/lab/recepcao" replace />} />
+              <Route path="requisicoes/:id" element={<LegacyRequisicaoRedirect />} />
+              <Route path="lab/recepcao" element={<RoleGuard module="lab-recepcao"><LabRecepcao /></RoleGuard>} />
+              <Route path="lab/encaminhamentos" element={<RoleGuard module={["lab-recepcao", "lab-emissao", "lab-validacao"]}><LabEncaminhamentos /></RoleGuard>} />
+              <Route path="lab/area" element={<RoleGuard module={["lab-area", "lab-validacao"]}><LabAreaFila /></RoleGuard>} />
+              <Route path="lab/area/:code" element={<RoleGuard module={["lab-area", "lab-validacao"]}><LabAreaFila /></RoleGuard>} />
+              <Route path="lab/bi/:id" element={<RoleGuard module={["lab-area", "lab-validacao", "lab-recepcao", "lab-emissao"]}><LabBoletimInterno /></RoleGuard>} />
+              <Route path="lab/emissao" element={<RoleGuard module="lab-emissao"><LabEmissao /></RoleGuard>} />
+              <Route path="lab/processos" element={<RoleGuard module="lab-recepcao"><LabProcesso /></RoleGuard>} />
+              <Route path="lab/processos/:id" element={<RoleGuard module={["lab-recepcao", "lab-area", "lab-validacao", "lab-emissao", "lab-exames"]}><LabProcesso /></RoleGuard>} />
+              <Route path="lab/exames" element={<RoleGuard module="lab-exames"><LabExames /></RoleGuard>} />
               <Route path="insumos" element={<RoleGuard module="insumos"><Insumos /></RoleGuard>} />
               <Route path="produtos" element={<RoleGuard module="produtos"><Produtos /></RoleGuard>} />
               <Route path="lotes" element={<RoleGuard module="lotes"><Lotes /></RoleGuard>} />

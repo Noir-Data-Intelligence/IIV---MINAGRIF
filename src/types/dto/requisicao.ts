@@ -11,7 +11,8 @@ export type TipoSujeito = "animal" | "humano";
 export interface RequisicaoDto {
   id: string;
   numero: string;
-  laboratorioId: string;
+  /** @deprecated a área deriva dos exames pedidos (ver `areas` em RequisicaoLabDto). */
+  laboratorioId: string | null;
   tipoSujeito: TipoSujeito;
   clienteNome: string;
   clienteContacto: string | null;
@@ -27,7 +28,8 @@ export interface RequisicaoDto {
 
 /** Payload de criação — cria a requisição e o lote de amostras numa só chamada. */
 export interface RequisicaoPayload {
-  laboratorioId: string;
+  /** @deprecated usar o registo da Recepção (`RegistarRequisicaoPayload`, área derivada dos exames). */
+  laboratorioId?: string | null;
   tipoSujeito: TipoSujeito;
   clienteNome: string;
   clienteContacto?: string | null;

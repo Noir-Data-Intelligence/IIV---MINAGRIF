@@ -7,10 +7,11 @@ import { ROLE_LABEL, type ModuleKey } from "@/lib/permissions";
 import { pageTransition } from "@/lib/motion";
 import {
   LayoutDashboard, Users, Building2, LogOut, ChevronLeft, FlaskConical,
-  ClipboardList, Package, Pill, Boxes, CalendarRange, Truck, MapPin,
+  Package, Pill, Boxes, CalendarRange, Truck, MapPin,
   ClipboardCheck, AlertTriangle, Shield, Menu, X, UserCircle, Search,
   Sparkles, Boxes as BoxesIcon, LineChart, ShieldCheck, ScrollText, MessageSquare, Images, Newspaper, Bell,
   FolderKanban, FileStack, Workflow, Rabbit, Dna, Sprout, Beef, Wallet, Wrench, Plane, GraduationCap, UserCog, Microscope, BarChart3, Award, Radar,
+  Inbox, Route as RouteIcon, FileCheck2, History, BookOpen,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,8 @@ import { NotificationCenter } from "@/components/admin/NotificationCenter";
 import { ChatWidget } from "@/components/admin/ChatWidget";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-interface NavItem { icon: LucideIcon; label: string; path: string; module: ModuleKey }
+/** `module` aceita vários módulos alternativos (basta poder ver um) — usado no Laboratório por fase. */
+interface NavItem { icon: LucideIcon; label: string; path: string; module: ModuleKey | ModuleKey[] }
 interface NavGroup { label: string; items: NavItem[]; icon: LucideIcon; colorClass: string }
 
 const navGroups: NavGroup[] = [
@@ -58,8 +60,15 @@ const navGroups: NavGroup[] = [
     icon: LineChart,
     colorClass: "text-[hsl(175,55%,55%)]",
     items: [
+      // Por ordem de processo (redesenho DEF-001/002/003). "Encaminhamentos"
+      // é a circulação de BI — NÃO confundir com "Distribuição" (vacinas).
+      { icon: Inbox, label: "Recepção (CGISC)", path: "/admin/lab/recepcao", module: "lab-recepcao" },
+      { icon: RouteIcon, label: "Encaminhamentos", path: "/admin/lab/encaminhamentos", module: ["lab-recepcao", "lab-emissao", "lab-validacao"] },
+      { icon: Microscope, label: "A Minha Área", path: "/admin/lab/area", module: ["lab-area", "lab-validacao"] },
+      { icon: FileCheck2, label: "Emissão de Resultados", path: "/admin/lab/emissao", module: "lab-emissao" },
+      { icon: History, label: "Processos Laboratoriais", path: "/admin/lab/processos", module: "lab-recepcao" },
+      { icon: BookOpen, label: "Catálogo de Exames", path: "/admin/lab/exames", module: "lab-exames" },
       { icon: FlaskConical, label: "Laboratórios", path: "/admin/laboratorios", module: "laboratorios" },
-      { icon: ClipboardList, label: "Requisições", path: "/admin/requisicoes", module: "analises" },
       { icon: Package, label: "Insumos", path: "/admin/insumos", module: "insumos" },
     ],
   },
@@ -288,7 +297,7 @@ export function AdminLayout() {
   if (!user) return null;
 
   const filteredGroups = navGroups
-    .map((g) => ({ ...g, items: g.items.filter((i) => canView(i.module)) }))
+    .map((g) => ({ ...g, items: g.items.filter((i) => (Array.isArray(i.module) ? i.module.some((m) => canView(m)) : canView(i.module))) }))
     .filter((g) => g.items.length > 0);
 
   const isActive = (path: string) =>

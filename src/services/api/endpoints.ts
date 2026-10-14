@@ -92,9 +92,42 @@ export const endpoints = {
     list: "/laboratorios",
     detail: (id: string) => `/laboratorios/${id}`,
   },
+  /** @deprecated rotas legadas — usar `lab.*` (fluxo por fase). */
   requisicoes: {
     list: "/requisicoes",
     detail: (id: string) => `/requisicoes/${id}`,
+  },
+  // Redesenho DEF-001/002/003: Recepção (CGISC) -> Encaminhamento -> Área ->
+  // Emissão (CGISC). Ver Back-end/routes/api.php (prefixo /lab).
+  lab: {
+    colegas: "/lab/colegas",
+    exames: "/lab/exames",
+    exame: (id: string) => `/lab/exames/${id}`,
+    recepcao: {
+      requisicoes: "/lab/recepcao/requisicoes",
+      requisicao: (id: string) => `/lab/recepcao/requisicoes/${id}`,
+      etiquetas: (id: string) => `/lab/recepcao/requisicoes/${id}/etiquetas`,
+      abrirProcesso: (id: string) => `/lab/recepcao/requisicoes/${id}/abrir-processo`,
+      conferencias: (amostraId: string) => `/lab/recepcao/amostras/${amostraId}/conferencias`,
+      aceitarComReserva: (amostraId: string) => `/lab/recepcao/amostras/${amostraId}/aceitar-com-reserva`,
+      rejeitar: (amostraId: string) => `/lab/recepcao/amostras/${amostraId}/rejeitar`,
+    },
+    encaminhamentos: "/lab/encaminhamentos",
+    encaminharTodos: (requisicaoId: string) => `/lab/requisicoes/${requisicaoId}/encaminhar`,
+    encerrar: (requisicaoId: string) => `/lab/requisicoes/${requisicaoId}/encerrar`,
+    areas: "/lab/areas",
+    fila: (code: string) => `/lab/areas/${code}/fila`,
+    bi: {
+      detail: (id: string) => `/lab/boletins-internos/${id}`,
+      accao: (id: string, accao: string) => `/lab/boletins-internos/${id}/${accao}`,
+    },
+    emissao: "/lab/emissao",
+    ba: {
+      detail: (id: string) => `/lab/boletins-analises/${id}`,
+      entregar: (id: string) => `/lab/boletins-analises/${id}/entregar`,
+    },
+    processo: (requisicaoId: string) => `/lab/processos/${requisicaoId}`,
+    movimentos: (amostraId: string) => `/lab/amostras/${amostraId}/movimentos`,
   },
   amostras: {
     list: "/amostras",

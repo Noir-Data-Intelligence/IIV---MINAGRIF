@@ -6,10 +6,20 @@
  * validação dupla/tripla.
  */
 export type BoletimStatus =
+  | "gerado"
+  | "em_transito"
+  | "recebido_area"
   | "em_analise"
   | "resultado_registado"
   | "em_validacao"
+  | "validado"
+  | "devolvido"
+  | "recebido_cgisc"
+  | "emitido"
+  | "rejeitado_na_area"
+  /** @deprecated estados do modelo antigo, migrados para validado/emitido no backend. */
   | "aprovado"
+  /** @deprecated */
   | "comunicado";
 
 export interface BoletimAnaliseDto {

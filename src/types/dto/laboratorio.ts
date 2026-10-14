@@ -34,6 +34,10 @@ export interface LaboratorioDto {
   slaDias: number | null;
   slaActive: boolean;
   slaSeverity: "warning" | "destructive";
+  /** D.0#5 (a confirmar com o laboratório): responsável de qualidade da área. */
+  responsavelQualidadeId?: string | null;
+  /** D.0#4 (a confirmar): exige confirmação de pagamento antes da entrega do BA (default false). */
+  exigePagamentoParaEntrega?: boolean;
   createdAt: string;
 }
 

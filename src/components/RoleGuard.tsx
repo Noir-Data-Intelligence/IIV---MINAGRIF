@@ -5,14 +5,15 @@ import { useToast } from "@/hooks/use-toast";
 import type { ModuleKey } from "@/lib/permissions";
 
 interface RoleGuardProps {
-  module: ModuleKey;
+  /** Um módulo, ou vários alternativos (basta poder ver um — ex. páginas do Laboratório partilhadas por fases). */
+  module: ModuleKey | ModuleKey[];
   children: ReactNode;
 }
 
 export function RoleGuard({ module, children }: RoleGuardProps) {
   const { loading, role, canView } = useUserRole();
   const { toast } = useToast();
-  const allowed = canView(module);
+  const allowed = Array.isArray(module) ? module.some((m) => canView(m)) : canView(module);
   // If role already known (from cache), render immediately to avoid flash between routes.
   const ready = !loading || role !== null;
 

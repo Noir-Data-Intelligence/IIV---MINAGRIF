@@ -50,8 +50,12 @@ type MetricConfig = {
 };
 
 const STATUS_ANALYSIS: Record<string, string> = {
+  gerado: "Gerado", em_transito: "Em Trânsito", recebido_area: "Recebido na Área",
   em_analise: "Em Análise", resultado_registado: "Resultado Registado",
-  em_validacao: "Em Validação", aprovado: "Aprovado", comunicado: "Comunicado",
+  em_validacao: "Em Validação", validado: "Validado", devolvido: "Devolvido à CGISC",
+  recebido_cgisc: "Recebido na CGISC", emitido: "Emitido", rejeitado_na_area: "Rejeitado na Área",
+  // Estados antigos (migrados no backend para validado/emitido).
+  aprovado: "Aprovado", comunicado: "Comunicado",
 };
 const STATUS_BATCH: Record<string, string> = {
   planeada: "Planeada", em_producao: "Em Produção", concluida: "Concluída", suspensa: "Suspensa",
@@ -92,10 +96,10 @@ const CONFIG: Record<string, MetricConfig> = {
   // ---------- KPIs ----------
   analysesPending: {
     title: "Análises Pendentes",
-    description: "Boletins ainda não comunicados ao cliente",
+    description: "Boletins ainda sem Boletim de Análises emitido",
     icon: Activity,
     source: "boletins",
-    filter: (r) => r.status !== "comunicado",
+    filter: (r) => !["emitido", "rejeitado_na_area", "comunicado"].includes(String(r.status)),
     columns: analysisColumns,
     searchKeys: ["numeroAnalise"],
     statusKey: "status",
@@ -103,7 +107,8 @@ const CONFIG: Record<string, MetricConfig> = {
       { value: "em_analise", label: "Em Análise" },
       { value: "resultado_registado", label: "Resultado Registado" },
       { value: "em_validacao", label: "Em Validação" },
-      { value: "aprovado", label: "Aprovado" },
+      { value: "validado", label: "Validado" },
+      { value: "recebido_cgisc", label: "Recebido na CGISC" },
     ],
   },
   completionRate: {

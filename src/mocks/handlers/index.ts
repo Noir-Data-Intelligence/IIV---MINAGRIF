@@ -15,6 +15,7 @@ import { insumosHandlers } from "@/mocks/handlers/insumos";
 import { requisicoesHandlers } from "@/mocks/handlers/requisicoes";
 import { amostrasHandlers } from "@/mocks/handlers/amostras";
 import { boletinsHandlers } from "@/mocks/handlers/boletins";
+import { labHandlers } from "@/mocks/handlers/lab";
 import { criteriosRejeicaoHandlers } from "@/mocks/handlers/criteriosRejeicao";
 import { produtosHandlers } from "@/mocks/handlers/produtos";
 import { lotesHandlers } from "@/mocks/handlers/lotes";
@@ -73,6 +74,7 @@ export const handlers = [
   ...requisicoesHandlers,
   ...amostrasHandlers,
   ...boletinsHandlers,
+  ...labHandlers,
   ...criteriosRejeicaoHandlers,
   ...produtosHandlers,
   ...lotesHandlers,

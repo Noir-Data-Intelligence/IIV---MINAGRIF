@@ -18,7 +18,7 @@ import { listDocumentos } from "@/services/api/documentos";
 import { listProcesses } from "@/services/api/processes";
 import { listNaoConformidades } from "@/services/api/naoConformidades";
 import { listAuditorias } from "@/services/api/auditorias";
-import { listRequisicoes } from "@/services/api/requisicoes";
+import { listRecepcao } from "@/services/api/lab";
 import { listNoticias } from "@/services/api/noticias";
 import { listLegislacaoAdmin } from "@/services/api/legislacao";
 import { listContactMessages } from "@/services/api/contactMessages";
@@ -40,7 +40,8 @@ const PAGES: PageItem[] = [
   { label: "Departamentos", path: "/admin/departamentos", module: "departamentos", icon: Building2, group: "Geral" },
   { label: "Meu Perfil", path: "/admin/perfil", module: "perfil", icon: UserCircle, group: "Geral" },
   { label: "Laboratórios", path: "/admin/laboratorios", module: "laboratorios", icon: FlaskConical, group: "Laboratório" },
-  { label: "Requisições", path: "/admin/requisicoes", module: "analises", icon: ClipboardList, group: "Laboratório" },
+  { label: "Recepção (CGISC)", path: "/admin/lab/recepcao", module: "lab-recepcao", icon: ClipboardList, group: "Laboratório" },
+  { label: "Emissão de Resultados", path: "/admin/lab/emissao", module: "lab-emissao", icon: ClipboardList, group: "Laboratório" },
   { label: "Insumos", path: "/admin/insumos", module: "insumos", icon: Package, group: "Laboratório" },
   { label: "Produtos", path: "/admin/produtos", module: "produtos", icon: Pill, group: "Produção" },
   { label: "Lotes", path: "/admin/lotes", module: "lotes", icon: Boxes, group: "Produção" },
@@ -267,12 +268,12 @@ export function GlobalSearch({ open, onOpenChange }: Props) {
             ),
           );
         }
-        if (canView("analises")) {
+        if (canView("lab-recepcao")) {
           tasks.push(
-            listRequisicoes({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
+            listRecepcao({ search: q, page: 1, perPage: 5 }).then(({ data }) =>
               data.map((r) => ({
-                id: r.id, label: `${r.numero} · ${r.clienteNome}`, sub: `${r.amostras?.length ?? 0} amostra(s)`,
-                path: `/admin/requisicoes/${r.id}`, icon: ClipboardList, group: "Requisições",
+                id: r.id, label: `${r.patNumero ?? r.numero} · ${r.clienteNome}`, sub: `${r.amostras?.length ?? 0} amostra(s)`,
+                path: `/admin/lab/processos/${r.id}`, icon: ClipboardList, group: "Processos laboratoriais",
               })),
             ),
           );

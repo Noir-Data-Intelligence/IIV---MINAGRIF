@@ -30,7 +30,11 @@ const ANGOLA_ZOOM = 6;
 const STATION_COLOR = "hsl(160, 60%, 38%)";
 const STATUS_COLOR: Record<AmostraStatus, string> = {
   recebida: "hsl(45, 90%, 55%)",
+  em_conferencia: "hsl(45, 90%, 55%)",
   aceite: "hsl(200, 70%, 50%)",
+  aceite_com_reserva: "hsl(200, 70%, 50%)",
+  em_processamento: "hsl(200, 70%, 50%)",
+  concluida: "hsl(160, 60%, 38%)",
   rejeitada: "hsl(0, 70%, 55%)",
 };
 
@@ -50,11 +54,9 @@ function dotIcon(color: string): L.DivIcon {
 }
 
 const stationIcon = dotIcon(STATION_COLOR);
-const colheitaIcons: Record<AmostraStatus, L.DivIcon> = {
-  recebida: dotIcon(STATUS_COLOR.recebida),
-  aceite: dotIcon(STATUS_COLOR.aceite),
-  rejeitada: dotIcon(STATUS_COLOR.rejeitada),
-};
+const colheitaIcons = Object.fromEntries(
+  (Object.keys(STATUS_COLOR) as AmostraStatus[]).map((s) => [s, dotIcon(STATUS_COLOR[s])]),
+) as Record<AmostraStatus, L.DivIcon>;
 
 export default function Observatorio() {
   const { t } = useTranslation("observatorio");

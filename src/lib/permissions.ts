@@ -64,7 +64,13 @@ export type ModuleKey =
   | "investigacao"
   | "avaliacoes"
   | "bi"
-  | "observatorio";
+  | "observatorio"
+  // Laboratório por fase (redesenho DEF-001/002/003) — espelha ModuleKey.php.
+  | "lab-recepcao"
+  | "lab-area"
+  | "lab-validacao"
+  | "lab-emissao"
+  | "lab-exames";
 
 
 
@@ -82,7 +88,11 @@ export const ALL_MODULES: ModuleKey[] = [
   "historico-alertas", "documentos", "processos", "animais", "inseminacao",
   "stock", "agricultura", "pecuaria", "financeiro", "patrimonio",
   "missoes", "rh", "formacoes", "investigacao", "avaliacoes", "bi", "observatorio",
+  "lab-recepcao", "lab-area", "lab-validacao", "lab-emissao", "lab-exames",
 ];
+
+/** Módulos do Laboratório por fase (Recepção -> Área -> Validação -> Emissão + catálogo). */
+export const LAB_MODULES: ModuleKey[] = ["lab-recepcao", "lab-area", "lab-validacao", "lab-emissao", "lab-exames"];
 
 
 export const MODULE_LABEL: Record<ModuleKey, string> = {
@@ -125,6 +135,11 @@ export const MODULE_LABEL: Record<ModuleKey, string> = {
   avaliacoes: "Avaliações de Desempenho",
   bi: "BI Institucional",
   observatorio: "Observatório Veterinário",
+  "lab-recepcao": "Lab — Recepção (CGISC)",
+  "lab-area": "Lab — Trabalho na Área",
+  "lab-validacao": "Lab — Validação",
+  "lab-emissao": "Lab — Emissão de Resultados",
+  "lab-exames": "Lab — Catálogo de Exames",
 };
 
 
@@ -162,8 +177,10 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
       // laboratório — precisa de ver (não escrever) utilizadores para os
       // escolher (espelha RolePermissionSeeder.php no backend).
       "utilizadores",
+      // Laboratório por fase: vê todas as fases, valida e gere o catálogo.
+      ...LAB_MODULES,
     ],
-    write: ["laboratorios", "analises", "resultados", "insumos", "auditorias", "nao-conformidades", "documentos", "processos"],
+    write: ["laboratorios", "lab-validacao", "lab-exames", "insumos", "auditorias", "nao-conformidades", "documentos", "processos"],
   },
   "responsavel-qualidade": {
     view: [
@@ -171,8 +188,9 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
       "laboratorios", "analises", "resultados",
       "auditorias", "nao-conformidades", "logs", "acessibilidade",
       "historico-alertas", "documentos", "processos",
+      "lab-recepcao", "lab-area", "lab-validacao", "lab-emissao",
     ],
-    write: ["auditorias", "nao-conformidades", "logs", "acessibilidade", "documentos", "processos"],
+    write: ["auditorias", "nao-conformidades", "logs", "acessibilidade", "documentos", "processos", "lab-validacao"],
   },
   tecnico: {
     view: [
@@ -181,14 +199,18 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission> = {
       "animais", "inseminacao", "historico-alertas", "documentos", "processos",
       "stock", "agricultura", "pecuaria", "patrimonio",
       "missoes", "formacoes", "investigacao", "avaliacoes", "observatorio",
+      "lab-area",
     ],
-    write: ["analises", "resultados", "insumos", "animais", "inseminacao", "documentos", "processos",
+    // DEF-002: o Técnico só trabalha DENTRO da área (lab-area + escopo por
+    // equipa no backend); deixou de ter escrita em analises/resultados.
+    write: ["lab-area", "insumos", "animais", "inseminacao", "documentos", "processos",
       "stock", "agricultura", "pecuaria", "missoes", "formacoes", "investigacao"],
   },
   recepcionista: {
+    // DEF-001/003: a Recepção (CGISC) é o único ponto de entrada e de saída.
     view: ["painel", "perfil", "analises", "distribuicao", "historico-alertas", "documentos", "processos",
-      "missoes", "formacoes", "investigacao", "avaliacoes"],
-    write: ["processos"],
+      "missoes", "formacoes", "investigacao", "avaliacoes", "lab-recepcao", "lab-emissao"],
+    write: ["processos", "lab-recepcao", "lab-emissao"],
   },
   "gestor-stock": {
     view: ["painel", "perfil", "insumos", "stock", "agricultura", "pecuaria",
