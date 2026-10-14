@@ -29,3 +29,21 @@ jobs:
             docker compose -f docker-compose.production.yml up -d --build
 
             docker image prune -f
+
+            echo "=== DIAGNOSTICO TEMPORARIO (ver iiv.noirdataintelligence.com a servir Laravel em vez do React) ==="
+            echo "--- docker ps -a (todos os containers, todas as redes) ---"
+            docker ps -a || true
+            echo "--- inspect iiv-web: redes e labels traefik ---"
+            docker inspect iiv-web --format '{{json .NetworkSettings.Networks}}' || true
+            docker inspect iiv-web --format '{{json .Config.Labels}}' || true
+            echo "--- containers com 'traefik' no nome ou labels traefik.enable ---"
+            docker ps -a --format '{{.Names}}' | xargs -I{} sh -c 'docker inspect {} --format "{{.Name}} traefik.enable={{index .Config.Labels \"traefik.enable\"}}" 2>/dev/null' || true
+            echo "--- curl local directo ao container iiv-web pela rede proxy ---"
+            docker run --rm --network proxy curlimages/curl:latest -s -o /dev/null -w 'iiv-web directo: %{http_code}\n' http://iiv-web:80/login || true
+            echo "--- curl com Host header forcado a localhost (apanha o proxy de entrada, seja ele qual for) ---"
+            curl -s -o /dev/null -w 'localhost:80 Host=iiv: %{http_code}\n' -H 'Host: iiv.noirdataintelligence.com' http://127.0.0.1:80/login || true
+            curl -s -o /dev/null -w 'localhost:443 Host=iiv (-k): %{http_code}\n' -k -H 'Host: iiv.noirdataintelligence.com' https://127.0.0.1:443/login || true
+            echo "--- procurar configs de nginx/traefik no sistema que mencionem iiv.noirdataintelligence.com ---"
+            grep -rl "iiv.noirdataintelligence.com" /etc/nginx 2>/dev/null || true
+            find / -maxdepth 6 -iname "*traefik*" -type f 2>/dev/null | grep -v '/proc/' || true
+            echo "=== FIM DIAGNOSTICO ==="
