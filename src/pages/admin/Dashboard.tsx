@@ -1014,19 +1014,27 @@ export default function Dashboard() {
       )}
 
       {/* Product types */}
-      {allowedCharts.has("productTypes") && productTypes.length > 0 && (
+      {allowedCharts.has("productTypes") && (
         <Card className="glass-card shadow-elegant rounded-xl hover-lift animate-fade-up">
           <CardHeader className="pb-2 flex-row items-center justify-between space-y-0"><CardTitle className="text-base font-semibold font-serif">Produtos por Tipo</CardTitle><Link to="/admin/painel/productTypes" className="text-xs text-primary hover:underline">Ver detalhes →</Link></CardHeader>
           <CardContent>
-            <ChartContainer config={productTypesConfig} className="h-[220px] w-full">
-              <BarChart data={productTypes} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis type="number" allowDecimals={false} tick={axisTickStyle} tickFormatter={formatAxisNumber} />
-                <YAxis type="category" dataKey="name" width={80} tick={axisTickStyle} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="value" name="Quantidade" fill={chartColors[1]} radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ChartContainer>
+            {productTypes.length > 0 ? (
+              <ChartContainer config={productTypesConfig} className="h-[220px] w-full">
+                {/* Cada tipo de produto recebe uma cor própria da paleta (tal como os
+                    gráficos de Pie acima), em vez de uma única cor para todas as barras —
+                    sem isso as barras só se distinguiam pelo rótulo do eixo, o que a
+                    auditoria de QA (CT-018) assinalou como ambíguo. */}
+                <BarChart data={productTypes} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" allowDecimals={false} tick={axisTickStyle} tickFormatter={formatAxisNumber} />
+                  <YAxis type="category" dataKey="name" width={80} tick={axisTickStyle} />
+                  <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                  <Bar dataKey="value" name="Quantidade" radius={[0, 6, 6, 0]}>
+                    {productTypes.map((_, i) => <Cell key={i} fill={getChartColor(i)} />)}
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+            ) : <NoDataOverlay message="Sem produtos registados." height={220} />}
           </CardContent>
         </Card>
       )}
