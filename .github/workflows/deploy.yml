@@ -43,14 +43,10 @@ jobs:
             echo "--- curl com Host header forcado a localhost (apanha o proxy de entrada, seja ele qual for) ---"
             curl -s -o /dev/null -w 'localhost:80 Host=iiv: %{http_code}\n' -H 'Host: iiv.noirdataintelligence.com' http://127.0.0.1:80/login || true
             curl -s -o /dev/null -w 'localhost:443 Host=iiv (-k): %{http_code}\n' -k -H 'Host: iiv.noirdataintelligence.com' https://127.0.0.1:443/login || true
-            echo "--- montagens do container 'nginx' (onde vive a config real) ---"
-            docker inspect nginx --format '{{json .Mounts}}' || true
-            echo "--- ficheiros de config dentro do container nginx ---"
-            docker exec nginx sh -c "ls -la /etc/nginx/ /etc/nginx/conf.d/ /etc/nginx/sites-enabled/ /etc/nginx/http.d/ 2>/dev/null" || true
-            echo "--- grep por 'iiv' dentro da config do container nginx ---"
-            docker exec nginx sh -c "grep -rl iiv /etc/nginx/ 2>/dev/null" || true
-            echo "--- conteudo completo de qualquer ficheiro de config que mencione iiv ---"
-            docker exec nginx sh -c "grep -rl iiv /etc/nginx/ 2>/dev/null | xargs -I{} sh -c 'echo FICHEIRO: {}; cat {}'" || true
-            echo "--- default_server actual (quem apanha pedidos sem match) ---"
-            docker exec nginx sh -c "grep -rln default_server /etc/nginx/ 2>/dev/null | xargs -I{} sh -c 'echo FICHEIRO: {}; cat {}'" || true
+            echo "--- config do nginx partilhado confirmada correcta (iiv-web.conf: proxy_pass http://iiv-web:80) ---"
+            echo "--- proxy_pass sem 'resolver' = IP do iiv-web cacheado uma vez; o iiv-web foi recriado DEPOIS do ultimo restart deste nginx -> cache desactualizada ---"
+            echo "--- reiniciar agora que o iiv-web ja esta estavel, para reresolver o IP actual ---"
+            docker restart nginx
+            sleep 3
+            curl -s -o /dev/null -w 'apos restart, Host=iiv /login: %{http_code}\n' --resolve iiv.noirdataintelligence.com:443:127.0.0.1 https://iiv.noirdataintelligence.com/login -k || true
             echo "=== FIM DIAGNOSTICO ==="
