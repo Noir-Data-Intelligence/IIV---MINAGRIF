@@ -530,26 +530,30 @@ export default function Dashboard() {
     riskKpi?: boolean; tone?: "warning" | "destructive";
   }> = [
     {
+      // DEF-004: cartão informativo (não é um estado de risco em si), por isso
+      // fundo neutro; só entra em tom de alerta (riskKpi) ao atingir o limiar,
+      // tal como os quatro cartões de risco abaixo.
       key: "analysesPending",
       icon: Activity, label: "Análises Pendentes", value: stats.analysesPending,
-      caption: "Agendadas e em progresso", variant: "gradient-green",
+      caption: "Agendadas e em progresso", variant: "glass",
       trend: calcTrend(stats.analysesPending, stats.analysesPendingPrev),
+      riskKpi: true, tone: kpiTone("analysesPending", stats.analysesPending),
     },
     {
       key: "completionRate",
       icon: TrendingUp, label: "Taxa de Conclusão", value: `${stats.completionRate}%`,
-      caption: "Análises concluídas", variant: "gradient-gold",
+      caption: "Análises concluídas", variant: "glass",
     },
     {
       key: "batchesActive",
       icon: Boxes, label: "Lotes Ativos", value: stats.batchesActive,
-      caption: "Em produção ou planeados", variant: "gradient-teal",
+      caption: "Em produção ou planeados", variant: "glass",
       trend: calcTrend(stats.batchesActive, stats.batchesActivePrev),
     },
     {
       key: "distributionsMonth",
       icon: Truck, label: "Distribuído no Mês", value: stats.distributionsMonth.toLocaleString("pt-PT"),
-      caption: "Unidades distribuídas", variant: "gradient-green-gold",
+      caption: "Unidades distribuídas", variant: "glass",
       trend: calcTrend(stats.distributionsMonth, stats.distributionsMonthPrev),
     },
     {
