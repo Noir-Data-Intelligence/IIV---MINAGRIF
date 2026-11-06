@@ -62,7 +62,8 @@ function EmptyState({ message }: { message: string }) {
 const variantClass: Record<Variant, string> = {
   "glass": "glass-card",
   "gradient-green": "gradient-green border-0 text-primary-foreground",
-  "gradient-gold": "gradient-gold border-0 text-primary-foreground",
+  // Texto escuro: branco sobre o dourado fica ~2.4:1 (WCAG AA exige 4.5:1).
+  "gradient-gold": "gradient-gold border-0 text-secondary-foreground",
   "gradient-teal": "gradient-teal border-0 text-primary-foreground",
   "gradient-green-gold": "gradient-green-gold border-0 text-primary-foreground",
 };
@@ -83,6 +84,7 @@ export function AdminCard({
   stagger,
 }: AdminCardProps) {
   const isGradient = variant !== "glass";
+  const onGold = variant === "gradient-gold";
   const isKpi = metric !== undefined;
 
   // KPI horizontal — ícone à esquerda, número grande à direita (mesmo layout
@@ -119,7 +121,7 @@ export function AdminCard({
               <p
                 className={cn(
                   "flex items-center gap-1.5 text-sm font-medium",
-                  isGradient ? "text-primary-foreground/90" : "text-destructive",
+                  !isGradient ? "text-destructive" : onGold ? "text-secondary-foreground" : "text-primary-foreground/90",
                 )}
                 title="Erro ao carregar dados"
               >
@@ -131,12 +133,22 @@ export function AdminCard({
               </p>
             )}
             {title && (
-              <p className={cn("text-sm mt-2 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
+              <p
+                className={cn(
+                  "text-sm mt-2 font-medium truncate",
+                  !isGradient ? "text-muted-foreground" : onGold ? "text-secondary-foreground/90" : "text-primary-foreground/85",
+                )}
+              >
                 {title}
               </p>
             )}
             {caption && (
-              <p className={cn("text-xs mt-0.5 truncate", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
+              <p
+                className={cn(
+                  "text-xs mt-0.5 truncate",
+                  !isGradient ? "text-muted-foreground" : onGold ? "text-secondary-foreground/80" : "text-primary-foreground/60",
+                )}
+              >
                 {caption}
               </p>
             )}
@@ -146,7 +158,7 @@ export function AdminCard({
               className={cn(
                 "absolute top-3 right-3 flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
                 isGradient
-                  ? "bg-white/15 text-primary-foreground"
+                  ? cn("bg-white/15", onGold ? "text-secondary-foreground" : "text-primary-foreground")
                   : trend.direction === "up"
                   ? "bg-primary/10 text-primary"
                   : "bg-destructive/10 text-destructive"

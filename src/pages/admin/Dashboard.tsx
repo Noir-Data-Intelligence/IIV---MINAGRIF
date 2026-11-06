@@ -21,7 +21,7 @@ import {
 import { toast } from "sonner";
 import {
   Users, Activity, Boxes, Truck, TrendingUp,
-  AlertTriangle, PackageX, CalendarClock, Settings2, RotateCcw, BellOff, EyeOff,
+  AlertTriangle, PackageX, CalendarClock, Settings2, RotateCcw, BellOff,
   ChevronRight, X, ArrowUpRight, ArrowDownRight, Baby, AlarmClockOff, type LucideIcon,
 } from "lucide-react";
 
@@ -169,9 +169,10 @@ const ALERT_TONE_STYLES: Record<"warning" | "destructive", {
     card: "border-amber-500/25 bg-amber-500/[0.035]",
     accent: "bg-amber-500",
     iconWrap: "bg-amber-500 text-white shadow-md shadow-amber-500/30",
-    badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    // amber-700 e não 600: o 600 fica ~3:1 sobre fundo claro (abaixo de WCAG AA).
+    badge: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
     badgeLabel: "Atenção",
-    value: "text-amber-600 dark:text-amber-400",
+    value: "text-amber-700 dark:text-amber-400",
   },
 };
 
@@ -199,9 +200,11 @@ export default function Dashboard() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 19 ? "Boa tarde" : "Boa noite";
   const firstName = user?.email?.split("@")[0] ?? "";
-  const todayLabel = new Date().toLocaleDateString("pt-PT", {
+  const todayRaw = new Date().toLocaleDateString("pt-PT", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
+  // Só a primeira letra — em português preposições e meses ficam em minúsculas.
+  const todayLabel = todayRaw.charAt(0).toUpperCase() + todayRaw.slice(1);
 
   // ---- Fontes de dados (hooks migrados, agregação client-side) ----
   // "Análises" migrado do domínio legado `analise.ts` para o domínio real da
@@ -513,9 +516,18 @@ export default function Dashboard() {
     users: usersQuery.isError,
   };
 
+  // Tonalidade de risco dos KPIs que também são alertas — vem de ALERT_META para que
+  // cartão e alerta nunca divirjam, e só se aplica quando o limiar é atingido.
+  const kpiTone = (k: AlertKey, value: number): "warning" | "destructive" | undefined => {
+    const th = thresholds[k] ?? 0;
+    return th > 0 && value >= th ? ALERT_META[k].tone : undefined;
+  };
+  const plural = (n: number, singular: string, pluralForm: string) => `${n} ${n === 1 ? singular : pluralForm}`;
+
   const allKpis: Array<{
     key: KpiKey; icon: LucideIcon; label: string; value: string | number; caption?: string; trend?: Trend;
     variant: "glass" | "gradient-green" | "gradient-gold" | "gradient-teal" | "gradient-green-gold";
+    riskKpi?: boolean; tone?: "warning" | "destructive";
   }> = [
     {
       key: "analysesPending",
@@ -544,6 +556,7 @@ export default function Dashboard() {
       key: "ncOpen",
       icon: AlertTriangle, label: "Não Conformidades", value: stats.ncOpen,
       caption: "Abertas ou em análise", variant: "glass",
+      riskKpi: true, tone: kpiTone("ncOpen", stats.ncOpen),
     },
     {
       key: "lowStock",
@@ -551,21 +564,24 @@ export default function Dashboard() {
       // Métrica de Insumos e Reagentes — distinta do "Itens Abaixo do Mínimo"
       // do módulo Stock Integrado (entidade diferente, StockItem).
       caption: "Insumos e reagentes abaixo do mínimo", variant: "glass",
+      riskKpi: true, tone: kpiTone("lowStock", stats.lowStock),
     },
     {
       key: "expiringSoon",
       icon: CalendarClock, label: "Lotes a Expirar", value: stats.expiringSoon,
       caption: "Lotes de produção — próximos 30 dias", variant: "glass",
+      riskKpi: true, tone: kpiTone("expiringSoon", stats.expiringSoon),
     },
     {
       key: "batchesExpired",
       icon: PackageX, label: "Lotes Expirados", value: stats.batchesExpired,
       caption: "Lotes de produção — validade ultrapassada", variant: "glass",
+      riskKpi: true, tone: kpiTone("batchesExpired", stats.batchesExpired),
     },
     {
       key: "users",
       icon: Users, label: "Utilizadores", value: stats.users,
-      caption: `${stats.labs} laboratórios · ${stats.products} produtos`,
+      caption: `${plural(stats.labs, "laboratório", "laboratórios")} · ${plural(stats.products, "produto", "produtos")}`,
       variant: "glass",
     },
   ];
@@ -585,7 +601,9 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-8">
+    // pb-24: reserva espaço para o botão flutuante do ChatWidget (fixed bottom-5, h-14),
+    // que de outro modo tapa o fundo do último gráfico.
+    <div className="space-y-8 pb-24">
       {/* HERO DE BOAS-VINDAS — substitui o cabeçalho genérico por uma saudação
           pessoal com data, estado do sistema e acesso à personalização. */}
       <div className="relative overflow-hidden rounded-3xl gradient-green text-primary-foreground shadow-xl animate-fade-up">
@@ -593,7 +611,9 @@ export default function Dashboard() {
         <div className="absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-primary-foreground/5 blur-3xl" />
         <div className="relative p-5 md:p-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="kicker text-[hsl(var(--iiv-gold))] capitalize">{todayLabel}</p>
+            {/* Dourado mais claro só aqui: o --iiv-gold base fica ~3.5:1 sobre a zona mais clara
+                do gradient-green; este tom dá ≥4.7:1 em todo o gradiente. */}
+            <p className="kicker normal-case tracking-wide text-[hsl(38_85%_65%)]">{todayLabel}</p>
             <h1 className="font-serif text-2xl md:text-3xl mt-2 leading-tight">
               {greeting}, <span className="capitalize">{firstName}</span>
             </h1>
@@ -601,7 +621,7 @@ export default function Dashboard() {
               {ROLE_INTRO[activeRole]} · perfil {ROLE_LABEL[activeRole]}
             </p>
             <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-xs font-medium">
-              <span className={cn("h-2 w-2 rounded-full", hasError ? "bg-destructive" : "bg-[hsl(var(--iiv-gold))] animate-pulse")} />
+              <span className={cn("h-2 w-2 rounded-full", hasError ? "bg-destructive" : "bg-emerald-400 animate-pulse")} />
               {hasError ? "Erro ao carregar alguns dados" : "Sistema operacional"}
               {lastUpdatedAt > 0 && (
                 <span className="opacity-70">
@@ -803,7 +823,7 @@ export default function Dashboard() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-6 px-1.5 gap-1 text-[11px] text-muted-foreground hover:text-foreground" aria-label={`Silenciar alerta ${meta.label}`}>
-                              <EyeOff className="h-3 w-3" /> Visto
+                              <BellOff className="h-3 w-3" /> Silenciar
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
@@ -853,6 +873,9 @@ export default function Dashboard() {
         {kpis.map((c) => {
           const Icon = c.icon;
           const isGradient = c.variant !== "glass";
+          // Branco sobre o dourado fica ~2.4:1; o texto escuro (--secondary-foreground) dá ~6.7:1.
+          const onGold = c.variant === "gradient-gold";
+          const tone = c.tone ? ALERT_TONE_STYLES[c.tone] : undefined;
           return (
             <motion.div key={c.key} variants={prefersReducedMotion ? undefined : fadeInUp}>
               <Link
@@ -861,7 +884,7 @@ export default function Dashboard() {
                 className={cn(
                   "group relative flex items-center gap-5 rounded-2xl p-6 min-h-[7.5rem] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isGradient
-                    ? `${c.variant} border-0 text-primary-foreground shadow-lg`
+                    ? cn(c.variant, "border-0 shadow-lg", onGold ? "text-secondary-foreground" : "text-primary-foreground")
                     : "bg-card border border-border/60 shadow-sm",
                 )}
               >
@@ -871,7 +894,13 @@ export default function Dashboard() {
                 <div
                   className={cn(
                     "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3",
-                    isGradient ? "bg-white/15 backdrop-blur-sm" : "gradient-green-soft text-primary-foreground shadow-md",
+                    isGradient
+                      ? "bg-white/15 backdrop-blur-sm"
+                      : tone
+                      ? tone.iconWrap
+                      : c.riskKpi
+                      ? "bg-muted text-muted-foreground"
+                      : "gradient-green-soft text-primary-foreground shadow-md",
                   )}
                 >
                   <Icon className="h-6 w-6" strokeWidth={1.75} />
@@ -881,29 +910,50 @@ export default function Dashboard() {
                     <p
                       className={cn(
                         "flex items-center gap-1.5 text-sm font-medium",
-                        isGradient ? "text-primary-foreground/90" : "text-destructive",
+                        !isGradient ? "text-destructive" : onGold ? "text-secondary-foreground" : "text-primary-foreground/90",
                       )}
                     >
                       <AlertTriangle className="h-4 w-4 shrink-0" /> Erro ao carregar
                     </p>
                   ) : (
-                    <p className="text-3xl xl:text-4xl font-serif leading-none tracking-tight">{c.value}</p>
+                    <p className={cn("text-3xl xl:text-4xl font-serif leading-none tracking-tight", tone?.value)}>{c.value}</p>
                   )}
-                  <p className={cn("text-sm mt-2 font-medium truncate", isGradient ? "text-primary-foreground/85" : "text-muted-foreground")}>
+                  <p
+                    className={cn(
+                      "text-sm mt-2 font-medium truncate",
+                      !isGradient ? "text-muted-foreground" : onGold ? "text-secondary-foreground/90" : "text-primary-foreground/85",
+                    )}
+                  >
                     {c.label}
                   </p>
                   {c.caption && (
-                    <p className={cn("text-xs mt-0.5 truncate", isGradient ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                    <p
+                      className={cn(
+                        "text-xs mt-0.5 truncate",
+                        !isGradient ? "text-muted-foreground" : onGold ? "text-secondary-foreground/80" : "text-primary-foreground/60",
+                      )}
+                    >
                       {c.caption}
                     </p>
                   )}
                 </div>
+                {tone && (
+                  <span
+                    className={cn(
+                      "absolute top-3 right-3 flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                      tone.badge,
+                    )}
+                  >
+                    <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                    {tone.badgeLabel}
+                  </span>
+                )}
                 {c.trend && (
                   <span
                     className={cn(
                       "absolute top-3 right-3 flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
                       isGradient
-                        ? "bg-white/15 text-primary-foreground"
+                        ? cn("bg-white/15", onGold ? "text-secondary-foreground" : "text-primary-foreground")
                         : c.trend.direction === "up"
                         ? "bg-primary/10 text-primary"
                         : "bg-destructive/10 text-destructive",
@@ -936,7 +986,7 @@ export default function Dashboard() {
                       <Bar dataKey="total" name="Análises" fill={chartColors[0]} radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ChartContainer>
-                ) : <NoDataOverlay message="Sem dados de análises." height={280} />}
+                ) : <NoDataOverlay message="Sem análises nos últimos 6 meses." height={280} />}
               </CardContent>
             </Card>
           )}
@@ -955,10 +1005,11 @@ export default function Dashboard() {
                         {analysisStatus.map((_, i) => <Cell key={i} fill={getChartColor(i)} />)}
                       </Pie>
                       <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                      <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+                      {/* flex-wrap: os 5 estados não cabem numa linha nesta coluna estreita e eram cortados. */}
+                      <ChartLegend content={<ChartLegendContent nameKey="name" className="flex-wrap gap-x-3 gap-y-1 text-xs" />} />
                     </PieChart>
                   </ChartContainer>
-                ) : <NoDataOverlay message="Sem dados." height={280} />}
+                ) : <NoDataOverlay message="Sem análises registadas." description="O gráfico aparece quando existirem boletins." height={280} />}
               </CardContent>
             </Card>
           )}
@@ -1003,7 +1054,7 @@ export default function Dashboard() {
                         {productionStatus.map((_, i) => <Cell key={i} fill={getChartColor(i)} />)}
                       </Pie>
                       <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                      <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+                      <ChartLegend content={<ChartLegendContent nameKey="name" className="flex-wrap gap-x-3 gap-y-1 text-xs" />} />
                     </PieChart>
                   </ChartContainer>
                 ) : <NoDataOverlay message="Sem dados." height={280} />}
